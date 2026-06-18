@@ -94,9 +94,16 @@ class PublicRegistrationController extends Controller
         ]);
     }
 
-    public function showCampus(Campus $campus): View
+    public function showCampus(Request $request, Campus $campus): RedirectResponse|View
     {
         abort_unless($campus->status->value === 'active', 404);
+
+        $publicUrl = $campus->publicUrl();
+        $publicHost = parse_url($publicUrl, PHP_URL_HOST);
+
+        if (! app()->environment('local') && filled($publicHost) && $request->getHost() !== $publicHost) {
+            return redirect()->away($publicUrl);
+        }
 
         $campus->load([
             'studyPrograms' => fn ($query) => $query->where('status', 'active'),
