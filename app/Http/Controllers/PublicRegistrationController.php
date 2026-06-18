@@ -94,8 +94,10 @@ class PublicRegistrationController extends Controller
         ]);
     }
 
-    public function showCampus(Request $request, Campus $campus): RedirectResponse|View
+    public function showCampus(Request $request, Campus|string $campus): RedirectResponse|View
     {
+        $campus = $this->resolveCampusRouteValue($campus);
+
         abort_unless($campus->status->value === 'active', 404);
 
         $publicUrl = $campus->publicUrl();
@@ -145,8 +147,10 @@ class PublicRegistrationController extends Controller
         ]);
     }
 
-    public function campusNewsIndex(Campus $campus): View
+    public function campusNewsIndex(Campus|string $campus): View
     {
+        $campus = $this->resolveCampusRouteValue($campus);
+
         abort_unless($campus->status->value === 'active', 404);
 
         $educationNews = $this->campusNewsQuery($campus)->paginate(12);
@@ -257,6 +261,18 @@ class PublicRegistrationController extends Controller
         return Lead::query()
             ->where('pemberkasan_token', $token)
             ->where('payment_status', PaymentStatus::Paid)
+            ->firstOrFail();
+    }
+
+    private function resolveCampusRouteValue(Campus|string $campus): Campus
+    {
+        if ($campus instanceof Campus) {
+            return $campus;
+        }
+
+        return Campus::query()
+            ->where('name', $campus)
+            ->orWhere('slug', $campus)
             ->firstOrFail();
     }
 
