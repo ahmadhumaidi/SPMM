@@ -5,8 +5,9 @@ Panduan ini untuk memasang Sistem Pusat Mahera Media pada VPS Ubuntu dengan Ngin
 ## 1. Yang Perlu Disiapkan
 
 - VPS Ubuntu 22.04 atau 24.04.
-- Domain utama, misalnya `maheramedia.com`.
-- Subdomain aplikasi, misalnya `spmm.maheramedia.com` dan `kampusmedia.maheramedia.com`.
+- Domain portal Kampus Media: `kampusmedia.cloud`.
+- Subdomain web kampus mitra: `*.kampusmedia.cloud`.
+- Domain sistem pusat SPMM, misalnya `spmm.maheramedia.com`.
 - Akses SSH ke VPS.
 - Database PostgreSQL.
 - Email SMTP untuk kirim verifikasi dan password mahasiswa.
@@ -16,18 +17,21 @@ Panduan ini untuk memasang Sistem Pusat Mahera Media pada VPS Ubuntu dengan Ngin
 
 Di panel DNS domain, buat record:
 
+Untuk `kampusmedia.cloud`:
+
 ```text
 A     @      IP_VPS_ANDA
 A     www    IP_VPS_ANDA
-```
-
-Jika nanti web kampus mitra memakai subdomain, tambahkan juga:
-
-```text
 A     *      IP_VPS_ANDA
 ```
 
-Wildcard `*` berguna agar subdomain kampus seperti `stieindocakti.maheramedia.com` bisa masuk ke aplikasi yang sama.
+Jika sistem pusat tetap memakai `maheramedia.com`, tambahkan di DNS `maheramedia.com`:
+
+```text
+A     spmm   IP_VPS_ANDA
+```
+
+Wildcard `*` di `kampusmedia.cloud` berguna agar subdomain kampus seperti `stieindocakti.kampusmedia.cloud` bisa masuk ke aplikasi yang sama.
 
 ## 3. Login ke VPS
 
@@ -125,7 +129,7 @@ Ubah bagian penting ini:
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://domain-utama-anda.com
+APP_URL=https://kampusmedia.cloud
 
 DB_DATABASE=spmm
 DB_USERNAME=spmm_user
@@ -134,7 +138,7 @@ DB_PASSWORD=password_database_anda
 MAIL_USERNAME=info@maheramedia.com
 MAIL_PASSWORD=app_password_email_anda
 
-SUPER_ADMIN_EMAIL=admin@domain-utama-anda.com
+SUPER_ADMIN_EMAIL=admin@maheramedia.com
 SUPER_ADMIN_PASSWORD=password_admin_yang_kuat
 ```
 
@@ -145,7 +149,7 @@ Untuk tahap live awal, `PAYMENT_PROVIDER=mock` dan `WHATSAPP_PROVIDER=log` masih
 Cara cepat:
 
 ```bash
-DOMAIN='domain-utama-anda.com' bash deploy/deploy-app.sh
+DOMAIN='kampusmedia.cloud' SERVER_NAMES='kampusmedia.cloud www.kampusmedia.cloud *.kampusmedia.cloud spmm.maheramedia.com' bash deploy/deploy-app.sh
 ```
 
 Atau jalankan manual:
@@ -182,7 +186,7 @@ nano /etc/nginx/sites-available/spmm
 Ubah:
 
 ```text
-server_name domain-utama-anda.com www.domain-utama-anda.com;
+server_name kampusmedia.cloud www.kampusmedia.cloud *.kampusmedia.cloud spmm.maheramedia.com;
 root /var/www/spmm/public;
 ```
 
@@ -224,7 +228,7 @@ Scheduler dipakai untuk invoice expired, reminder, dan pekerjaan berkala lain.
 ## 13. Pasang SSL
 
 ```bash
-certbot --nginx -d domain-utama-anda.com -d www.domain-utama-anda.com
+certbot --nginx -d kampusmedia.cloud -d www.kampusmedia.cloud -d spmm.maheramedia.com
 ```
 
 Untuk wildcard subdomain kampus, SSL wildcard biasanya perlu validasi DNS. Itu bisa disiapkan setelah domain utama sudah stabil.
@@ -234,8 +238,8 @@ Untuk wildcard subdomain kampus, SSL wildcard biasanya perlu validasi DNS. Itu b
 Buka:
 
 ```text
-https://domain-utama-anda.com
-https://domain-utama-anda.com/admin
+https://kampusmedia.cloud
+https://spmm.maheramedia.com/admin
 ```
 
 Login admin memakai email dan password dari `.env`:
@@ -268,7 +272,7 @@ Mekanisme live nanti:
 4. Payment gateway mengirim webhook ke:
 
 ```text
-https://domain-utama-anda.com/api/webhooks/payment/NAMA_PROVIDER
+https://kampusmedia.cloud/api/webhooks/payment/NAMA_PROVIDER
 ```
 
 5. Sistem menandai invoice paid.

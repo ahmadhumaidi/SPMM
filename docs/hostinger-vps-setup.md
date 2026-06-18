@@ -10,20 +10,29 @@ OS: Ubuntu
 Repository: git@github.com:ahmadhumaidi/SPMM.git
 ```
 
-## Rekomendasi Domain
+## Pengaturan Domain
 
-Gunakan subdomain dulu:
+Domain untuk website Kampus Media:
+
+```text
+kampusmedia.cloud
+```
+
+Subdomain untuk web kampus mitra:
+
+```text
+stieindocakti.kampusmedia.cloud
+unigajayana.kampusmedia.cloud
+stiepemuda.kampusmedia.cloud
+```
+
+Sistem pusat SPMM bisa tetap memakai domain Mahera Media:
 
 ```text
 spmm.maheramedia.com
 ```
 
-Alasannya:
-
-- lebih aman untuk tahap uji coba,
-- domain utama tetap bisa dipakai untuk portal publik nanti,
-- SSL dan deploy lebih mudah dipisah,
-- SIAKAD dan LMS nanti bisa dibuat:
+SIAKAD dan LMS nanti bisa dibuat:
 
 ```text
 siakad.maheramedia.com
@@ -141,8 +150,8 @@ SUPER_ADMIN_PASSWORD=ganti_password_admin_yang_kuat
 Jika sudah ada subdomain:
 
 ```env
-APP_URL=https://spmm.maheramedia.com
-SANCTUM_STATEFUL_DOMAINS=spmm.maheramedia.com
+APP_URL=https://kampusmedia.cloud
+SANCTUM_STATEFUL_DOMAINS=kampusmedia.cloud,www.kampusmedia.cloud,spmm.maheramedia.com
 ```
 
 ## 8. Deploy Aplikasi
@@ -156,7 +165,7 @@ DOMAIN='187.77.121.111' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash dep
 Jika sudah ada subdomain:
 
 ```bash
-DOMAIN='spmm.maheramedia.com' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash deploy/deploy-app.sh
+DOMAIN='kampusmedia.cloud' SERVER_NAMES='kampusmedia.cloud www.kampusmedia.cloud *.kampusmedia.cloud spmm.maheramedia.com' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash deploy/deploy-app.sh
 ```
 
 ## 9. Buka Website
@@ -171,7 +180,8 @@ http://187.77.121.111/admin
 Jika sudah pakai subdomain:
 
 ```text
-https://spmm.maheramedia.com
+https://kampusmedia.cloud
+https://stieindocakti.kampusmedia.cloud
 https://spmm.maheramedia.com/admin
 ```
 
@@ -180,7 +190,7 @@ https://spmm.maheramedia.com/admin
 Jika subdomain sudah mengarah ke IP VPS:
 
 ```bash
-certbot --nginx -d spmm.maheramedia.com
+certbot --nginx -d kampusmedia.cloud -d www.kampusmedia.cloud -d spmm.maheramedia.com
 ```
 
 ## 11. Update Aplikasi Berikutnya
@@ -189,5 +199,5 @@ Jika nanti ada update kode:
 
 ```bash
 cd /var/www/spmm
-REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' DOMAIN='spmm.maheramedia.com' bash deploy/deploy-app.sh
+REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' DOMAIN='kampusmedia.cloud' SERVER_NAMES='kampusmedia.cloud www.kampusmedia.cloud *.kampusmedia.cloud spmm.maheramedia.com' bash deploy/deploy-app.sh
 ```

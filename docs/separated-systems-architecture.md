@@ -16,7 +16,8 @@ SPMM bukan induk aplikasi akademik. SPMM berperan sebagai pusat PMB/CRM sampai c
 Domain contoh:
 
 - `spmm.maheramedia.com`
-- `pmb.maheramedia.com`
+- `kampusmedia.cloud`
+- `*.kampusmedia.cloud`
 
 Tanggung jawab:
 

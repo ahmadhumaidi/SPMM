@@ -47,6 +47,23 @@ class FeeSchemeResource extends Resource
         return auth()->user()?->isSuperAdmin() ?? false;
     }
 
+    public static function studyProgramOptionsForCampus(mixed $campusId): array
+    {
+        if (blank($campusId)) {
+            return [];
+        }
+
+        return StudyProgram::query()
+            ->where('campus_id', $campusId)
+            ->orderBy('degree_level')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (StudyProgram $program): array => [
+                $program->id => trim(($program->degree_level ? $program->degree_level.' ' : '').$program->name),
+            ])
+            ->all();
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -67,13 +84,7 @@ class FeeSchemeResource extends Resource
                         ->required(),
                     CheckboxList::make('study_program_ids')
                         ->label('Program studi')
-                        ->options(fn (Get $get): array => filled($get('campus_id'))
-                            ? StudyProgram::query()
-                                ->where('campus_id', $get('campus_id'))
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
-                                ->all()
-                            : [])
+                        ->options(fn (Get $get): array => static::studyProgramOptionsForCampus($get('campus_id')))
                         ->columns(2)
                         ->bulkToggleable()
                         ->visibleOn('create')
@@ -82,13 +93,7 @@ class FeeSchemeResource extends Resource
                         ->columnSpanFull(),
                     Select::make('study_program_id')
                         ->label('Program studi')
-                        ->options(fn (Get $get): array => filled($get('campus_id'))
-                            ? StudyProgram::query()
-                                ->where('campus_id', $get('campus_id'))
-                                ->orderBy('name')
-                                ->pluck('name', 'id')
-                                ->all()
-                            : [])
+                        ->options(fn (Get $get): array => static::studyProgramOptionsForCampus($get('campus_id')))
                         ->searchable()
                         ->preload()
                         ->visibleOn('edit')

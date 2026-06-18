@@ -77,7 +77,7 @@ class StudyProgramResource extends Resource
             ->unique()
             ->sort()
             ->mapWithKeys(fn (string $faculty): array => [$faculty => $faculty])
-            ->put('__other', 'Other (input manual)')
+            ->put('__manual', 'Tambah fakultas baru')
             ->all();
     }
 
@@ -234,21 +234,23 @@ class StudyProgramResource extends Resource
                 ->live()
                 ->required(fn (Get $get): bool => $get('input_mode') === 'manual')
                 ->afterStateUpdated(function (?string $state, Set $set): void {
-                    if ($state !== '__other') {
+                    if ($state !== '__manual') {
                         $set('faculty', $state);
                     } else {
                         $set('faculty', null);
                     }
                 })
                 ->visible(fn (Get $get): bool => $get('input_mode') === 'manual')
+                ->helperText('Pilih fakultas yang sudah ada, atau pilih "Tambah fakultas baru" untuk mengetik manual.')
                 ->dehydrated(),
             TextInput::make('faculty')
-                ->label(fn (Get $get): string => $get('faculty_choice') === '__other' ? 'Fakultas baru' : 'Fakultas')
+                ->label(fn (Get $get): string => $get('faculty_choice') === '__manual' ? 'Nama fakultas baru' : 'Fakultas')
                 ->maxLength(255)
-                ->disabled(fn (Get $get): bool => $get('input_mode') !== 'manual' || ($get('faculty_choice') !== '__other' && ! request()->routeIs('filament.admin.resources.study-programs.edit')))
+                ->disabled(fn (Get $get): bool => $get('input_mode') !== 'manual' || ($get('faculty_choice') !== '__manual' && ! request()->routeIs('filament.admin.resources.study-programs.edit')))
                 ->dehydrated()
-                ->required(fn (Get $get): bool => $get('input_mode') === 'manual' && $get('faculty_choice') === '__other')
-                ->visible(fn (Get $get): bool => ($get('input_mode') === 'manual' && $get('faculty_choice') === '__other') || request()->routeIs('filament.admin.resources.study-programs.edit') || filled($get('faculty'))),
+                ->placeholder('Contoh: Ekonomi & Bisnis')
+                ->required(fn (Get $get): bool => $get('input_mode') === 'manual' && $get('faculty_choice') === '__manual')
+                ->visible(fn (Get $get): bool => ($get('input_mode') === 'manual' && $get('faculty_choice') === '__manual') || request()->routeIs('filament.admin.resources.study-programs.edit') || filled($get('faculty'))),
             Select::make('accreditation')
                 ->label('Accreditation')
                 ->options(static::accreditationOptions())

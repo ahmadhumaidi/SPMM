@@ -18,7 +18,7 @@ class CreateStudyProgram extends CreateRecord
         $programKeys = $data['program_catalog_keys'] ?? [];
 
         if ($inputMode === 'manual') {
-            if (($data['faculty_choice'] ?? null) !== '__other') {
+            if (($data['faculty_choice'] ?? null) !== '__manual') {
                 $data['faculty'] = $data['faculty_choice'] ?? $data['faculty'] ?? null;
             }
 

@@ -2,7 +2,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name domain-utama-anda.com www.domain-utama-anda.com;
+    server_name __SERVER_NAMES__;
     root /var/www/spmm/public;
 
     add_header X-Frame-Options "SAMEORIGIN";
