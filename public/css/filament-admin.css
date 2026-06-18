@@ -1,0 +1,1454 @@
+:root {
+    --spmm-navy: #071a3d;
+    --spmm-navy-2: #0b2d63;
+    --spmm-cyan: #06b6d4;
+    --spmm-indigo: #4f46e5;
+    --spmm-ink: #102033;
+    --spmm-muted: #64748b;
+    --spmm-line: rgba(226, 232, 240, 0.92);
+    --spmm-panel: rgba(255, 255, 255, 0.86);
+    --spmm-soft: #f4f7fb;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background:
+        radial-gradient(circle at 8% 6%, rgba(6, 182, 212, 0.20), transparent 28rem),
+        radial-gradient(circle at 96% 18%, rgba(79, 70, 229, 0.14), transparent 34rem),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important;
+    color: var(--spmm-ink);
+}
+
+.fi-layout {
+    background: transparent !important;
+}
+
+.fi-sidebar {
+    background:
+        radial-gradient(circle at 18% 8%, rgba(6, 182, 212, 0.28), transparent 16rem),
+        linear-gradient(180deg, var(--spmm-navy) 0%, #081225 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 24px 0 80px rgba(15, 23, 42, 0.18) !important;
+}
+
+.fi-sidebar-header {
+    min-height: 76px !important;
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+.fi-logo,
+.fi-sidebar-header a {
+    color: #ffffff !important;
+    font-weight: 950 !important;
+    letter-spacing: 0 !important;
+}
+
+.fi-logo::after {
+    content: "Sistem Pusat Mahera Media";
+    display: block;
+    margin-top: 5px;
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.fi-sidebar-nav {
+    padding: 18px 12px !important;
+}
+
+.fi-sidebar-group {
+    margin-bottom: 16px !important;
+}
+
+.fi-sidebar-group-label {
+    color: #ffffff !important;
+    font-size: 0.82rem !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.fi-sidebar-item a {
+    min-height: 44px !important;
+    border-radius: 1rem !important;
+    color: #dbeafe !important;
+    transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease !important;
+}
+
+.fi-sidebar-item a:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+.fi-sidebar-item-active a {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.95), rgba(79, 70, 229, 0.95)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 18px 48px rgba(6, 182, 212, 0.28) !important;
+}
+
+.fi-sidebar svg,
+.fi-sidebar-item-icon,
+.fi-sidebar-collapse-btn,
+.fi-sidebar-close-overlay,
+.fi-sidebar-header button {
+    color: #ffffff !important;
+}
+
+.fi-sidebar-item-label,
+.fi-sidebar-group-label,
+.fi-sidebar-header button,
+.fi-sidebar-header a {
+    color: #ffffff !important;
+}
+
+.fi-topbar {
+    background: transparent !important;
+}
+
+.fi-topbar nav {
+    background: rgba(255, 255, 255, 0.74) !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.80) !important;
+    box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06) !important;
+    backdrop-filter: blur(22px);
+}
+
+.fi-main {
+    padding-top: 1.5rem !important;
+}
+
+.fi-header {
+    margin-bottom: 1.25rem !important;
+}
+
+.fi-header-heading {
+    color: var(--spmm-navy) !important;
+    font-weight: 950 !important;
+    letter-spacing: 0 !important;
+}
+
+.fi-header-subheading {
+    color: var(--spmm-muted) !important;
+    font-weight: 650 !important;
+}
+
+.fi-section,
+.fi-ta-ctn,
+.fi-fo-component-ctn,
+.fi-wi-stats-overview-stat,
+.fi-in-entry-wrp,
+.fi-dropdown-panel {
+    border: 1px solid var(--spmm-line) !important;
+    border-radius: 1.5rem !important;
+    background: var(--spmm-panel) !important;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.09) !important;
+    backdrop-filter: blur(18px);
+}
+
+.fi-section-header {
+    padding: 24px 26px 0 !important;
+}
+
+.fi-section-content,
+.fi-fo-component-ctn {
+    padding: 26px !important;
+}
+
+.fi-section-content > .grid {
+    gap: 24px !important;
+}
+
+.fi-section-header-heading,
+.fi-wi-stats-overview-stat-label {
+    color: var(--spmm-navy) !important;
+    font-weight: 950 !important;
+}
+
+.fi-section-header-description,
+.fi-wi-stats-overview-stat-description {
+    color: var(--spmm-muted) !important;
+    font-weight: 650 !important;
+}
+
+.fi-ta-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.86)) !important;
+    border-bottom: 1px solid var(--spmm-line) !important;
+    border-radius: 1.5rem 1.5rem 0 0 !important;
+}
+
+.fi-ta-table thead {
+    background: rgba(241, 245, 249, 0.86) !important;
+}
+
+.fi-ta-table thead th {
+    color: #334155 !important;
+    font-size: 0.72rem !important;
+    font-weight: 950 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.055em;
+}
+
+.fi-ta-row {
+    transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.fi-ta-row:hover {
+    background: rgba(224, 242, 254, 0.56) !important;
+}
+
+.fi-badge {
+    border-radius: 999px !important;
+    font-weight: 850 !important;
+}
+
+.fi-btn {
+    border-radius: 1rem !important;
+    font-weight: 850 !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease !important;
+}
+
+.fi-btn:hover {
+    transform: translateY(-1px);
+}
+
+.fi-btn-color-primary {
+    background: linear-gradient(135deg, var(--spmm-navy), var(--spmm-cyan)) !important;
+    box-shadow: 0 18px 44px rgba(6, 182, 212, 0.24) !important;
+}
+
+.fi-input-wrp,
+.fi-select-input,
+.fi-textarea,
+.fi-fo-file-upload,
+.choices__inner {
+    border-radius: 1rem !important;
+}
+
+.fi-input-wrp {
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.fi-input-wrp:focus-within {
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.16) !important;
+}
+
+.fi-main,
+.fi-page,
+.fi-section,
+.fi-section-content,
+.fi-fo-component-ctn,
+.fi-fo-field-wrp,
+form {
+    overflow: visible !important;
+}
+
+.fi-section:has(.choices.is-open),
+.fi-section-content:has(.choices.is-open),
+.fi-fo-component-ctn:has(.choices.is-open),
+form:has(.choices.is-open) {
+    position: relative;
+    z-index: 5000 !important;
+}
+
+.fi-fo-field-wrp:has(.choices.is-open),
+.fi-fo-field-wrp:focus-within {
+    position: relative;
+    z-index: 6000 !important;
+}
+
+.choices {
+    position: relative;
+}
+
+.choices.is-open {
+    z-index: 7000 !important;
+}
+
+.choices__list--dropdown,
+.choices__list[aria-expanded] {
+    z-index: 8000 !important;
+    position: absolute !important;
+}
+
+.fi-dropdown-panel,
+[x-floating-ui-portal] {
+    z-index: 9000 !important;
+}
+
+.fi-ta,
+.fi-ta-ctn,
+.fi-ta-header,
+.fi-ta-header-ctn,
+.fi-ta-header-toolbar,
+.fi-ta-toolbar,
+.fi-ta-filter-indicators,
+.fi-ta-pagination {
+    overflow: visible !important;
+}
+
+.fi-ta-ctn,
+.fi-ta-header,
+.fi-ta-header-toolbar,
+.fi-ta-toolbar {
+    position: relative;
+    z-index: 20;
+}
+
+.fi-ta-content {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+
+.fi-dropdown-panel,
+.fi-dropdown-list,
+.fi-ta-filters,
+.fi-modal,
+.fi-modal-window,
+.fi-modal-close-overlay,
+.fi-popover,
+[data-floating-ui-portal],
+[x-floating-ui-portal],
+[wire\\:ignore] > .fi-dropdown-panel {
+    max-height: min(78vh, 42rem) !important;
+    overflow-y: auto !important;
+    z-index: 99999 !important;
+}
+
+.fi-modal-close-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+}
+
+.fi-modal-window,
+.fi-modal {
+    position: relative !important;
+    z-index: 100000 !important;
+}
+
+.fi-modal .fixed,
+.fi-modal > .fixed,
+.fi-modal-close-overlay + div,
+div[role="dialog"],
+div[aria-modal="true"] {
+    z-index: 100001 !important;
+}
+
+.fi-modal-window {
+    transform: none;
+}
+
+body:has(.fi-modal-window),
+.fi-layout:has(.fi-modal-window),
+.fi-main:has(.fi-modal-window),
+.fi-page:has(.fi-modal-window) {
+    overflow: visible !important;
+}
+
+.fi-ta:has(.fi-dropdown-panel),
+.fi-ta-ctn:has(.fi-dropdown-panel),
+.fi-main:has(.fi-dropdown-panel),
+.fi-page:has(.fi-dropdown-panel) {
+    overflow: visible !important;
+    z-index: 9999 !important;
+}
+
+.fi-form-actions,
+.fi-ac {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    z-index: 1 !important;
+}
+
+form [class*="sticky"][class*="bottom"] {
+    position: static !important;
+    inset: auto !important;
+    z-index: 1 !important;
+}
+
+.fi-tabs {
+    border-radius: 1.25rem !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.06) !important;
+}
+
+.fi-tabs-item-active {
+    background: #ffffff !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+.fi-simple-layout {
+    background:
+        radial-gradient(circle at 20% 10%, rgba(6, 182, 212, 0.28), transparent 32rem),
+        radial-gradient(circle at 90% 15%, rgba(79, 70, 229, 0.18), transparent 34rem),
+        linear-gradient(135deg, #071a3d 0%, #0b2d63 55%, #0b5e8e 100%) !important;
+}
+
+.fi-simple-main {
+    border: 1px solid rgba(255, 255, 255, 0.70) !important;
+    border-radius: 2rem !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    box-shadow: 0 28px 90px rgba(2, 6, 23, 0.22) !important;
+    backdrop-filter: blur(22px);
+}
+
+.fi-simple-header-heading {
+    color: var(--spmm-navy) !important;
+    font-weight: 950 !important;
+}
+
+:root.dark body {
+    background:
+        radial-gradient(circle at 8% 6%, rgba(6, 182, 212, 0.16), transparent 28rem),
+        radial-gradient(circle at 96% 18%, rgba(79, 70, 229, 0.14), transparent 34rem),
+        #050b18 !important;
+    color: #e5eefb !important;
+}
+
+:root.dark .fi-topbar nav {
+    border-bottom-color: rgba(255, 255, 255, 0.10) !important;
+    background: rgba(7, 16, 35, 0.86) !important;
+}
+
+:root.dark .fi-section,
+:root.dark .fi-ta-ctn,
+:root.dark .fi-fo-component-ctn,
+:root.dark .fi-wi-stats-overview-stat,
+:root.dark .fi-in-entry-wrp,
+:root.dark .fi-dropdown-panel {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(15, 23, 42, 0.94) !important;
+}
+
+:root.dark .fi-header-heading,
+:root.dark .fi-section-header-heading,
+:root.dark .fi-wi-stats-overview-stat-label,
+:root.dark .fi-ta-text,
+:root.dark .fi-ta-cell,
+:root.dark .fi-ta-cell span,
+:root.dark .fi-ta-cell div,
+:root.dark .fi-breadcrumbs-item-label {
+    color: #f8fafc !important;
+}
+
+:root.dark .fi-header-subheading,
+:root.dark .fi-section-header-description,
+:root.dark .fi-wi-stats-overview-stat-description,
+:root.dark .fi-ta-text-color-gray,
+:root.dark .fi-ta-table td,
+:root.dark .fi-breadcrumbs a {
+    color: #cbd5e1 !important;
+}
+
+:root.dark .fi-ta-header,
+:root.dark .fi-ta-table thead {
+    background: rgba(30, 41, 59, 0.96) !important;
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+:root.dark .fi-ta-table thead th,
+:root.dark .fi-ta-header-cell-label {
+    color: #e2e8f0 !important;
+}
+
+:root.dark .fi-ta-row:hover {
+    background: rgba(6, 182, 212, 0.10) !important;
+}
+
+:root.dark .fi-input-wrp,
+:root.dark .fi-select-input,
+:root.dark .fi-textarea,
+:root.dark .choices__inner {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(15, 23, 42, 0.92) !important;
+    color: #f8fafc !important;
+}
+
+:root.dark input,
+:root.dark select,
+:root.dark textarea {
+    color: #f8fafc !important;
+}
+
+:root.dark input::placeholder,
+:root.dark textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+:root.dark .fi-pagination,
+:root.dark .fi-ta-pagination,
+:root.dark .fi-ta-summary {
+    color: #cbd5e1 !important;
+}
+
+:root.dark .fi-simple-main {
+    background: rgba(15, 23, 42, 0.92) !important;
+}
+
+:root.dark .fi-simple-header-heading {
+    color: #ffffff !important;
+}
+
+@media (max-width: 1024px) {
+    .fi-sidebar {
+        box-shadow: none !important;
+    }
+
+    .fi-main {
+        padding-top: 1rem !important;
+    }
+}
+
+.spmm-report-shell {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.spmm-report-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.36fr);
+    gap: 1rem;
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 2rem;
+    background:
+        radial-gradient(circle at 18% 10%, rgba(6, 182, 212, 0.24), transparent 24rem),
+        linear-gradient(135deg, var(--spmm-navy), var(--spmm-navy-2) 58%, #075985);
+    padding: 1.5rem;
+    color: #ffffff;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+}
+
+.spmm-report-kicker {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.45rem 0.8rem;
+    color: #a5f3fc;
+    font-size: 0.75rem;
+    font-weight: 950;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.spmm-report-hero h2 {
+    margin-top: 1rem;
+    max-width: 760px;
+    color: #ffffff;
+    font-size: clamp(1.7rem, 3vw, 2.8rem);
+    font-weight: 950;
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
+.spmm-report-hero p {
+    margin-top: 0.85rem;
+    max-width: 720px;
+    color: #dbeafe;
+    font-weight: 650;
+    line-height: 1.7;
+}
+
+.spmm-report-hero-card {
+    display: grid;
+    align-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.10);
+    padding: 1.25rem;
+    backdrop-filter: blur(16px);
+}
+
+.spmm-report-hero-card span,
+.spmm-report-hero-card small {
+    color: #bae6fd;
+    font-weight: 800;
+}
+
+.spmm-report-hero-card strong {
+    margin-top: 0.35rem;
+    color: #ffffff;
+    font-size: 3rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.spmm-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.spmm-stat-card {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    min-width: 0;
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.88);
+    padding: 1.1rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+.spmm-stat-icon {
+    display: grid;
+    width: 3rem;
+    height: 3rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 1rem;
+    color: #ffffff;
+}
+
+.spmm-stat-icon svg,
+.spmm-panel-icon svg,
+.spmm-empty svg,
+.spmm-export-card a svg {
+    width: 1.3rem;
+    height: 1.3rem;
+}
+
+.spmm-stat-card p {
+    color: var(--spmm-muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.spmm-stat-card strong {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--spmm-navy);
+    font-size: 1.55rem;
+    font-weight: 950;
+    line-height: 1.05;
+}
+
+.spmm-report-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.spmm-panel {
+    overflow: hidden;
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+.spmm-panel header {
+    display: flex;
+    gap: 0.85rem;
+    align-items: center;
+    border-bottom: 1px solid var(--spmm-line);
+    padding: 1.1rem;
+}
+
+.spmm-panel-icon {
+    display: grid;
+    width: 2.8rem;
+    height: 2.8rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 1rem;
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.spmm-panel h3 {
+    color: var(--spmm-navy);
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.spmm-panel p {
+    color: var(--spmm-muted);
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.spmm-list {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+}
+
+.spmm-list-row {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.spmm-list-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--spmm-ink);
+    font-size: 0.9rem;
+    font-weight: 850;
+}
+
+.spmm-list-top strong {
+    color: var(--spmm-navy);
+    font-weight: 950;
+}
+
+.spmm-progress {
+    overflow: hidden;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.spmm-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--spmm-cyan), var(--spmm-indigo));
+}
+
+.spmm-empty {
+    display: grid;
+    justify-items: center;
+    gap: 0.55rem;
+    padding: 2rem;
+    color: var(--spmm-muted);
+    font-weight: 850;
+}
+
+.spmm-export-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1.25rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.spmm-export-card .spmm-report-kicker {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.spmm-export-card h3 {
+    margin-top: 0.65rem;
+    color: var(--spmm-navy);
+    font-size: 1.25rem;
+    font-weight: 950;
+}
+
+.spmm-export-card p {
+    margin-top: 0.35rem;
+    color: var(--spmm-muted);
+    font-weight: 650;
+}
+
+.spmm-export-card a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, var(--spmm-navy), var(--spmm-cyan));
+    padding: 0.9rem 1.1rem;
+    color: #ffffff;
+    font-weight: 950;
+    white-space: nowrap;
+    box-shadow: 0 18px 44px rgba(6, 182, 212, 0.24);
+}
+
+.spmm-payment-detail {
+    display: grid;
+    gap: 1rem;
+}
+
+.spmm-payment-hero {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 2rem;
+    background:
+        radial-gradient(circle at 18% 10%, rgba(6, 182, 212, 0.24), transparent 24rem),
+        linear-gradient(135deg, var(--spmm-navy), var(--spmm-navy-2) 58%, #075985);
+    padding: 1.5rem;
+    color: #ffffff;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+}
+
+.spmm-payment-hero h2 {
+    margin-top: 0.8rem;
+    color: #ffffff;
+    font-size: clamp(1.7rem, 3vw, 2.8rem);
+    font-weight: 950;
+    line-height: 1.05;
+}
+
+.spmm-payment-hero p {
+    margin-top: 0.75rem;
+    color: #dbeafe;
+    font-weight: 750;
+}
+
+.spmm-payment-summary {
+    display: grid;
+    align-content: center;
+    min-width: 280px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.10);
+    padding: 1.25rem;
+    backdrop-filter: blur(16px);
+}
+
+.spmm-payment-summary span,
+.spmm-payment-summary small {
+    color: #bae6fd;
+    font-weight: 850;
+}
+
+.spmm-payment-summary strong {
+    margin-top: 0.35rem;
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 950;
+}
+
+.spmm-payment-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.spmm-payment-stats div,
+.spmm-payment-table-card {
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+.spmm-payment-stats div {
+    padding: 0.9rem 1rem;
+}
+
+.spmm-payment-stats span {
+    color: var(--spmm-muted);
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
+.spmm-payment-stats strong {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--spmm-navy);
+    font-size: 1.12rem;
+    font-weight: 950;
+}
+
+.spmm-payment-table-card {
+    overflow: hidden;
+}
+
+.spmm-payment-table-card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--spmm-line);
+    padding: 0.9rem 1rem;
+}
+
+.spmm-payment-table-card h3 {
+    color: var(--spmm-navy);
+    font-size: 1.1rem;
+    font-weight: 950;
+}
+
+.spmm-payment-table-card p {
+    margin-top: 0.25rem;
+    color: var(--spmm-muted);
+    font-weight: 650;
+}
+
+.spmm-payment-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.spmm-payment-table th {
+    background: rgba(241, 245, 249, 0.92);
+    color: #334155;
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.spmm-payment-table td {
+    border-top: 1px solid var(--spmm-line);
+    padding: 0.5rem 0.7rem;
+    color: var(--spmm-ink);
+    white-space: nowrap;
+}
+
+.spmm-payment-registration-row td {
+    background: #fff7ed;
+}
+
+.spmm-payment-semester-row td {
+    background: #e0f2fe;
+    color: #075985;
+    font-size: 0.76rem;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.spmm-payment-badge {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.18rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 950;
+}
+
+.fi-resource-student-payments .fi-fo-repeater-item {
+    border-radius: 1rem !important;
+    overflow: hidden !important;
+}
+
+.fi-resource-student-payments .fi-fo-repeater-item-header {
+    min-height: 2.2rem !important;
+    padding: 0.45rem 0.7rem !important;
+    background: rgba(241, 245, 249, 0.86) !important;
+}
+
+.fi-resource-student-payments .fi-fo-repeater-item-content {
+    padding: 0.65rem !important;
+}
+
+.fi-resource-student-payments .fi-fo-repeater-item-content .grid {
+    gap: 0.55rem !important;
+}
+
+.fi-resource-student-payments .fi-fo-field-wrp-label {
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+}
+
+.fi-resource-student-payments .fi-input-wrp,
+.fi-resource-student-payments .fi-select-input,
+.fi-resource-student-payments .fi-textarea {
+    min-height: 2.2rem !important;
+    border-radius: 0.75rem !important;
+}
+
+.fi-resource-student-payments .fi-input,
+.fi-resource-student-payments .fi-select-input {
+    font-size: 0.82rem !important;
+}
+
+.spmm-payment-badge-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.spmm-payment-badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.spmm-payment-badge-waived {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.spmm-payment-badge-unpaid {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.spmm-payment-edit-table input,
+.spmm-payment-edit-table select {
+    width: 100%;
+    min-width: 7rem;
+    border: 1px solid var(--spmm-line);
+    border-radius: 0.65rem;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 0.38rem 0.55rem;
+    color: var(--spmm-ink);
+    font-size: 0.78rem;
+    font-weight: 750;
+    outline: none;
+}
+
+.spmm-payment-edit-table input:focus,
+.spmm-payment-edit-table select:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+}
+
+.spmm-payment-edit-table label {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--spmm-muted);
+    font-size: 0.68rem;
+    font-weight: 950;
+}
+
+.spmm-payment-component-stack {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.spmm-payment-planning {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(340px, 1.15fr);
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid rgba(6, 182, 212, 0.16);
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at top left, rgba(6, 182, 212, 0.16), transparent 34%),
+        rgba(255, 255, 255, 0.92);
+    padding: 1rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.spmm-payment-planning h3 {
+    margin-top: 0.35rem;
+    color: var(--spmm-navy);
+    font-size: 1.08rem;
+    font-weight: 950;
+}
+
+.spmm-payment-planning p {
+    margin-top: 0.3rem;
+    color: var(--spmm-muted);
+    font-size: 0.86rem;
+    font-weight: 650;
+    line-height: 1.55;
+}
+
+.spmm-payment-planning-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+    gap: 0.75rem;
+}
+
+.spmm-payment-planning label span {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--spmm-muted);
+    font-size: 0.72rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.spmm-payment-planning input {
+    width: 100%;
+    border: 1px solid var(--spmm-line);
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, 0.96);
+    padding: 0.72rem 0.78rem;
+    color: var(--spmm-ink);
+    font-size: 0.84rem;
+    font-weight: 850;
+    outline: none;
+}
+
+.spmm-payment-planning input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+}
+
+.spmm-payment-planning button {
+    border-radius: 0.95rem;
+    background: linear-gradient(135deg, var(--spmm-navy), var(--spmm-cyan));
+    padding: 0.76rem 1rem;
+    color: #ffffff;
+    font-size: 0.84rem;
+    font-weight: 950;
+    box-shadow: 0 18px 44px rgba(6, 182, 212, 0.24);
+}
+
+.spmm-payment-savebar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.8rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.spmm-payment-savebar-inline {
+    flex-shrink: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+}
+
+.spmm-payment-savebar a,
+.spmm-payment-savebar button {
+    border-radius: 0.9rem;
+    padding: 0.7rem 1rem;
+    font-weight: 950;
+}
+
+.spmm-payment-savebar a {
+    border: 1px solid var(--spmm-line);
+    color: var(--spmm-ink);
+}
+
+.spmm-payment-savebar button {
+    background: linear-gradient(135deg, var(--spmm-navy), var(--spmm-cyan));
+    color: #ffffff;
+    box-shadow: 0 18px 44px rgba(6, 182, 212, 0.24);
+}
+
+.spmm-student-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.spmm-student-page-hero {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 1.75rem;
+    background:
+        radial-gradient(circle at 12% 10%, rgba(250, 204, 21, 0.24), transparent 28%),
+        linear-gradient(135deg, #0f172a 0%, #164e63 54%, #0891b2 100%);
+    padding: clamp(1.1rem, 3vw, 2rem);
+    color: #ffffff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.spmm-student-page-hero h2 {
+    margin-top: 0.6rem;
+    color: #ffffff;
+    font-size: clamp(1.45rem, 2.6vw, 2.35rem);
+    font-weight: 950;
+}
+
+.spmm-student-page-hero p {
+    margin-top: 0.55rem;
+    max-width: 52rem;
+    color: #dbeafe;
+    font-weight: 700;
+    line-height: 1.65;
+}
+
+.spmm-student-page-table {
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.85rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.spmm-registration-recap {
+    border: 1px solid var(--spmm-line);
+    border-radius: 1.5rem;
+    background:
+        radial-gradient(circle at top left, rgba(6, 182, 212, 0.14), transparent 30%),
+        rgba(255, 255, 255, 0.92);
+    padding: 0.6rem;
+    color: var(--spmm-ink);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+}
+
+.spmm-registration-recap header {
+    border-bottom: 1px solid var(--spmm-line);
+    padding: 1rem;
+}
+
+.spmm-registration-recap h2 {
+    color: var(--spmm-navy);
+    font-size: clamp(1.35rem, 2vw, 2rem);
+    font-weight: 950;
+    letter-spacing: 0;
+}
+
+.spmm-registration-recap header p {
+    margin-top: 0.35rem;
+    color: var(--spmm-muted);
+    font-weight: 700;
+}
+
+.spmm-registration-recap-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 18rem));
+    gap: 0.5rem;
+    padding: 1rem;
+}
+
+.spmm-registration-recap-filters label span {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--spmm-muted);
+    font-size: 0.75rem;
+    font-weight: 950;
+    text-transform: uppercase;
+}
+
+.spmm-registration-recap-filters select {
+    width: 100%;
+    border: 1px solid var(--spmm-line);
+    border-radius: 0.9rem;
+    background: #ffffff;
+    padding: 0.68rem 0.78rem;
+    color: var(--spmm-ink);
+    font-size: 0.86rem;
+    font-weight: 800;
+    outline: none;
+}
+
+.spmm-registration-recap-table-wrap {
+    overflow-x: auto;
+    padding: 0 1rem 1rem;
+}
+
+.spmm-registration-recap-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #ffffff;
+    color: var(--spmm-ink);
+    font-size: 0.78rem;
+    overflow: hidden;
+    border: 1px solid var(--spmm-line);
+    border-radius: 1rem;
+}
+
+.spmm-registration-recap-table th,
+.spmm-registration-recap-table td {
+    border-bottom: 1px solid var(--spmm-line);
+    border-right: 1px solid var(--spmm-line);
+    padding: 0.62rem 0.55rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.spmm-registration-recap-table th {
+    background: linear-gradient(135deg, #0f172a, #164e63);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.spmm-registration-recap-name {
+    min-width: 16rem;
+    text-align: left !important;
+    font-weight: 650;
+}
+
+.spmm-registration-recap-percent {
+    color: var(--spmm-navy);
+    font-weight: 850;
+}
+
+.spmm-registration-recap-empty {
+    padding: 1.1rem !important;
+    color: #475569;
+    font-weight: 700;
+}
+
+.spmm-registration-recap-total td {
+    background: #ecfeff;
+    color: var(--spmm-navy);
+    font-weight: 900;
+}
+
+.spmm-registration-recap-total td:last-child {
+    color: #0891b2;
+}
+
+:root.dark .spmm-stat-card,
+:root.dark .spmm-panel,
+:root.dark .spmm-export-card,
+:root.dark .spmm-payment-stats div,
+:root.dark .spmm-payment-planning,
+:root.dark .spmm-payment-table-card,
+:root.dark .spmm-student-page-table {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.94);
+}
+
+:root.dark .spmm-stat-card strong,
+:root.dark .spmm-panel h3,
+:root.dark .spmm-list-top,
+:root.dark .spmm-list-top strong,
+:root.dark .spmm-export-card h3,
+:root.dark .spmm-payment-stats strong,
+:root.dark .spmm-payment-planning h3,
+:root.dark .spmm-payment-table-card h3,
+:root.dark .spmm-payment-table td {
+    color: #ffffff;
+}
+
+:root.dark .spmm-stat-card p,
+:root.dark .spmm-panel p,
+:root.dark .spmm-export-card p,
+:root.dark .spmm-payment-stats span,
+:root.dark .spmm-payment-planning p,
+:root.dark .spmm-payment-planning label span,
+:root.dark .spmm-payment-table-card p {
+    color: #cbd5e1;
+}
+
+:root.dark .spmm-panel header {
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+:root.dark .spmm-payment-table-card header,
+:root.dark .spmm-payment-table td {
+    border-color: rgba(255, 255, 255, 0.10);
+}
+
+:root.dark .spmm-payment-table th {
+    background: rgba(30, 41, 59, 0.96);
+    color: #e2e8f0;
+}
+
+:root.dark .spmm-payment-edit-table input,
+:root.dark .spmm-payment-edit-table select,
+:root.dark .spmm-payment-planning input,
+:root.dark .spmm-payment-savebar {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.92);
+    color: #ffffff;
+}
+
+:root.dark .spmm-payment-savebar a {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+:root.dark .spmm-payment-registration-row td {
+    background: rgba(251, 146, 60, 0.12);
+}
+
+:root.dark .spmm-payment-semester-row td {
+    background: rgba(6, 182, 212, 0.14);
+    color: #67e8f9;
+}
+
+:root.dark .spmm-panel-icon {
+    background: rgba(6, 182, 212, 0.14);
+    color: #67e8f9;
+}
+
+:root.dark .spmm-progress {
+    background: rgba(255, 255, 255, 0.10);
+}
+
+:root.dark .spmm-registration-recap {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.94);
+    color: #ffffff;
+}
+
+:root.dark .spmm-registration-recap h2,
+:root.dark .spmm-registration-recap-table,
+:root.dark .spmm-registration-recap-percent {
+    color: #ffffff;
+}
+
+:root.dark .spmm-registration-recap header,
+:root.dark .spmm-registration-recap-table,
+:root.dark .spmm-registration-recap-table th,
+:root.dark .spmm-registration-recap-table td {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root.dark .spmm-registration-recap header p,
+:root.dark .spmm-registration-recap-filters label span {
+    color: #cbd5e1;
+}
+
+:root.dark .spmm-registration-recap-filters select,
+:root.dark .spmm-registration-recap-table {
+    background: rgba(15, 23, 42, 0.92);
+}
+
+:root.dark .spmm-registration-recap-total td {
+    background: rgba(6, 182, 212, 0.14);
+    color: #ffffff;
+}
+
+@media (max-width: 1200px) {
+    .spmm-stat-grid,
+    .spmm-report-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .spmm-report-hero,
+    .spmm-stat-grid,
+    .spmm-report-grid,
+    .spmm-payment-hero,
+    .spmm-payment-stats,
+    .spmm-payment-planning,
+    .spmm-payment-planning-fields,
+    .spmm-export-card {
+        grid-template-columns: 1fr;
+    }
+
+    .spmm-payment-hero {
+        display: grid;
+    }
+
+    .spmm-export-card {
+        display: grid;
+    }
+
+    .spmm-payment-table-card header {
+        display: grid;
+    }
+
+    .spmm-payment-savebar-inline {
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .spmm-payment-savebar-inline a,
+    .spmm-payment-savebar-inline button {
+        text-align: center;
+        width: 100%;
+    }
+
+    .spmm-registration-recap-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .spmm-export-card a {
+        justify-content: center;
+        width: 100%;
+    }
+}

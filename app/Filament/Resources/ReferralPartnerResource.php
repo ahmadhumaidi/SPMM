@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\ReferralPartnerResource\Pages;
+use App\Models\ReferralPartner;
+use App\Models\StudentAccount;
+use App\Models\User;
+use App\Support\FilamentResourceScope;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
+
+class ReferralPartnerResource extends Resource
+{
+    protected static ?string $model = ReferralPartner::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-link';
+
+    protected static ?string $navigationGroup = 'Afiliasi';
+
+    protected static ?string $navigationLabel = 'Link Referral';
+
+    protected static ?string $modelLabel = 'Link Referral';
+
+    protected static ?int $navigationSort = 1;
+
+    public static function canAccess(): bool
+    {
+        return FilamentResourceScope::canAccessAffiliates();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->with(['user.campuses', 'studentAccount.lead.campus']);
+
+        if (FilamentResourceScope::isSuperAdmin()) {
+            return $query;
+        }
+
+        $campusIds = auth()->user()?->campuses()->select('campuses.id');
+
+        return $query->where(function (Builder $query) use ($campusIds): void {
+            $query
+                ->whereHas('user.campuses', fn (Builder $campusQuery): Builder => $campusQuery->whereIn('campuses.id', $campusIds))
+                ->orWhereHas('studentAccount.lead', fn (Builder $leadQuery): Builder => $leadQuery->whereIn('leads.campus_id', $campusIds))
+                ->orWhereHas('conversions.lead', fn (Builder $leadQuery): Builder => $leadQuery->whereIn('leads.campus_id', $campusIds));
+        });
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+            TextInput::make('name')
+                ->label('Nama partner')
+                ->required()
+                ->maxLength(255),
+            Select::make('type')
+                ->label('Tipe partner')
+                ->options([
+                    'staff' => 'Staff',
+                    'mahasiswa' => 'Mahasiswa',
+                    'umum' => 'Umum',
+                ])
+                ->default('staff')
+                ->required()
+                ->live(),
+            Select::make('user_id')
+                ->label('User staff')
+                ->options(fn (): array => User::query()
+                    ->when(! FilamentResourceScope::isSuperAdmin(), fn (Builder $query): Builder => $query->whereHas('campuses', fn (Builder $campusQuery): Builder => FilamentResourceScope::applyCampusScope($campusQuery, 'campuses.id')))
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->all())
+                ->searchable()
+                ->visible(fn ($get): bool => $get('type') === 'staff'),
+            Select::make('student_account_id')
+                ->label('Akun mahasiswa')
+                ->options(fn (): array => StudentAccount::query()
+                    ->with('lead')
+                    ->when(! FilamentResourceScope::isSuperAdmin(), fn (Builder $query): Builder => $query->whereHas('lead', fn (Builder $leadQuery): Builder => FilamentResourceScope::applyManagedLeadCampusScope($leadQuery)))
+                    ->get()
+                    ->mapWithKeys(fn (StudentAccount $account): array => [$account->id => $account->lead?->full_name.' - '.$account->email])
+                    ->all())
+                ->searchable()
+                ->visible(fn ($get): bool => $get('type') === 'mahasiswa'),
+            TextInput::make('referral_code')
+                ->label('Kode referral')
+                ->required()
+                ->unique(ignoreRecord: true)
+                ->maxLength(64)
+                ->default(fn (): string => 'REF-'.Str::upper(Str::random(8)))
+                ->helperText('Link: /daftar?ref=KODE'),
+            TextInput::make('commission_amount')
+                ->label('Komisi')
+                ->prefix('Rp')
+                ->numeric()
+                ->default(0),
+            Select::make('status')
+                ->label('Status')
+                ->options([
+                    'active' => 'Aktif',
+                    'inactive' => 'Nonaktif',
+                ])
+                ->default('active')
+                ->required(),
+            Textarea::make('notes')
+                ->label('Catatan')
+                ->columnSpanFull(),
+        ])->columns(2);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->defaultSort('created_at', 'desc')
+            ->columns([
+                TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+                TextColumn::make('type')->label('Tipe')->badge(),
+                TextColumn::make('referral_code')->label('Kode')->copyable()->searchable(),
+                TextColumn::make('referral_link')
+                    ->label('Link')
+                    ->state(fn (ReferralPartner $record): string => url('/daftar?ref='.$record->referral_code))
+                    ->copyable()
+                    ->limit(44),
+                TextColumn::make('conversions_count')->counts('conversions')->label('Pendaftar'),
+                TextColumn::make('commission_amount')->label('Komisi')->money('IDR')->sortable(),
+                TextColumn::make('status')->label('Status')->badge(),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListReferralPartners::route('/'),
+            'create' => Pages\CreateReferralPartner::route('/create'),
+            'edit' => Pages\EditReferralPartner::route('/{record}/edit'),
+        ];
+    }
+}
