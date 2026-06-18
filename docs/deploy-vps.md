@@ -42,6 +42,14 @@ apt update && apt upgrade -y
 
 ## 4. Install Kebutuhan Server
 
+Cara cepat, setelah file project tersedia di server, gunakan script:
+
+```bash
+DB_PASSWORD='ganti_password_database_yang_kuat' bash deploy/bootstrap-ubuntu.sh
+```
+
+Atau jalankan manual:
+
 ```bash
 apt install -y nginx postgresql postgresql-contrib php8.2-fpm php8.2-cli php8.2-pgsql php8.2-mbstring php8.2-xml php8.2-curl php8.2-zip php8.2-gd php8.2-bcmath php8.2-intl unzip git supervisor cron certbot python3-certbot-nginx
 ```
@@ -132,6 +140,14 @@ SUPER_ADMIN_PASSWORD=password_admin_yang_kuat
 Untuk tahap live awal, `PAYMENT_PROVIDER=mock` dan `WHATSAPP_PROVIDER=log` masih bisa dipakai untuk uji coba internal. Saat payment gateway dan WhatsApp sudah siap, nilainya diganti sesuai provider yang akan diintegrasikan.
 
 ## 8. Install Aplikasi
+
+Cara cepat:
+
+```bash
+DOMAIN='domain-utama-anda.com' bash deploy/deploy-app.sh
+```
+
+Atau jalankan manual:
 
 ```bash
 composer install --no-dev --optimize-autoloader
