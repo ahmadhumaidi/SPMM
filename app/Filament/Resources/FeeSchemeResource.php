@@ -346,7 +346,7 @@ class FeeSchemeResource extends Resource
             $data['building_fee'] = 0;
             $data['monthly_tuition_fee'] = 0;
             $data['tuition_semesters'] = 1;
-            $data['total_initial_payment'] = $data['registration_fee'] + $data['ukt_total'];
+            $data['total_initial_payment'] = 0;
             $data['development_installments_json'] = null;
             $data['tuition_installments_json'] = null;
             $data['ukt_installments_json'] = static::buildInstallments($data['ukt_total'], $uktTerms);
@@ -366,6 +366,8 @@ class FeeSchemeResource extends Resource
                 $data['installment_schedule_json'] = $customSchedule;
             }
 
+            $data['total_initial_payment'] = static::initialPaymentFromFirstMonth($data['installment_schedule_json']);
+
             return $data;
         }
 
@@ -377,7 +379,6 @@ class FeeSchemeResource extends Resource
         unset($data['ukt_installment_terms'], $data['development_installment_terms'], $data['tuition_installment_terms']);
 
         $data['ukt_total'] = 0;
-        $data['total_initial_payment'] = $data['registration_fee'] + $data['building_fee'] + $data['monthly_tuition_fee'];
         $data['development_installments_json'] = static::buildInstallments($data['building_fee'], $developmentTerms);
         $data['tuition_installments_json'] = static::buildInstallments($data['monthly_tuition_fee'], $tuitionTerms);
         $data['ukt_installments_json'] = null;
@@ -397,7 +398,24 @@ class FeeSchemeResource extends Resource
             $data['installment_schedule_json'] = $customSchedule;
         }
 
+        $data['total_initial_payment'] = static::initialPaymentFromFirstMonth($data['installment_schedule_json']);
+
         return $data;
+    }
+
+    public static function initialPaymentFromFirstMonth(array $schedule): int
+    {
+        $firstMonth = collect($schedule)
+            ->sortBy(fn (array $row): int => (int) ($row['month'] ?? 0))
+            ->first();
+
+        if (! $firstMonth) {
+            return 0;
+        }
+
+        return (int) ($firstMonth['development_fee'] ?? 0)
+            + (int) ($firstMonth['tuition_fee'] ?? 0)
+            + (int) ($firstMonth['ukt'] ?? 0);
     }
 
     public static function buildInstallments(int $amount, array $terms): array
