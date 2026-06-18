@@ -41,6 +41,12 @@ Panduan pemasangan server ada di:
 docs/deploy-vps.md
 ```
 
+Panduan khusus Hostinger VPS ada di:
+
+```text
+docs/hostinger-vps-setup.md
+```
+
 Panduan membuat dan menghubungkan repository GitHub ada di:
 
 ```text
