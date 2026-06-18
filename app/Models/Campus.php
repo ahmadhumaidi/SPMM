@@ -57,4 +57,19 @@ class Campus extends Model
     {
         return $this->belongsToMany(EducationNews::class, 'campus_education_news')->withTimestamps();
     }
+
+    public function publicUrl(): string
+    {
+        if (filled($this->custom_domain)) {
+            return str_starts_with($this->custom_domain, 'http')
+                ? $this->custom_domain
+                : 'https://'.$this->custom_domain;
+        }
+
+        if (filled($this->subdomain) && ! app()->environment('local')) {
+            return 'https://'.$this->subdomain.'.kampusmedia.cloud';
+        }
+
+        return route('campuses.show', ['campus' => $this->name]);
+    }
 }
