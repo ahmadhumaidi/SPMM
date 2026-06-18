@@ -2,26 +2,47 @@
     use Illuminate\Support\Facades\Storage;
 
     $settings = $campus->website_settings ?? [];
-    $activePrograms = $campus->studyPrograms->take(6);
+    $activePrograms = $campus->studyPrograms;
     $activeTracks = $campus->classTracks;
     $fees = $campus->feeSchemes;
     $firstTrack = $activeTracks->first();
     $lowestRegistration = $fees->where('registration_fee', '>', 0)->min('registration_fee') ?? 100000;
-    $lowestMonthly = $fees->where('monthly_tuition_fee', '>', 0)->min('monthly_tuition_fee')
-        ?? $fees->where('ukt_total', '>', 0)->min('ukt_total')
-        ?? 560000;
+    $averageMonthlyInstallment = function ($fee): ?int {
+        $schedule = $fee->uses_custom_installments
+            ? ($fee->custom_installment_schedule_json ?: $fee->installment_schedule_json)
+            : $fee->installment_schedule_json;
+
+        $monthlyAmounts = collect($schedule ?: [])
+            ->map(function (array $row): int {
+                $installment = (int) ($row['development_fee'] ?? 0)
+                    + (int) ($row['tuition_fee'] ?? 0)
+                    + (int) ($row['ukt'] ?? 0);
+
+                return $installment > 0 ? $installment : (int) ($row['total'] ?? 0);
+            })
+            ->filter(fn (int $amount): bool => $amount > 0)
+            ->values();
+
+        if ($monthlyAmounts->isEmpty()) {
+            return null;
+        }
+
+        return (int) ceil($monthlyAmounts->avg());
+    };
+    $lowestMonthly = $fees
+        ->where('is_active', true)
+        ->map($averageMonthlyInstallment)
+        ->filter()
+        ->min() ?? 560000;
     $feeSummaries = $fees
         ->where('is_active', true)
         ->take(6)
         ->map(function ($fee) {
-            $tuitionSemesters = max(1, (int) ($fee->tuition_semesters ?: 1));
             $registration = (int) $fee->registration_fee;
             $development = (int) $fee->building_fee;
-            $tuitionTotal = (int) $fee->monthly_tuition_fee * $tuitionSemesters;
+            $tuitionPerSemester = (int) $fee->monthly_tuition_fee;
             $ukt = (int) $fee->ukt_total;
-            $total = $fee->financing_model === 'ukt'
-                ? $registration + $ukt
-                : $registration + $development + $tuitionTotal;
+            $heregistration = (int) $fee->total_initial_payment;
 
             return [
                 'program' => $fee->studyProgram?->name ?? 'Semua Program Studi',
@@ -29,14 +50,13 @@
                 'model' => $fee->financing_model === 'ukt' ? 'UKT' : 'SPB + SPP',
                 'registration' => $registration,
                 'development' => $development,
-                'tuition_total' => $tuitionTotal,
-                'tuition_semesters' => $tuitionSemesters,
+                'tuition_per_semester' => $tuitionPerSemester,
                 'ukt' => $ukt,
-                'total' => $total,
+                'heregistration' => $heregistration,
             ];
         })
         ->values();
-    $lowestCompletionCost = $feeSummaries->pluck('total')->filter()->min();
+    $lowestHeregistrationCost = $feeSummaries->pluck('heregistration')->filter()->min();
     $campusInitial = mb_substr($campus->name, 0, 1);
     $logoUrl = $campus->logo_path ? Storage::url($campus->logo_path) : null;
     $whatsappNumber = $settings['whatsapp_number'] ?? '6280000000000';
@@ -457,14 +477,14 @@
                 <article class="reveal mt-6 rounded-[2rem] border border-white/15 bg-white p-6 text-slate-900 shadow-2xl lg:p-8">
                     <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
                         <div>
-                            <p class="text-sm font-black uppercase tracking-wide text-sky-700">Rincian Biaya Sampai Lulus</p>
+                            <p class="text-sm font-black uppercase tracking-wide text-sky-700">Estimasi Biaya</p>
                             <h3 class="mt-2 text-3xl font-black text-navy">Estimasi biaya dari sistem pusat.</h3>
                             <p class="mt-3 max-w-3xl leading-7 text-slate-600">Rincian ini mengambil fee scheme aktif kampus, termasuk pendaftaran, SPB/development, SPP per semester, atau UKT.</p>
                         </div>
-                        @if ($lowestCompletionCost)
+                        @if ($lowestHeregistrationCost)
                             <div class="rounded-3xl bg-sky-50 p-5 text-right">
-                                <p class="text-sm font-black text-sky-700">Mulai dari</p>
-                                <strong class="mt-1 block text-3xl font-black text-navy">Rp {{ number_format($lowestCompletionCost, 0, ',', '.') }}</strong>
+                                <p class="text-sm font-black text-sky-700">Heregistrasi mulai dari</p>
+                                <strong class="mt-1 block text-3xl font-black text-navy">Rp {{ number_format($lowestHeregistrationCost, 0, ',', '.') }}</strong>
                             </div>
                         @endif
                     </div>
@@ -484,7 +504,7 @@
                                             <h4 class="mt-1 text-xl font-black text-navy">{{ $fee['program'] }}</h4>
                                             <p class="mt-1 text-sm font-semibold text-slate-500">{{ $fee['track'] }}</p>
                                         </div>
-                                        <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">Sampai lulus</span>
+                                        <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">Biaya awal</span>
                                     </div>
                                     <div class="mt-5 grid gap-2 text-sm">
                                         @if ($fee['registration'] > 0)
@@ -499,10 +519,10 @@
                                                 <strong class="text-navy">Rp {{ number_format($fee['development'], 0, ',', '.') }}</strong>
                                             </div>
                                         @endif
-                                        @if ($fee['tuition_total'] > 0)
+                                        @if ($fee['tuition_per_semester'] > 0)
                                             <div class="flex justify-between gap-4 rounded-2xl bg-white px-4 py-3">
-                                                <span class="font-bold text-slate-600">SPP {{ $fee['tuition_semesters'] }} semester</span>
-                                                <strong class="text-navy">Rp {{ number_format($fee['tuition_total'], 0, ',', '.') }}</strong>
+                                                <span class="font-bold text-slate-600">SPP per semester</span>
+                                                <strong class="text-navy">Rp {{ number_format($fee['tuition_per_semester'], 0, ',', '.') }}</strong>
                                             </div>
                                         @endif
                                         @if ($fee['ukt'] > 0)
@@ -513,8 +533,8 @@
                                         @endif
                                     </div>
                                     <div class="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-navy px-4 py-4 text-white">
-                                        <span class="font-black">Total estimasi</span>
-                                        <strong class="text-xl font-black">Rp {{ number_format($fee['total'], 0, ',', '.') }}</strong>
+                                        <span class="font-black">Total herregistrasi</span>
+                                        <strong class="text-xl font-black">Rp {{ number_format($fee['heregistration'], 0, ',', '.') }}</strong>
                                     </div>
                                 </div>
                             @endforeach
