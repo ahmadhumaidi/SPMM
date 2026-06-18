@@ -61,7 +61,7 @@ class PartnerCampusSiteResource extends Resource
                         ->disabled(),
                     TextInput::make('subdomain')
                         ->label('Subdomain')
-                        ->helperText('Contoh: mahera-jakarta. Nanti menjadi mahera-jakarta.kampusnusantara.com')
+                        ->helperText('Contoh: mahera-jakarta. Nanti menjadi mahera-jakarta.maheramedia.com')
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
                     TextInput::make('custom_domain')
@@ -88,7 +88,7 @@ class PartnerCampusSiteResource extends Resource
                     Placeholder::make('subdomain_preview')
                         ->label('URL subdomain produksi')
                         ->content(fn (Campus $record): string => filled($record->subdomain)
-                            ? $record->subdomain.'.kampusnusantara.com'
+                            ? $record->subdomain.'.maheramedia.com'
                             : 'Isi subdomain terlebih dahulu.'),
                     Placeholder::make('custom_domain_preview')
                         ->label('URL custom domain')
@@ -246,7 +246,7 @@ class PartnerCampusSiteResource extends Resource
                 TextColumn::make('subdomain')
                     ->label('Subdomain')
                     ->placeholder('Belum diatur')
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state.'.kampusnusantara.com' : 'Belum diatur')
+                    ->formatStateUsing(fn (?string $state): string => $state ? $state.'.maheramedia.com' : 'Belum diatur')
                     ->copyable(),
                 TextColumn::make('custom_domain')
                     ->label('Custom domain')

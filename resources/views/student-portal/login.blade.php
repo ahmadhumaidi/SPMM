@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login Mahasiswa | Kampus Nusantara</title>
+    <title>Login Mahasiswa | Kampus Media</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
     <main class="grid min-h-screen place-items-center px-4 py-10">
         <section class="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl shadow-slate-200">
             <p class="text-sm font-black uppercase tracking-wide text-sky-700">Portal Mahasiswa</p>
-            <h1 class="mt-2 text-3xl font-black text-slate-950">Login Kampus Nusantara</h1>
+            <h1 class="mt-2 text-3xl font-black text-slate-950">Login Kampus Media</h1>
             <p class="mt-3 leading-7 text-slate-600">Masuk menggunakan email dan password sementara yang dikirim setelah pendaftaran.</p>
 
             <form method="POST" action="{{ route('student-portal.authenticate') }}" class="mt-7 grid gap-4">

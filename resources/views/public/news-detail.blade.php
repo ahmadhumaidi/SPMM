@@ -11,7 +11,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $news->title }} | Kampus Nusantara</title>
+    <title>{{ $news->title }} | Kampus Media</title>
     <meta name="description" content="{{ $news->excerpt ?: str(strip_tags($news->content))->limit(155) }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -22,7 +22,7 @@
             <a href="{{ route('campuses.index') }}" class="flex items-center gap-3">
                 <span class="grid h-11 w-11 place-items-center rounded-xl bg-[#071a3d] text-lg font-black text-white">KN</span>
                 <span>
-                    <span class="block text-sm font-black leading-tight text-[#071a3d] sm:text-base">Kampus Nusantara</span>
+                    <span class="block text-sm font-black leading-tight text-[#071a3d] sm:text-base">Kampus Media</span>
                     <span class="block text-xs font-semibold text-slate-500">Berita Pendidikan</span>
                 </span>
             </a>
@@ -42,7 +42,7 @@
                 <h1 class="mt-6 max-w-4xl text-4xl font-black leading-tight sm:text-6xl">{{ $news->title }}</h1>
                 <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-100">{{ $news->excerpt }}</p>
                 <p class="mt-6 text-sm font-bold text-cyan-100">
-                    {{ $news->author_name ?: 'Kampus Nusantara' }} · {{ $news->published_at?->translatedFormat('d M Y H:i') }}
+                    {{ $news->author_name ?: 'Kampus Media' }} · {{ $news->published_at?->translatedFormat('d M Y H:i') }}
                 </p>
             </div>
         </header>

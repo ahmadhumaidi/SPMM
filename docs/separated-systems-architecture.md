@@ -15,12 +15,12 @@ SPMM bukan induk aplikasi akademik. SPMM berperan sebagai pusat PMB/CRM sampai c
 
 Domain contoh:
 
-- `spmm.maheramedia.id`
-- `pmb.kampusnusantara.com`
+- `spmm.maheramedia.com`
+- `pmb.maheramedia.com`
 
 Tanggung jawab:
 
-- Portal Kampus Nusantara.
+- Portal Kampus Media.
 - Web kampus mitra.
 - Pendaftaran calon mahasiswa.
 - CRM dan follow-up PMB.
@@ -36,7 +36,7 @@ SPMM mengirim data ke SIAKAD setelah mahasiswa valid dan aktif.
 
 Domain contoh:
 
-- `siakad.kampusnusantara.com`
+- `siakad.maheramedia.com`
 - `akademik.kampus-a.ac.id`
 
 Tanggung jawab:
@@ -59,7 +59,7 @@ SIAKAD menerima data mahasiswa aktif dari SPMM.
 
 Domain contoh:
 
-- `lms.kampusnusantara.com`
+- `lms.maheramedia.com`
 - `elearning.kampus-a.ac.id`
 
 Tanggung jawab:

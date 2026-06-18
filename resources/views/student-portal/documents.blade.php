@@ -12,7 +12,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pemberkasan | Kampus Nusantara</title>
+    <title>Pemberkasan | Kampus Media</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

@@ -5,7 +5,8 @@ Panduan ini untuk memasang Sistem Pusat Mahera Media pada VPS Ubuntu dengan Ngin
 ## 1. Yang Perlu Disiapkan
 
 - VPS Ubuntu 22.04 atau 24.04.
-- Domain utama, misalnya `kampusnusantara.com`.
+- Domain utama, misalnya `maheramedia.com`.
+- Subdomain aplikasi, misalnya `spmm.maheramedia.com` dan `kampusmedia.maheramedia.com`.
 - Akses SSH ke VPS.
 - Database PostgreSQL.
 - Email SMTP untuk kirim verifikasi dan password mahasiswa.
@@ -26,7 +27,7 @@ Jika nanti web kampus mitra memakai subdomain, tambahkan juga:
 A     *      IP_VPS_ANDA
 ```
 
-Wildcard `*` berguna agar subdomain kampus seperti `stieindocakti.kampusnusantara.com` bisa masuk ke aplikasi yang sama.
+Wildcard `*` berguna agar subdomain kampus seperti `stieindocakti.maheramedia.com` bisa masuk ke aplikasi yang sama.
 
 ## 3. Login ke VPS
 
@@ -130,7 +131,7 @@ DB_DATABASE=spmm
 DB_USERNAME=spmm_user
 DB_PASSWORD=password_database_anda
 
-MAIL_USERNAME=info.kampusnusantara@gmail.com
+MAIL_USERNAME=info@maheramedia.com
 MAIL_PASSWORD=app_password_email_anda
 
 SUPER_ADMIN_EMAIL=admin@domain-utama-anda.com

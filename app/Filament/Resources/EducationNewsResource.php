@@ -93,7 +93,7 @@ class EducationNewsResource extends Resource
                         ->maxLength(120),
                     TextInput::make('author_name')
                         ->label('Penulis')
-                        ->default('Kampus Nusantara')
+                        ->default('Kampus Media')
                         ->maxLength(120),
                     DateTimePicker::make('published_at')
                         ->label('Tanggal Publish')

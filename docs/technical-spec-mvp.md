@@ -64,7 +64,7 @@ Platform ini menjadi single source of truth untuk:
 ## Main Components
 
 - Core CRM/ERP: dashboard internal, database pusat, API ingestion, payment orchestration, lead assignment, lifecycle PDDIKTI.
-- Portal Kampus Nusantara: pencarian kampus, filter biaya, detail kampus/prodi, CTA pendaftaran.
+- Portal Kampus Media: pencarian kampus, filter biaya, detail kampus/prodi, CTA pendaftaran.
 - Web Kampus Mitra multi-tenant: subdomain default, custom domain opsional, form pendaftaran kampus tertentu, tampilan biaya transparan.
 
 ## Tenant Resolution

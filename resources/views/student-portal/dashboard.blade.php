@@ -24,7 +24,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard Mahasiswa | Kampus Nusantara</title>
+    <title>Dashboard Mahasiswa | Kampus Media</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -85,7 +85,7 @@
                     <a href="{{ route('student-portal.dashboard') }}" class="flex items-center gap-3">
                         <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-navy to-cyanx text-sm font-black text-white shadow-glow">KN</span>
                         <span>
-                            <span class="block font-black text-navy dark:text-white">Kampus Nusantara</span>
+                            <span class="block font-black text-navy dark:text-white">Kampus Media</span>
                             <span class="block text-xs font-bold text-slate-500 dark:text-slate-400">Student OS</span>
                         </span>
                     </a>

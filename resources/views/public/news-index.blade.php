@@ -7,7 +7,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title }} | Kampus Nusantara</title>
+    <title>{{ $title }} | Kampus Media</title>
     <meta name="description" content="{{ $subtitle }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -18,7 +18,7 @@
             <a href="{{ $campus ? route('campuses.show', ['campus' => $campus->name]) : route('campuses.index') }}" class="flex items-center gap-3">
                 <span class="grid h-11 w-11 place-items-center rounded-xl bg-[#071a3d] text-lg font-black text-white">KN</span>
                 <span>
-                    <span class="block text-sm font-black leading-tight text-[#071a3d] sm:text-base">Kampus Nusantara</span>
+                    <span class="block text-sm font-black leading-tight text-[#071a3d] sm:text-base">Kampus Media</span>
                     <span class="block text-xs font-semibold text-slate-500">{{ $campus?->name ?? 'Berita Pendidikan' }}</span>
                 </span>
             </a>

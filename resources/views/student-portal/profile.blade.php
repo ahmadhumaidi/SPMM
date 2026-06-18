@@ -26,7 +26,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Profil Mahasiswa | Kampus Nusantara</title>
+    <title>Profil Mahasiswa | Kampus Media</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

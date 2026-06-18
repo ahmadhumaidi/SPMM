@@ -15,7 +15,7 @@ Repository: git@github.com:ahmadhumaidi/SPMM.git
 Gunakan subdomain dulu:
 
 ```text
-spmm.domainanda.com
+spmm.maheramedia.com
 ```
 
 Alasannya:
@@ -26,8 +26,8 @@ Alasannya:
 - SIAKAD dan LMS nanti bisa dibuat:
 
 ```text
-siakad.domainanda.com
-lms.domainanda.com
+siakad.maheramedia.com
+lms.maheramedia.com
 ```
 
 Jika belum ada domain, aplikasi tetap bisa diuji sementara lewat IP:
@@ -141,8 +141,8 @@ SUPER_ADMIN_PASSWORD=ganti_password_admin_yang_kuat
 Jika sudah ada subdomain:
 
 ```env
-APP_URL=https://spmm.domainanda.com
-SANCTUM_STATEFUL_DOMAINS=spmm.domainanda.com
+APP_URL=https://spmm.maheramedia.com
+SANCTUM_STATEFUL_DOMAINS=spmm.maheramedia.com
 ```
 
 ## 8. Deploy Aplikasi
@@ -156,7 +156,7 @@ DOMAIN='187.77.121.111' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash dep
 Jika sudah ada subdomain:
 
 ```bash
-DOMAIN='spmm.domainanda.com' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash deploy/deploy-app.sh
+DOMAIN='spmm.maheramedia.com' REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' bash deploy/deploy-app.sh
 ```
 
 ## 9. Buka Website
@@ -171,8 +171,8 @@ http://187.77.121.111/admin
 Jika sudah pakai subdomain:
 
 ```text
-https://spmm.domainanda.com
-https://spmm.domainanda.com/admin
+https://spmm.maheramedia.com
+https://spmm.maheramedia.com/admin
 ```
 
 ## 10. SSL Setelah Domain Aktif
@@ -180,7 +180,7 @@ https://spmm.domainanda.com/admin
 Jika subdomain sudah mengarah ke IP VPS:
 
 ```bash
-certbot --nginx -d spmm.domainanda.com
+certbot --nginx -d spmm.maheramedia.com
 ```
 
 ## 11. Update Aplikasi Berikutnya
@@ -189,5 +189,5 @@ Jika nanti ada update kode:
 
 ```bash
 cd /var/www/spmm
-REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' DOMAIN='spmm.domainanda.com' bash deploy/deploy-app.sh
+REPO_URL='git@github.com:ahmadhumaidi/SPMM.git' DOMAIN='spmm.maheramedia.com' bash deploy/deploy-app.sh
 ```

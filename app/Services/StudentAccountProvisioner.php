@@ -41,21 +41,21 @@ class StudentAccountProvisioner
         $loginUrl = route('student-portal.login');
 
         $body = "Halo {$lead->full_name},\n\n".
-            "Terima kasih sudah mendaftar di Kampus Nusantara.\n\n".
+            "Terima kasih sudah mendaftar di Kampus Media.\n\n".
             "Silakan verifikasi email kamu melalui link berikut:\n{$verificationUrl}\n\n".
             "Akses login mahasiswa:\n".
             "URL: {$loginUrl}\n".
             "Email: {$lead->email}\n".
             "Password sementara: {$temporaryPassword}\n\n".
             "Setelah login, mahasiswa dapat melengkapi biodata, upload berkas, melihat pembayaran, dan mencetak kwitansi pembayaran.\n\n".
-            "Salam,\nKampus Nusantara";
+            "Salam,\nKampus Media";
 
         Mail::raw(
             $body,
             function ($message) use ($lead): void {
                 $message
                     ->to($lead->email, $lead->full_name)
-                    ->subject('Terima kasih sudah mendaftar di Kampus Nusantara');
+                    ->subject('Terima kasih sudah mendaftar di Kampus Media');
             },
         );
 

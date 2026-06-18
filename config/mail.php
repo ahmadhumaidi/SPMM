@@ -21,7 +21,7 @@ return [
     ],
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'info.kampusnusantara@gmail.com'),
-        'name' => env('MAIL_FROM_NAME', 'Kampus Nusantara'),
+        'address' => env('MAIL_FROM_ADDRESS', 'info@maheramedia.com'),
+        'name' => env('MAIL_FROM_NAME', 'Kampus Media'),
     ],
 ];

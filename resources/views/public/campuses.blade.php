@@ -37,9 +37,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kampus Nusantara | Portal Kuliah Karyawan, Reguler, Online & RPL</title>
-    <meta name="description" content="Kampus Nusantara membantu calon mahasiswa menemukan kampus mitra, membandingkan biaya kuliah, dan mendaftar online dengan alur PMB yang mudah.">
-    <meta name="keywords" content="kampus nusantara, kuliah karyawan, kuliah online, PMB online, daftar kuliah">
+    <title>Kampus Media | Portal Kuliah Karyawan, Reguler, Online & RPL</title>
+    <meta name="description" content="Kampus Media membantu calon mahasiswa menemukan kampus mitra, membandingkan biaya kuliah, dan mendaftar online dengan alur PMB yang mudah.">
+    <meta name="keywords" content="kampus media, kuliah karyawan, kuliah online, PMB online, daftar kuliah">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -97,7 +97,7 @@
             <a href="{{ route('home') }}" class="flex items-center gap-3">
                 <span class="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg font-black text-navy">KN</span>
                 <span>
-                    <span class="block text-sm font-black leading-tight sm:text-base">Kampus Nusantara</span>
+                    <span class="block text-sm font-black leading-tight sm:text-base">Kampus Media</span>
                     <span class="block text-xs font-semibold text-sky-100">Sistem Pusat Mahera Media</span>
                 </span>
             </a>
@@ -133,7 +133,7 @@
                     Temukan Kampus, Bandingkan Biaya, Daftar Online.
                 </h1>
                 <p class="mt-6 max-w-2xl text-lg leading-8 text-sky-50 sm:text-xl">
-                    Kampus Nusantara membantu calon mahasiswa memilih kampus, program studi, jadwal kuliah, dan biaya yang sesuai dengan kebutuhan.
+                    Kampus Media membantu calon mahasiswa memilih kampus, program studi, jadwal kuliah, dan biaya yang sesuai dengan kebutuhan.
                 </p>
                 <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                     <a href="#kampus" class="inline-flex items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
@@ -392,7 +392,7 @@
     <footer class="bg-white px-4 py-12 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-                <p class="text-lg font-black text-navy">Kampus Nusantara</p>
+                <p class="text-lg font-black text-navy">Kampus Media</p>
                 <p class="mt-1 text-sm font-semibold text-slate-500">SPMM - Sistem Pusat Mahera Media.</p>
             </div>
             <div class="flex flex-wrap gap-5 text-sm font-bold text-slate-600">
