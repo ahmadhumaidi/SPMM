@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter')
             ->renderHook(
                 'panels::head.end',
-                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=20">'),
+                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=21">'),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
