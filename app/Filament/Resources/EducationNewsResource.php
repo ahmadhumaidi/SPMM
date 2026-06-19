@@ -12,9 +12,12 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -42,7 +45,7 @@ class EducationNewsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with('campuses');
+        $query = parent::getEloquentQuery()->with(['campuses', 'publishedBy']);
 
         if (FilamentResourceScope::isSuperAdmin()) {
             return $query;
@@ -99,6 +102,12 @@ class EducationNewsResource extends Resource
                         ->label('Tanggal Publish')
                         ->seconds(false)
                         ->default(now()),
+                    Select::make('published_by_user_id')
+                        ->label('Diverifikasi publish oleh')
+                        ->relationship('publishedBy', 'name')
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->placeholder('Belum dipublish'),
                     FileUpload::make('image_path')
                         ->label('Gambar Berita')
                         ->image()
@@ -115,6 +124,27 @@ class EducationNewsResource extends Resource
                     RichEditor::make('content')
                         ->label('Isi Berita')
                         ->columnSpanFull(),
+                ]),
+            Section::make('Sumber & AI')
+                ->columns(2)
+                ->collapsed()
+                ->schema([
+                    TextInput::make('source_name')
+                        ->label('Nama sumber')
+                        ->maxLength(255),
+                    TextInput::make('source_url')
+                        ->label('URL sumber')
+                        ->url()
+                        ->maxLength(2048),
+                    DateTimePicker::make('source_published_at')
+                        ->label('Tanggal sumber')
+                        ->seconds(false),
+                    Toggle::make('generated_by_ai')
+                        ->label('Dibuat AI')
+                        ->disabled(),
+                    DateTimePicker::make('ai_generated_at')
+                        ->label('Waktu generate AI')
+                        ->seconds(false),
                 ]),
         ]);
     }
@@ -144,10 +174,21 @@ class EducationNewsResource extends Resource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
+                IconColumn::make('generated_by_ai')
+                    ->label('AI')
+                    ->boolean(),
+                TextColumn::make('source_name')
+                    ->label('Sumber')
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('published_at')
                     ->label('Publish')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
+                TextColumn::make('publishedBy.name')
+                    ->label('Diverifikasi oleh')
+                    ->placeholder('-')
+                    ->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -163,6 +204,22 @@ class EducationNewsResource extends Resource
                     ->preload(),
             ])
             ->actions([
+                Tables\Actions\Action::make('publish')
+                    ->label('Publish')
+                    ->visible(fn (EducationNews $record): bool => $record->status !== 'published')
+                    ->requiresConfirmation()
+                    ->action(function (EducationNews $record): void {
+                        $record->update([
+                            'status' => 'published',
+                            'published_at' => $record->published_at ?? now(),
+                            'published_by_user_id' => auth()->id(),
+                        ]);
+
+                        Notification::make()
+                            ->title('Berita dipublish')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
