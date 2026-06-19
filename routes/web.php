@@ -38,6 +38,7 @@ Route::post('/mahasiswa/password', [StudentPortalController::class, 'updatePassw
 Route::get('/mahasiswa/pemberkasan', [StudentPortalController::class, 'documents'])->name('student-portal.documents');
 Route::post('/mahasiswa/pemberkasan', [StudentPortalController::class, 'uploadDocuments'])->name('student-portal.documents.upload');
 Route::get('/mahasiswa/pembayaran', [StudentPortalController::class, 'payments'])->name('student-portal.payments');
+Route::get('/mahasiswa/affiliate', [StudentPortalController::class, 'affiliateDashboard']);
 Route::get('/mahasiswa/affiliator', [StudentPortalController::class, 'affiliateDashboard'])->name('student-portal.affiliate');
 Route::get('/mahasiswa/materi-kuliah', [StudentPortalController::class, 'learningMaterials'])->name('student-portal.materials');
 Route::get('/mahasiswa/tugas', [StudentPortalController::class, 'assignments'])->name('student-portal.assignments');
