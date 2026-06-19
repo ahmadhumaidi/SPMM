@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'public_url' => env('SPMM_PUBLIC_URL', 'https://kampusmedia.cloud'),
+
     'payment' => [
         'provider' => env('PAYMENT_PROVIDER', 'mock'),
         'invoice_expiry_hours' => (int) env('PAYMENT_INVOICE_EXPIRY_HOURS', 24),
