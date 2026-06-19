@@ -18,5 +18,9 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('payment-webhooks', function (Request $request) {
             return Limit::perMinute(120)->by($request->ip());
         });
+
+        RateLimiter::for('meta-leads', function (Request $request) {
+            return Limit::perMinute(120)->by($request->ip());
+        });
     }
 }
