@@ -310,7 +310,7 @@ class StudentPortalController extends Controller
             'account' => $account,
             'partner' => $partner,
             'conversions' => $conversions,
-            'referralLink' => route('registration.create', ['ref' => $partner->referral_code]),
+            'referralLink' => rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/').'/daftar?ref='.$partner->referral_code,
             'registeredCount' => $conversions->count(),
             'paidCount' => $conversions->whereNotNull('paid_at')->count(),
             'approvedCommission' => $conversions->where('commission_status', 'approved')->sum('commission_amount'),
