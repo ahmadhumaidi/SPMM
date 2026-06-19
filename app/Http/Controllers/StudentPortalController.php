@@ -22,8 +22,14 @@ use Illuminate\Support\Str;
 
 class StudentPortalController extends Controller
 {
-    public function login(): View
+    public function login(Request $request): View
     {
+        $redirectTo = $request->query('redirect');
+
+        if (is_string($redirectTo) && Str::startsWith($redirectTo, url('/mahasiswa'))) {
+            $request->session()->put('student_portal.intended_url', $redirectTo);
+        }
+
         return view('student-portal.login');
     }
 
@@ -48,7 +54,11 @@ class StudentPortalController extends Controller
         $account->update(['last_login_at' => now()]);
         $request->session()->put('student_account_id', $account->id);
 
-        return redirect()->route('student-portal.dashboard');
+        $intendedUrl = $request->session()->pull('student_portal.intended_url');
+
+        return $intendedUrl
+            ? redirect()->to($intendedUrl)
+            : redirect()->route('student-portal.dashboard');
     }
 
     public function verify(string $token, Request $request): RedirectResponse
@@ -72,6 +82,8 @@ class StudentPortalController extends Controller
         $account = $this->currentAccount($request);
 
         if (! $account) {
+            $request->session()->put('student_portal.intended_url', $request->fullUrl());
+
             return redirect()->route('student-portal.login');
         }
 
@@ -287,6 +299,8 @@ class StudentPortalController extends Controller
         $account = $this->currentAccount($request);
 
         if (! $account) {
+            $request->session()->put('student_portal.intended_url', $request->fullUrl());
+
             return redirect()->route('student-portal.login');
         }
 
