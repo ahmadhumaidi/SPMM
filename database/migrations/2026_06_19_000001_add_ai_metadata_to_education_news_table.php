@@ -15,7 +15,7 @@ return new class extends Migration
             $table->timestamp('source_published_at')->nullable()->after('source_hash');
             $table->boolean('generated_by_ai')->default(false)->after('source_published_at');
             $table->timestamp('ai_generated_at')->nullable()->after('generated_by_ai');
-            $table->json('ai_prompt_json')->nullable()->after('ai_generated_at');
+            $table->jsonb('ai_prompt_json')->nullable()->after('ai_generated_at');
         });
     }
 
