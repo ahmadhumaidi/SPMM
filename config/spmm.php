@@ -36,4 +36,13 @@ return [
             'PDDIKTI',
         ],
     ],
+
+    'meta_leads' => [
+        'verify_token' => env('META_LEADS_VERIFY_TOKEN'),
+        'page_access_token' => env('META_LEADS_PAGE_ACCESS_TOKEN'),
+        'graph_version' => env('META_GRAPH_VERSION', 'v20.0'),
+        'default_campus_id' => env('META_LEADS_DEFAULT_CAMPUS_ID'),
+        'default_study_program_id' => env('META_LEADS_DEFAULT_STUDY_PROGRAM_ID'),
+        'default_class_track_id' => env('META_LEADS_DEFAULT_CLASS_TRACK_ID'),
+    ],
 ];
