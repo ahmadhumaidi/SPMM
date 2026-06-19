@@ -59,7 +59,9 @@
     $lowestHeregistrationCost = $feeSummaries->pluck('heregistration')->filter()->min();
     $campusInitial = mb_substr($campus->name, 0, 1);
     $logoUrl = $campus->logo_path ? Storage::url($campus->logo_path) : null;
-    $whatsappNumber = $settings['whatsapp_number'] ?? '6280000000000';
+    $whatsappNumber = '6282199976600';
+    $whatsappMessage = rawurlencode('halo min, saya mendapat informasi dari kampus media (KAMI), saya ingin mengetahui informasi lebih lanjut tentang kampus '.$campus->name);
+    $whatsappUrl = "https://wa.me/{$whatsappNumber}?text={$whatsappMessage}";
     $heroBadge = $settings['hero_badge'] ?? 'Promo beasiswa PMB terbatas tahun ini';
     $heroHeadline = $settings['hero_headline'] ?? 'Kuliah Karyawan & Reguler Lebih Fleksibel';
     $heroSubheadline = $settings['hero_subheadline'] ?? 'Kuliah bisa sambil kerja, biaya terjangkau, dan bisa dicicil bulanan.';
@@ -156,7 +158,7 @@
         </div>
     </div>
 
-    <nav class="sticky top-0 z-50 border-b border-white/10 bg-navy/92 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-black/50 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="#home" class="flex items-center gap-3">
                 @if ($logoUrl)
@@ -201,7 +203,7 @@
                     <a href="#daftar" class="inline-flex h-13 items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
                         {{ $primaryCtaLabel }}
                     </a>
-                    <a href="https://wa.me/{{ $whatsappNumber }}" class="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
+                    <a href="{{ $whatsappUrl }}" class="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
                         <i data-lucide="message-circle" class="h-5 w-5"></i>
                         {{ $secondaryCtaLabel }}
                     </a>
@@ -465,7 +467,7 @@
                         <p class="font-black text-sky-700">Cicilan per bulan</p>
                         <strong class="mt-3 block text-4xl font-black text-navy">Rp {{ number_format($lowestMonthly, 0, ',', '.') }}</strong>
                         <p class="mt-3 leading-7 text-slate-600">Skema cicilan ringan untuk kelas karyawan, reguler, online, dan hybrid.</p>
-                        <a href="https://wa.me/{{ $whatsappNumber }}" class="mt-7 inline-flex w-full justify-center rounded-full bg-gold px-6 py-4 font-black text-navy">Konsultasi</a>
+                        <a href="{{ $whatsappUrl }}" class="mt-7 inline-flex w-full justify-center rounded-full bg-gold px-6 py-4 font-black text-navy">Konsultasi</a>
                     </article>
                     <article class="reveal rounded-[2rem] border border-white/15 bg-white/10 p-7 backdrop-blur">
                         <p class="font-black text-yellow-200">Beasiswa tersedia</p>
@@ -698,7 +700,7 @@
                 <div class="reveal">
                     <p class="text-sm font-black uppercase tracking-wide text-sky-700">FAQ</p>
                     <h2 class="mt-3 text-3xl font-black text-navy sm:text-5xl">Pertanyaan yang sering ditanyakan.</h2>
-                    <a href="https://wa.me/{{ $whatsappNumber }}" class="mt-8 inline-flex rounded-full bg-gold px-7 py-4 font-black text-navy">Tanya Konsultan</a>
+                    <a href="{{ $whatsappUrl }}" class="mt-8 inline-flex rounded-full bg-gold px-7 py-4 font-black text-navy">Tanya Konsultan</a>
                 </div>
                 <div class="space-y-4">
                     @foreach ($faqs as $faq)
@@ -742,7 +744,7 @@
             <div>
                 <h3 class="font-black text-yellow-200">Kontak</h3>
                 <div class="mt-4 grid gap-3 text-sky-100">
-                    <a href="https://wa.me/{{ $whatsappNumber }}">WhatsApp PMB</a>
+                    <a href="{{ $whatsappUrl }}">WhatsApp PMB</a>
                     <span>{{ $campus->city }}{{ $campus->province ? ', '.$campus->province : '' }}</span>
                     <span class="flex gap-3 pt-2">
                         <i data-lucide="instagram" class="h-5 w-5"></i>
@@ -754,7 +756,7 @@
         </div>
     </footer>
 
-    <a href="https://wa.me/{{ $whatsappNumber }}" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="WhatsApp PMB">
+    <a href="{{ $whatsappUrl }}" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="WhatsApp PMB">
         <i data-lucide="message-circle" class="h-7 w-7"></i>
     </a>
 

@@ -92,10 +92,10 @@
         </div>
     </div>
 
-    <nav class="sticky top-0 z-50 border-b border-white/10 bg-navy/92 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
+    <nav class="sticky top-0 z-50 border-b border-white/10 bg-black/50 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <span class="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg font-black text-navy">KN</span>
+                <img src="/images/kampus-media-logo.jpg" alt="Kampus Media" class="h-11 w-11 rounded-xl bg-white object-contain p-1">
                 <span>
                     <span class="block text-sm font-black leading-tight sm:text-base">Kampus Media</span>
                     <span class="block text-xs font-semibold text-sky-100">Sistem Pusat Mahera Media</span>

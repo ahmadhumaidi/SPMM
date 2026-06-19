@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Lead;
 use App\Models\StudentAccount;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class StudentAccountProvisioner
 {
@@ -50,14 +52,22 @@ class StudentAccountProvisioner
             "Setelah login, mahasiswa dapat melengkapi biodata, upload berkas, melihat pembayaran, dan mencetak kwitansi pembayaran.\n\n".
             "Salam,\nKampus Media";
 
-        Mail::raw(
-            $body,
-            function ($message) use ($lead): void {
-                $message
-                    ->to($lead->email, $lead->full_name)
-                    ->subject('Terima kasih sudah mendaftar di Kampus Media');
-            },
-        );
+        try {
+            Mail::raw(
+                $body,
+                function ($message) use ($lead): void {
+                    $message
+                        ->to($lead->email, $lead->full_name)
+                        ->subject('Terima kasih sudah mendaftar di Kampus Media');
+                },
+            );
+        } catch (Throwable $exception) {
+            Log::warning('Student welcome email failed.', [
+                'lead_id' => $lead->id,
+                'email' => $lead->email,
+                'message' => $exception->getMessage(),
+            ]);
+        }
 
         if (app()->environment('local')) {
             Storage::disk('local')->put("local-emails/lead-{$lead->id}.txt", $body);
