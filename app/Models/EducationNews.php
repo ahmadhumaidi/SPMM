@@ -22,15 +22,40 @@ class EducationNews extends Model
         'content',
         'image_path',
         'author_name',
+        'source_name',
+        'source_url',
+        'source_hash',
+        'source_published_at',
+        'generated_by_ai',
+        'ai_generated_at',
+        'ai_prompt_json',
         'status',
         'published_at',
+        'published_by_user_id',
     ];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'source_published_at' => 'datetime',
+            'generated_by_ai' => 'boolean',
+            'ai_generated_at' => 'datetime',
+            'ai_prompt_json' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (EducationNews $news): void {
+            if (
+                $news->status === 'published'
+                && blank($news->published_by_user_id)
+                && auth()->check()
+            ) {
+                $news->published_by_user_id = auth()->id();
+            }
+        });
     }
 
     public function campus(): BelongsTo
@@ -41,5 +66,10 @@ class EducationNews extends Model
     public function campuses(): BelongsToMany
     {
         return $this->belongsToMany(Campus::class, 'campus_education_news')->withTimestamps();
+    }
+
+    public function publishedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'published_by_user_id');
     }
 }
