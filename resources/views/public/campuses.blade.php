@@ -95,7 +95,7 @@
     <nav class="sticky top-0 z-50 border-b border-white/10 bg-black/50 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <img src="/images/optimized/kampus-media-logo.png" alt="Kampus Media" decoding="async" class="h-12 w-auto object-contain">
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" decoding="async" class="h-12 w-auto object-contain [filter:drop-shadow(0_0_1px_white)_drop-shadow(0_0_4px_rgba(255,255,255,.75))]">
             </a>
             <div class="hidden items-center gap-7 text-sm font-bold text-sky-50 md:flex">
                 <a href="#kampus" class="hover:text-gold">Kampus</a>
@@ -385,23 +385,23 @@
         </section>
     </main>
 
-    <footer class="bg-white px-4 py-12 sm:px-6 lg:px-8">
+    <footer class="border-t border-white/10 bg-navy/90 px-4 py-12 text-white shadow-2xl shadow-slate-950/20 backdrop-blur-xl sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-                <p class="text-lg font-black text-navy">Kampus Media</p>
-                <p class="mt-1 text-sm font-semibold text-slate-500">SPMM - Sistem Pusat Mahera Media.</p>
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" loading="lazy" decoding="async" class="h-14 w-auto object-contain [filter:drop-shadow(0_0_1px_white)_drop-shadow(0_0_4px_rgba(255,255,255,.75))]">
             </div>
-            <div class="flex flex-wrap gap-5 text-sm font-bold text-slate-600">
-                <a href="#kampus">Kampus</a>
-                <a href="#berita">Berita</a>
-                <a href="{{ route('registration.create') }}">Daftar</a>
-                <a href="{{ url('/admin') }}">Admin</a>
+            <div class="flex flex-wrap items-center gap-3">
+                @foreach ([['facebook', 'Facebook'], ['instagram', 'Instagram'], ['tiktok', 'TikTok'], ['youtube', 'YouTube']] as $social)
+                    <a href="#" aria-label="{{ $social[1] }} Kampus Media" class="grid h-11 w-11 place-items-center rounded-2xl border border-white/40 bg-white shadow-lg shadow-slate-950/10 transition hover:-translate-y-1 hover:bg-sky-50">
+                        <img src="/images/social/{{ $social[0] }}.png" alt="{{ $social[1] }}" loading="lazy" decoding="async" class="h-6 w-6 object-contain">
+                    </a>
+                @endforeach
             </div>
         </div>
     </footer>
 
-    <a href="{{ route('registration.create') }}" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="Daftar PMB">
-        <i data-lucide="message-circle" class="h-7 w-7"></i>
+    <a href="{{ route('registration.create') }}" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1 shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="Daftar PMB">
+        <img src="/images/social/whatsapp.png" alt="WhatsApp" loading="lazy" decoding="async" class="h-full w-full object-contain">
     </a>
 
     <script>
