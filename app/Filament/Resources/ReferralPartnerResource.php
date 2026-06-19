@@ -127,7 +127,7 @@ class ReferralPartnerResource extends Resource
                 TextColumn::make('referral_code')->label('Kode')->copyable()->searchable(),
                 TextColumn::make('referral_link')
                     ->label('Link')
-                    ->state(fn (ReferralPartner $record): string => url('/daftar?ref='.$record->referral_code))
+                    ->state(fn (ReferralPartner $record): string => rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/').'/daftar?ref='.$record->referral_code)
                     ->copyable()
                     ->limit(44),
                 TextColumn::make('conversions_count')->counts('conversions')->label('Pendaftar'),
