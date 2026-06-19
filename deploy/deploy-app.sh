@@ -6,7 +6,9 @@ REPO_URL="${REPO_URL:-https://github.com/ahmadhumaidi/SPMM.git}"
 BRANCH="${BRANCH:-main}"
 DOMAIN="${DOMAIN:-domain-utama-anda.com}"
 SERVER_NAMES="${SERVER_NAMES:-${DOMAIN} www.${DOMAIN} *.${DOMAIN}}"
-PHP_VERSION="${PHP_VERSION:-8.2}"
+PHP_VERSION="${PHP_VERSION:-8.3}"
+INSTALL_NGINX="${INSTALL_NGINX:-false}"
+INSTALL_SUPERVISOR="${INSTALL_SUPERVISOR:-true}"
 
 echo "==> Deploying SPMM"
 echo "App dir: $APP_DIR"
@@ -14,6 +16,7 @@ echo "Repo: $REPO_URL"
 echo "Branch: $BRANCH"
 echo "Domain: $DOMAIN"
 echo "Server names: $SERVER_NAMES"
+echo "Install Nginx config: $INSTALL_NGINX"
 
 if [ ! -d "$APP_DIR/.git" ]; then
     echo "==> Cloning repository"
@@ -58,21 +61,31 @@ echo "==> Fixing permissions"
 chown -R www-data:www-data "$APP_DIR"
 chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
 
-echo "==> Installing Nginx config"
-cp "$APP_DIR/deploy/nginx-spmm.conf.example" /etc/nginx/sites-available/spmm
-sed -i "s#__SERVER_NAMES__#${SERVER_NAMES}#g" /etc/nginx/sites-available/spmm
-sed -i "s/domain-utama-anda.com/${DOMAIN}/g" /etc/nginx/sites-available/spmm
-sed -i "s/www.domain-utama-anda.com/www.${DOMAIN}/g" /etc/nginx/sites-available/spmm
-sed -i "s#unix:/var/run/php/php8.2-fpm.sock#unix:/var/run/php/php${PHP_VERSION}-fpm.sock#g" /etc/nginx/sites-available/spmm
-ln -sfn /etc/nginx/sites-available/spmm /etc/nginx/sites-enabled/spmm
-nginx -t
-systemctl reload nginx
+if [ "$INSTALL_NGINX" = "true" ]; then
+    echo "==> Installing Nginx config"
+    cp "$APP_DIR/deploy/nginx-spmm.conf.example" /etc/nginx/sites-available/spmm
+    sed -i "s#__SERVER_NAMES__#${SERVER_NAMES}#g" /etc/nginx/sites-available/spmm
+    sed -i "s/domain-utama-anda.com/${DOMAIN}/g" /etc/nginx/sites-available/spmm
+    sed -i "s/www.domain-utama-anda.com/www.${DOMAIN}/g" /etc/nginx/sites-available/spmm
+    sed -i "s#unix:/var/run/php/php8.3-fpm.sock#unix:/var/run/php/php${PHP_VERSION}-fpm.sock#g" /etc/nginx/sites-available/spmm
+    ln -sfn /etc/nginx/sites-available/spmm /etc/nginx/sites-enabled/spmm
+    nginx -t
+    systemctl reload nginx
+else
+    echo "==> Skipping Nginx config install"
+    echo "    Set INSTALL_NGINX=true only for first-time installs. Production currently uses separate manual configs for kampusmedia.cloud and spmm.maheramedia.com."
+fi
 
-echo "==> Installing Supervisor worker"
-cp "$APP_DIR/deploy/supervisor-spmm-worker.conf.example" /etc/supervisor/conf.d/spmm-worker.conf
-supervisorctl reread
-supervisorctl update
-supervisorctl restart spmm-worker:* || supervisorctl start spmm-worker:*
+if [ "$INSTALL_SUPERVISOR" = "true" ]; then
+    echo "==> Installing Supervisor worker"
+    mkdir -p /etc/supervisor/conf.d
+    cp "$APP_DIR/deploy/supervisor-spmm-worker.conf.example" /etc/supervisor/conf.d/spmm-worker.conf
+    supervisorctl reread
+    supervisorctl update
+    supervisorctl restart spmm-worker:* || supervisorctl start spmm-worker:*
+else
+    echo "==> Skipping Supervisor worker install"
+fi
 
 echo "==> Ensuring scheduler cron exists"
 CRON_LINE="* * * * * cd ${APP_DIR} && php artisan schedule:run >> /dev/null 2>&1"
