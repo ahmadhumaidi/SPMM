@@ -317,7 +317,7 @@
                     </div>
 
                     @if ($campuses->count() > 3)
-                        <div class="mt-8 flex justify-center md:hidden">
+                        <div class="mt-8 flex justify-center">
                             <button id="campus-show-all" type="button" class="inline-flex rounded-full bg-navy px-6 py-3 font-black text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-1">
                                 Lihat semua kampus
                             </button>
@@ -465,7 +465,8 @@
             const term = search?.value.toLowerCase().trim() || '';
             const activePrograms = Array.from(selectedPrograms);
             const isMobile = window.matchMedia('(max-width: 767px)').matches;
-            const shouldLimitMobile = isMobile && ! showAllCampuses && ! term && activePrograms.length === 0;
+            const initialCampusLimit = isMobile ? 3 : 6;
+            const shouldLimitCampuses = ! showAllCampuses && ! term && activePrograms.length === 0;
             let visibleIndex = 0;
 
             cards.forEach((card) => {
@@ -477,7 +478,7 @@
                 });
 
                 const isMatch = matchesSearch && matchesProgram;
-                const shouldHideByLimit = shouldLimitMobile && visibleIndex >= 3;
+                const shouldHideByLimit = shouldLimitCampuses && visibleIndex >= initialCampusLimit;
 
                 card.hidden = ! isMatch || shouldHideByLimit;
 
@@ -487,7 +488,7 @@
             });
 
             if (showAllButton) {
-                showAllButton.hidden = ! shouldLimitMobile || visibleIndex <= 3;
+                showAllButton.hidden = ! shouldLimitCampuses || visibleIndex <= initialCampusLimit;
             }
         };
 
