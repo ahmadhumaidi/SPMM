@@ -34,6 +34,9 @@
     $seoTitle = 'Kampus Media | Portal Kuliah Karyawan, Online, Hybrid & RPL';
     $seoDescription = 'Temukan kampus terpercaya, program studi, biaya kuliah transparan, kelas karyawan, full online, hybrid learning, dan RPL di Kampus Media.';
     $seoImage = url('/images/social/logo%20kampus%20media.png');
+    $whatsappNumber = '6282199976600';
+    $whatsappMessage = rawurlencode('halo min, saya mendapat informasi dari kampus media (KAMI), saya ingin mengetahui informasi lebih lanjut');
+    $whatsappUrl = "https://wa.me/{$whatsappNumber}?text={$whatsappMessage}";
 @endphp
 
 <!doctype html>
@@ -416,7 +419,7 @@
         </div>
     </footer>
 
-    <a href="{{ route('registration.create') }}" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1 shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="Daftar PMB">
+    <a href="{{ $whatsappUrl }}" target="_blank" rel="noopener" class="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1 shadow-2xl shadow-green-600/30 transition hover:-translate-y-1" aria-label="WhatsApp Kampus Media">
         <img src="/images/social/whatsapp.png" alt="WhatsApp" loading="lazy" decoding="async" class="h-full w-full object-contain">
     </a>
 
