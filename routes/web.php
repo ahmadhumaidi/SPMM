@@ -3,6 +3,7 @@
 use App\Http\Controllers\PublicRegistrationController;
 use App\Http\Controllers\MockPaymentController;
 use App\Http\Controllers\SeparateSystemPortalController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\StudentPortalController;
 use App\Http\Controllers\StudentExportController;
 use App\Models\Campus;
@@ -14,6 +15,8 @@ Route::bind('campus', fn (string $value): Campus => Campus::query()
     ->firstOrFail());
 
 Route::get('/', [PublicRegistrationController::class, 'index'])->name('home');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/kampus', [PublicRegistrationController::class, 'index'])->name('campuses.index');
 Route::get('/kampus/{campus}/berita', [PublicRegistrationController::class, 'campusNewsIndex'])->name('campuses.news.index');
 Route::get('/kampus/{campus}', [PublicRegistrationController::class, 'showCampus'])->name('campuses.show');
