@@ -16,6 +16,9 @@ return [
     'ai_news' => [
         'openai_api_key' => env('OPENAI_API_KEY'),
         'openai_model' => env('OPENAI_MODEL', 'gpt-4.1-mini'),
+        'generate_cover_image' => (bool) env('AI_NEWS_GENERATE_COVER_IMAGE', true),
+        'openai_image_model' => env('OPENAI_IMAGE_MODEL', 'gpt-image-1'),
+        'openai_image_size' => env('OPENAI_IMAGE_SIZE', '1536x1024'),
         'sources' => [
             'Pendidikan Tinggi Indonesia' => 'https://news.google.com/rss/search?q=pendidikan+tinggi+Indonesia&hl=id&gl=ID&ceid=ID:id',
             'Kampus dan Kuliah Karyawan' => 'https://news.google.com/rss/search?q=kampus+kuliah+karyawan+Indonesia&hl=id&gl=ID&ceid=ID:id',

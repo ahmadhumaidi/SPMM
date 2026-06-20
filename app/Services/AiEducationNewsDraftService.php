@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\EducationNews;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 use SimpleXMLElement;
@@ -18,6 +19,7 @@ class AiEducationNewsDraftService
         $trendContext = $this->trendContext($topic);
         $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
         $article = $this->generateArticle($source, $topic, $trendContext, $editorialKnowledge);
+        $imagePath = $this->generateCoverImagePath($article, $source, $topic, $editorialKnowledge);
 
         $news = EducationNews::query()->create([
             'title' => $article['title'],
@@ -25,6 +27,7 @@ class AiEducationNewsDraftService
             'category' => $article['category'],
             'excerpt' => $article['excerpt'],
             'content' => $article['content'],
+            'image_path' => $imagePath,
             'author_name' => 'Kampus Media AI',
             'source_name' => $source['source_name'],
             'source_url' => $source['url'],
@@ -38,6 +41,8 @@ class AiEducationNewsDraftService
                 'source_excerpt' => $source['excerpt'],
                 'trend_context' => $trendContext,
                 'editorial_knowledge' => $editorialKnowledge,
+                'image_prompt' => $this->imagePrompt($article, $source, $topic, $editorialKnowledge),
+                'image_path' => $imagePath,
                 'fallback_used' => $article['fallback_used'],
             ],
             'status' => 'draft',
@@ -250,6 +255,151 @@ class AiEducationNewsDraftService
             ])->implode(''),
             'fallback_used' => true,
         ];
+    }
+
+    private function generateCoverImagePath(array $article, array $source, ?string $topic = null, array $editorialKnowledge = []): ?string
+    {
+        if (! config('spmm.ai_news.generate_cover_image', true)) {
+            return null;
+        }
+
+        $prompt = $this->imagePrompt($article, $source, $topic, $editorialKnowledge);
+        $slug = Str::slug($article['title'] ?? $source['title'] ?? 'artikel-seo') ?: 'artikel-seo';
+
+        $aiImagePath = $this->generateOpenAiCoverImage($prompt, $slug);
+
+        if (filled($aiImagePath)) {
+            return $aiImagePath;
+        }
+
+        return $this->generateFallbackCoverImage($article, $topic, $slug);
+    }
+
+    private function generateOpenAiCoverImage(string $prompt, string $slug): ?string
+    {
+        $apiKey = config('spmm.ai_news.openai_api_key');
+
+        if (blank($apiKey)) {
+            return null;
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(60)
+                ->post('https://api.openai.com/v1/images/generations', [
+                    'model' => config('spmm.ai_news.openai_image_model', 'gpt-image-1'),
+                    'prompt' => $prompt,
+                    'size' => config('spmm.ai_news.openai_image_size', '1536x1024'),
+                    'n' => 1,
+                ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $base64Image = $response->json('data.0.b64_json');
+
+            if (filled($base64Image)) {
+                $path = "education-news/ai-{$slug}-".now()->format('YmdHis').'.png';
+                Storage::disk('public')->put($path, base64_decode($base64Image));
+
+                return $path;
+            }
+
+            $imageUrl = $response->json('data.0.url');
+
+            if (filled($imageUrl)) {
+                $imageResponse = Http::timeout(30)->get($imageUrl);
+
+                if ($imageResponse->successful()) {
+                    $path = "education-news/ai-{$slug}-".now()->format('YmdHis').'.png';
+                    Storage::disk('public')->put($path, $imageResponse->body());
+
+                    return $path;
+                }
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function generateFallbackCoverImage(array $article, ?string $topic, string $slug): string
+    {
+        $title = Str::of($article['title'] ?? 'Artikel Pendidikan')->squish()->limit(72)->toString();
+        $category = Str::of($article['category'] ?? 'Pendidikan')->squish()->limit(28)->toString();
+        $topicText = filled($topic) ? Str::of($topic)->squish()->limit(34)->toString() : 'Kampus Media';
+        $path = "education-news/ai-cover-{$slug}-".now()->format('YmdHis').'.svg';
+
+        $svg = <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="{$this->svgText($title)}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#071a3d"/>
+      <stop offset="58%" stop-color="#0b3a70"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="78%" cy="18%" r="58%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity=".46"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#020617" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <rect width="1200" height="675" fill="url(#glow)"/>
+  <circle cx="1020" cy="120" r="180" fill="#38bdf8" opacity=".18"/>
+  <circle cx="110" cy="575" r="230" fill="#f59e0b" opacity=".13"/>
+  <g opacity=".18">
+    <path d="M100 130h1000M100 245h1000M100 360h1000M100 475h1000" stroke="#fff" stroke-width="1"/>
+    <path d="M180 80v520M360 80v520M540 80v520M720 80v520M900 80v520M1080 80v520" stroke="#fff" stroke-width="1"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="78" y="78" width="1044" height="519" rx="42" fill="#ffffff" opacity=".10"/>
+    <rect x="96" y="96" width="1008" height="483" rx="34" fill="#ffffff" opacity=".12"/>
+  </g>
+  <text x="132" y="168" fill="#fde68a" font-family="Arial, sans-serif" font-size="30" font-weight="800" letter-spacing="2">{$this->svgText(strtoupper($category))}</text>
+  <foreignObject x="128" y="210" width="740" height="250">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: white; font-size: 58px; line-height: 1.06; font-weight: 900;">
+      {$this->svgText($title)}
+    </div>
+  </foreignObject>
+  <text x="132" y="515" fill="#dbeafe" font-family="Arial, sans-serif" font-size="28" font-weight="700">{$this->svgText($topicText)}</text>
+  <g transform="translate(900 220)">
+    <rect width="178" height="178" rx="42" fill="#ffffff" opacity=".16"/>
+    <path d="M54 116V62h70v54H54Zm12-42v30h46V74H66Zm-16 58h78v16H50v-16Z" fill="#ffffff"/>
+    <path d="M44 52 90 28l46 24-46 24-46-24Z" fill="#fbbf24"/>
+  </g>
+  <text x="132" y="560" fill="#ffffff" opacity=".92" font-family="Arial, sans-serif" font-size="24" font-weight="800">Kampus Media</text>
+</svg>
+SVG;
+
+        Storage::disk('public')->put($path, $svg);
+
+        return $path;
+    }
+
+    private function imagePrompt(array $article, array $source, ?string $topic = null, array $editorialKnowledge = []): string
+    {
+        $brand = $editorialKnowledge['brand']['name'] ?? 'Kampus Media';
+        $audience = collect($editorialKnowledge['brand']['audience'] ?? [])->take(4)->implode(', ');
+
+        return Str::of(implode(' ', [
+            'Create a modern editorial hero image for an Indonesian education SEO article.',
+            'Brand context:', $brand.'.',
+            'Article title:', $article['title'] ?? $source['title'] ?? 'Artikel pendidikan.',
+            'Topic:', $topic ?: 'kampus, jurusan, kuliah karyawan, RPL, prospek kerja.',
+            'Audience:', $audience ?: 'calon mahasiswa dan karyawan.',
+            'Visual style: professional education technology, Indonesian campus atmosphere, students or working professionals, navy blue and cyan with warm yellow accent, clean modern composition, premium, optimistic.',
+            'Do not include readable text, logos, brand marks, distorted faces, or misleading certificate claims.',
+        ]))->squish()->toString();
+    }
+
+    private function svgText(string $text): string
+    {
+        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
     private function uniqueSlug(string $title): string
