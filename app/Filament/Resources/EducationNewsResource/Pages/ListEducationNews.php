@@ -21,13 +21,13 @@ class ListEducationNews extends ListRecords
     {
         return [
             Actions\Action::make('generateAiDraft')
-                ->label('Generate Draft Berita AI')
-                ->modalHeading('Generate Draft Berita AI')
-                ->modalDescription('Sistem akan mengambil berita pendidikan terbaru dari RSS, lalu membuat draft. Draft belum otomatis publish.')
+                ->label('Generate Draft Artikel SEO AI')
+                ->modalHeading('Generate Draft Artikel SEO AI')
+                ->modalDescription('Sistem mengambil referensi pendidikan terbaru, membaca konteks tren, lalu membuat draft artikel SEO dengan knowledge Kampus Media. Draft belum otomatis publish.')
                 ->form([
                     TextInput::make('topic')
                         ->label('Topik opsional')
-                        ->placeholder('Contoh: kuliah karyawan, RPL, beasiswa, PDDIKTI')
+                        ->placeholder('Contoh: kuliah karyawan, kelas RPL, prospek jurusan, biaya kuliah')
                         ->maxLength(120),
                     CheckboxList::make('campus_ids')
                         ->label('Kampus tujuan')
