@@ -315,6 +315,14 @@
                             </article>
                         @endforeach
                     </div>
+
+                    @if ($campuses->count() > 3)
+                        <div class="mt-8 flex justify-center md:hidden">
+                            <button id="campus-show-all" type="button" class="inline-flex rounded-full bg-navy px-6 py-3 font-black text-white shadow-lg shadow-slate-900/20 transition hover:-translate-y-1">
+                                Lihat semua kampus
+                            </button>
+                        </div>
+                    @endif
                 @endif
             </div>
         </section>
@@ -443,7 +451,9 @@
         const campusSection = document.getElementById('kampus');
         const filterButtons = Array.from(document.querySelectorAll('[data-program-filter]'));
         const cards = Array.from(document.querySelectorAll('[data-campus-card]'));
+        const showAllButton = document.getElementById('campus-show-all');
         const selectedPrograms = new Set();
+        let showAllCampuses = false;
         const programAliases = {
             'kuliah karyawan': ['kuliah karyawan', 'kelas karyawan', 'professional', 'profesional', 'program kuliah professional'],
             'full online': ['full online', 'online'],
@@ -454,6 +464,9 @@
         const applyCampusFilters = () => {
             const term = search?.value.toLowerCase().trim() || '';
             const activePrograms = Array.from(selectedPrograms);
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            const shouldLimitMobile = isMobile && ! showAllCampuses && ! term && activePrograms.length === 0;
+            let visibleIndex = 0;
 
             cards.forEach((card) => {
                 const searchableText = card.dataset.search || '';
@@ -463,9 +476,25 @@
                     return (programAliases[program] || [program]).some((alias) => programText.includes(alias));
                 });
 
-                card.hidden = ! (matchesSearch && matchesProgram);
+                const isMatch = matchesSearch && matchesProgram;
+                const shouldHideByLimit = shouldLimitMobile && visibleIndex >= 3;
+
+                card.hidden = ! isMatch || shouldHideByLimit;
+
+                if (isMatch) {
+                    visibleIndex += 1;
+                }
             });
+
+            if (showAllButton) {
+                showAllButton.hidden = ! shouldLimitMobile || visibleIndex <= 3;
+            }
         };
+
+        showAllButton?.addEventListener('click', () => {
+            showAllCampuses = true;
+            applyCampusFilters();
+        });
 
         filterButtons.forEach((button) => {
             button.addEventListener('click', () => {
@@ -484,11 +513,14 @@
         });
 
         search?.addEventListener('input', applyCampusFilters);
+        window.addEventListener('resize', applyCampusFilters);
         searchForm?.addEventListener('submit', (event) => {
             event.preventDefault();
             applyCampusFilters();
             campusSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
+
+        applyCampusFilters();
     </script>
 </body>
 </html>
