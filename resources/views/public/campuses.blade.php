@@ -30,6 +30,10 @@
         ->take(8)
         ->values();
     $educationNews = $educationNews ?? collect();
+    $canonicalUrl = rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/').'/';
+    $seoTitle = 'Kampus Media | Portal Kuliah Karyawan, Online, Hybrid & RPL';
+    $seoDescription = 'Temukan kampus terpercaya, program studi, biaya kuliah transparan, kelas karyawan, full online, hybrid learning, dan RPL di Kampus Media.';
+    $seoImage = url('/images/social/logo%20kampus%20media.png');
 @endphp
 
 <!doctype html>
@@ -37,9 +41,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kampus Media | Portal Kuliah Karyawan, Reguler, Online & RPL</title>
-    <meta name="description" content="Kampus Media membantu calon mahasiswa menemukan kampus mitra, membandingkan biaya kuliah, dan mendaftar online dengan alur PMB yang mudah.">
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
     <meta name="keywords" content="kampus media, kuliah karyawan, kuliah online, PMB online, daftar kuliah">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kampus Media">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

@@ -4,6 +4,8 @@
     $imageUrl = $news->image_path
         ? Storage::url($news->image_path)
         : 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80';
+    $canonicalUrl = route('news.show', $news);
+    $seoDescription = $news->excerpt ?: str(strip_tags($news->content))->limit(155);
 @endphp
 
 <!doctype html>
@@ -12,7 +14,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $news->title }} | Kampus Media</title>
-    <meta name="description" content="{{ $news->excerpt ?: str(strip_tags($news->content))->limit(155) }}">
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Kampus Media">
+    <meta property="og:title" content="{{ $news->title }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $imageUrl }}">
+    @if ($news->published_at)
+        <meta property="article:published_time" content="{{ $news->published_at->toAtomString() }}">
+    @endif
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $news->title }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $imageUrl }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>

@@ -3,7 +3,26 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'SPMM - Sistem Pusat Mahera Media' }}</title>
+    @php
+        $pageTitle = $title ?? 'Kampus Media';
+        $pageDescription = $description ?? 'Daftar kuliah online melalui Kampus Media. Pilih kampus, program studi, program perkuliahan, dan dapatkan invoice pendaftaran otomatis.';
+        $canonicalUrl = $canonical ?? url()->current();
+        $seoImage = url('/images/social/logo%20kampus%20media.png');
+    @endphp
+    <title>{{ $pageTitle }} | Kampus Media</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kampus Media">
+    <meta property="og:title" content="{{ $pageTitle }} | Kampus Media">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $pageTitle }} | Kampus Media">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/public.css?v=1">
 </head>

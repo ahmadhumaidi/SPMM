@@ -100,6 +100,10 @@
         ['name' => 'Ilmu Komunikasi', 'degree' => 'S1', 'accreditation' => 'Baik'],
     ];
     $educationNews = $educationNews ?? collect();
+    $canonicalUrl = $campus->publicUrl();
+    $seoTitle = 'PMB '.$campus->name.' | Kuliah Fleksibel dan Biaya Transparan';
+    $seoDescription = 'Informasi PMB '.$campus->name.': program studi, kelas karyawan, online/hybrid, RPL, biaya kuliah, dan pendaftaran online melalui Kampus Media.';
+    $seoImage = $logoUrl ?: $heroImage;
 @endphp
 
 <!doctype html>
@@ -107,11 +111,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PMB {{ $campus->name }} | Kuliah Karyawan & Reguler Fleksibel</title>
-    <meta name="description" content="Penerimaan Mahasiswa Baru {{ $campus->name }}. Kuliah karyawan dan reguler fleksibel, biaya terjangkau, dan bisa dicicil bulanan.">
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
     <meta name="keywords" content="PMB, kuliah karyawan, kuliah online, {{ $campus->name }}, kampus Indonesia">
-    <meta property="og:title" content="PMB {{ $campus->name }}">
-    <meta property="og:description" content="Kuliah bisa sambil kerja, biaya terjangkau, dan bisa dicicil bulanan.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kampus Media">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

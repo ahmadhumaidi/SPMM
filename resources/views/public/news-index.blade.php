@@ -1,5 +1,9 @@
 @php
     use Illuminate\Support\Facades\Storage;
+    $canonicalUrl = $campus
+        ? route('campuses.news.index', ['campus' => $campus->name])
+        : route('news.index');
+    $seoImage = url('/images/social/logo%20kampus%20media.png');
 @endphp
 
 <!doctype html>
@@ -9,6 +13,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} | Kampus Media</title>
     <meta name="description" content="{{ $subtitle }}">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kampus Media">
+    <meta property="og:title" content="{{ $title }} | Kampus Media">
+    <meta property="og:description" content="{{ $subtitle }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $title }} | Kampus Media">
+    <meta name="twitter:description" content="{{ $subtitle }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
