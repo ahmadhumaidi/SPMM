@@ -56,6 +56,56 @@ class AiEducationNewsDraftService
         return $news;
     }
 
+    public function createSeoArticleDraft(string $keyword, ?array $campusIds = null): EducationNews
+    {
+        $keyword = Str::of($keyword)->squish()->limit(160)->toString();
+        $trendContext = $this->trendContext($keyword);
+        $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
+        $source = [
+            'source_name' => 'Kampus Media AI',
+            'title' => $keyword,
+            'url' => null,
+            'hash' => null,
+            'excerpt' => null,
+            'published_at' => null,
+        ];
+        $article = $this->generateKeywordArticle($keyword, $trendContext, $editorialKnowledge);
+        $imagePath = $this->generateCoverImagePath($article, $source, $keyword, $editorialKnowledge);
+
+        $news = EducationNews::query()->create([
+            'title' => $article['title'],
+            'slug' => $this->uniqueSlug($article['title']),
+            'category' => $article['category'],
+            'excerpt' => $article['excerpt'],
+            'content' => $article['content'],
+            'image_path' => $imagePath,
+            'author_name' => 'Kampus Media AI',
+            'source_name' => 'Artikel SEO AI',
+            'source_url' => null,
+            'source_hash' => null,
+            'source_published_at' => null,
+            'generated_by_ai' => filled(config('spmm.ai_news.openai_api_key')),
+            'ai_generated_at' => now(),
+            'ai_prompt_json' => [
+                'mode' => 'seo_article',
+                'keyword' => $keyword,
+                'trend_context' => $trendContext,
+                'editorial_knowledge' => $editorialKnowledge,
+                'image_prompt' => $this->imagePrompt($article, $source, $keyword, $editorialKnowledge),
+                'image_path' => $imagePath,
+                'fallback_used' => $article['fallback_used'],
+            ],
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        if (! empty($campusIds)) {
+            $news->campuses()->sync($campusIds);
+        }
+
+        return $news;
+    }
+
     private function nextSourceItem(?string $topic = null): array
     {
         $items = collect($this->rssSources($topic))
@@ -229,6 +279,73 @@ class AiEducationNewsDraftService
         }
     }
 
+    private function generateKeywordArticle(string $keyword, array $trendContext = [], array $editorialKnowledge = []): array
+    {
+        $fallback = $this->fallbackKeywordArticle($keyword, $trendContext, $editorialKnowledge);
+        $apiKey = config('spmm.ai_news.openai_api_key');
+
+        if (blank($apiKey)) {
+            return $fallback;
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(45)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => config('spmm.ai_news.openai_model', 'gpt-4.1-mini'),
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Anda adalah SEO content strategist dan penulis artikel pendidikan Indonesia untuk Kampus Media. Buat artikel evergreen yang orisinal, mudah dibaca, dan membantu calon mahasiswa mengambil keputusan. Jangan mengarang data spesifik seperti ranking resmi, biaya pasti, akreditasi kampus tertentu, atau jaminan kerja.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => json_encode([
+                                'instruction' => 'Tulis artikel SEO full berdasarkan kata kunci yang diberikan. Artikel tidak perlu berbasis berita RSS. Buat artikel evergreen yang bisa ranking di Google, punya struktur jelas, dan relevan dengan Kampus Media.',
+                                'keyword' => $keyword,
+                                'format' => [
+                                    'title' => 'judul SEO maksimal 90 karakter dan natural',
+                                    'category' => 'pilih salah satu: Pendidikan, Karier, Kampus, Jurusan, RPL, Kuliah Karyawan',
+                                    'excerpt' => 'meta description/ringkasan maksimal 280 karakter',
+                                    'content_html' => 'HTML sederhana 900-1400 kata: pembuka, 5-8 h2, paragraf pendek, ul/li, FAQ pendek bila relevan, dan CTA halus. Jangan gunakan h1.',
+                                ],
+                                'seo_requirements' => [
+                                    'jawab intent pencarian sejak paragraf pertama',
+                                    'gunakan keyword utama secara natural di judul, pembuka, salah satu h2, dan penutup',
+                                    'sertakan keyword turunan seperti kampus terpercaya, prospek kerja, biaya kuliah, kuliah karyawan, kelas karyawan, kuliah online, hybrid, atau RPL hanya bila relevan',
+                                    'tambahkan bagian praktis: cara memilih, hal yang perlu dicek, kesalahan umum, dan langkah berikutnya',
+                                    'tambahkan CTA ke Kampus Media sebagai portal pembanding kampus dan PMB',
+                                ],
+                                'trend_context' => $trendContext,
+                                'kampus_media_editorial_knowledge' => $editorialKnowledge,
+                            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                        ],
+                    ],
+                    'response_format' => ['type' => 'json_object'],
+                ]);
+
+            if (! $response->successful()) {
+                return $fallback;
+            }
+
+            $payload = json_decode($response->json('choices.0.message.content', ''), true);
+
+            if (! is_array($payload)) {
+                return $fallback;
+            }
+
+            return [
+                'title' => Str::of($payload['title'] ?? $fallback['title'])->squish()->limit(100)->toString(),
+                'category' => Str::of($payload['category'] ?? $fallback['category'])->squish()->limit(120)->toString(),
+                'excerpt' => Str::of($payload['excerpt'] ?? $fallback['excerpt'])->squish()->limit(500)->toString(),
+                'content' => $payload['content_html'] ?? $fallback['content'],
+                'fallback_used' => false,
+            ];
+        } catch (Throwable) {
+            return $fallback;
+        }
+    }
+
     private function fallbackArticle(array $source, ?string $topic = null, array $trendContext = [], array $editorialKnowledge = []): array
     {
         $title = Str::of($source['title'])->replaceMatches('/\s+-\s+.*$/', '')->squish()->limit(90)->toString();
@@ -252,6 +369,34 @@ class AiEducationNewsDraftService
                 '<p>'.e($cta).'</p>',
                 '<p>Draft ini dibuat otomatis sebagai bahan awal. Admin disarankan memeriksa isi, menyesuaikan sudut pandang, dan melengkapi informasi sebelum dipublikasikan.</p>',
                 '<p><strong>Sumber referensi:</strong> <a href="'.e($source['url']).'" target="_blank" rel="noopener">'.e($source['source_name']).'</a></p>',
+            ])->implode(''),
+            'fallback_used' => true,
+        ];
+    }
+
+    private function fallbackKeywordArticle(string $keyword, array $trendContext = [], array $editorialKnowledge = []): array
+    {
+        $keywordText = e($keyword);
+        $title = Str::of($keyword)->squish()->headline()->prepend('Panduan ')->limit(90)->toString();
+        $keywords = collect($trendContext['education_keywords'] ?? [])->take(5)->implode(', ');
+        $cta = e($editorialKnowledge['preferred_cta'] ?? 'Konsultasikan pilihan kampus, jurusan, dan biaya kuliah melalui Kampus Media.');
+
+        return [
+            'title' => $title,
+            'category' => 'Pendidikan',
+            'excerpt' => Str::of("Panduan memahami {$keyword} untuk calon mahasiswa yang ingin memilih jurusan, kampus, dan jalur kuliah yang sesuai tujuan karier.")->squish()->limit(280)->toString(),
+            'content' => collect([
+                '<p><strong>'.$keywordText.'</strong> menjadi salah satu topik yang sering dicari calon mahasiswa ketika mulai membandingkan pilihan kuliah. Keputusan memilih jurusan dan kampus sebaiknya tidak hanya mengikuti tren, tetapi juga mempertimbangkan minat, kemampuan, biaya, akreditasi, dan prospek karier.</p>',
+                '<h2>Mengapa topik ini penting?</h2>',
+                '<p>Bagi calon mahasiswa baru, pekerja, maupun lulusan D3 yang ingin lanjut kuliah, memahami '.$keywordText.' membantu proses memilih program studi dengan lebih terarah. Pilihan yang tepat bisa mendukung perkembangan karier dan rencana masa depan.</p>',
+                '<h2>Hal yang perlu dipertimbangkan</h2>',
+                '<ul><li>Minat dan kemampuan pribadi.</li><li>Prospek kerja dan kebutuhan industri.</li><li>Akreditasi kampus dan program studi.</li><li>Legalitas kampus melalui PDDIKTI.</li><li>Skema biaya, cicilan, dan jadwal kuliah.</li><li>Ketersediaan kelas karyawan, online, hybrid, atau RPL.</li></ul>',
+                filled($keywords) ? '<p>Untuk memperkaya sudut pandang, sistem juga mempertimbangkan keyword pendidikan yang dekat dengan minat pencarian seperti '.e($keywords).'.</p>' : '',
+                '<h2>Tips memilih jurusan dan kampus</h2>',
+                '<p>Mulailah dari tujuan karier, lalu cocokkan dengan kurikulum, gelar, biaya, jadwal, dan dukungan kampus. Jika sudah bekerja, pertimbangkan kelas karyawan, kuliah online, hybrid learning, atau jalur RPL sesuai kebutuhan.</p>',
+                '<h2>Peran Kampus Media</h2>',
+                '<p>'.e($cta).'</p>',
+                '<p>Draft artikel ini dibuat otomatis sebagai bahan awal. Admin disarankan meninjau, menambah data, dan menyesuaikan gaya bahasa sebelum dipublikasikan.</p>',
             ])->implode(''),
             'fallback_used' => true,
         ];
