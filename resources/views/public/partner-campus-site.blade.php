@@ -36,12 +36,13 @@
         ->min() ?? 560000;
     $feeSummaries = $fees
         ->where('is_active', true)
-        ->map(function ($fee) {
+        ->map(function ($fee) use ($averageMonthlyInstallment) {
             $registration = (int) $fee->registration_fee;
             $development = (int) $fee->building_fee;
             $tuitionPerSemester = (int) $fee->monthly_tuition_fee;
             $ukt = (int) $fee->ukt_total;
             $heregistration = (int) $fee->total_initial_payment;
+            $monthlyInstallment = $averageMonthlyInstallment($fee);
 
             return [
                 'study_program_id' => $fee->study_program_id,
@@ -54,6 +55,7 @@
                 'tuition_per_semester' => $tuitionPerSemester,
                 'ukt' => $ukt,
                 'heregistration' => $heregistration,
+                'monthly_installment' => $monthlyInstallment,
             ];
         })
         ->values();
@@ -587,6 +589,15 @@
                                             </div>
                                         @endif
                                     </div>
+                                    @if ($fee['monthly_installment'])
+                                        <div class="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-4 text-navy">
+                                            <span>
+                                                <span class="block text-xs font-black uppercase tracking-wide text-sky-700">Estimasi per bulan</span>
+                                                <span class="mt-1 block text-sm font-bold text-slate-600">Sesuai jadwal angsuran prodi dan program ini</span>
+                                            </span>
+                                            <strong class="shrink-0 text-xl font-black">Rp {{ number_format($fee['monthly_installment'], 0, ',', '.') }}</strong>
+                                        </div>
+                                    @endif
                                     <div class="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-navy px-4 py-4 text-white">
                                         <span class="font-black">Total herregistrasi</span>
                                         <strong class="text-xl font-black">Rp {{ number_format($fee['heregistration'], 0, ',', '.') }}</strong>
