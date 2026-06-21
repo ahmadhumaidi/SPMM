@@ -112,6 +112,18 @@
         ['name' => 'Bisnis Digital', 'degree' => 'S1', 'accreditation' => 'Baik'],
         ['name' => 'Ilmu Komunikasi', 'degree' => 'S1', 'accreditation' => 'Baik'],
     ];
+    $programGroups = $activePrograms
+        ->sortBy([
+            ['degree_level', 'asc'],
+            ['name', 'asc'],
+        ])
+        ->groupBy(fn ($program) => $program->degree_level ?: 'S1');
+    $fallbackProgramGroups = collect($programFallbacks)
+        ->sortBy([
+            ['degree', 'asc'],
+            ['name', 'asc'],
+        ])
+        ->groupBy(fn ($program) => $program['degree'] ?: 'S1');
     $educationNews = $educationNews ?? collect();
     $canonicalUrl = $campus->publicUrl();
     $seoTitle = 'PMB '.$campus->name.' | Kuliah Fleksibel dan Biaya Transparan';
@@ -392,29 +404,41 @@
 
                 <div class="reveal overflow-hidden rounded-3xl border border-slate-200 bg-white">
                     <div id="program-list" class="grid md:grid-cols-2">
-                    @forelse ($activePrograms as $program)
+                    @forelse ($programGroups as $degree => $programs)
+                        <div data-program-group-heading="{{ $degree }}" class="col-span-full border-b border-[#E5E7EB] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-sky-700 md:px-6">
+                            {{ $degree }}
+                        </div>
+                        @foreach ($programs as $program)
                         <button
                             type="button"
                             data-program-list-item
-                            data-program-name="{{ strtolower($program->name) }}"
+                            data-program-degree="{{ $degree }}"
+                            data-program-name="{{ strtolower($degree.' '.$program->name) }}"
                             data-program-modal-target="program-modal-{{ $program->id }}"
                             class="group flex h-16 items-center justify-between gap-4 border-b border-[#E5E7EB] px-5 text-left transition hover:bg-[#F8FAFC] md:px-6 md:odd:border-r"
                         >
-                            <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $program->name }}</span>
+                            <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $degree }} - {{ $program->name }}</span>
                             <span class="text-xl font-bold text-slate-400 transition group-hover:translate-x-1 group-hover:text-[#2563EB]">→</span>
                         </button>
+                        @endforeach
                     @empty
-                        @foreach ($programFallbacks as $program)
+                        @foreach ($fallbackProgramGroups as $degree => $programs)
+                            <div data-program-group-heading="{{ $degree }}" class="col-span-full border-b border-[#E5E7EB] bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-[0.18em] text-sky-700 md:px-6">
+                                {{ $degree }}
+                            </div>
+                            @foreach ($programs as $program)
                             <button
                                 type="button"
                                 data-program-list-item
-                                data-program-name="{{ strtolower($program['name']) }}"
-                                data-program-modal-target="program-fallback-modal-{{ $loop->iteration }}"
+                                data-program-degree="{{ $degree }}"
+                                data-program-name="{{ strtolower($degree.' '.$program['name']) }}"
+                                data-program-modal-target="program-fallback-modal-{{ $loop->parent->iteration }}-{{ $loop->iteration }}"
                                 class="group flex h-16 items-center justify-between gap-4 border-b border-[#E5E7EB] px-5 text-left transition hover:bg-[#F8FAFC] md:px-6 md:odd:border-r"
                             >
-                                <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $program['name'] }}</span>
+                                <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $degree }} - {{ $program['name'] }}</span>
                                 <span class="text-xl font-bold text-slate-400 transition group-hover:translate-x-1 group-hover:text-[#2563EB]">→</span>
                             </button>
+                            @endforeach
                         @endforeach
                     @endforelse
                     </div>
@@ -459,8 +483,9 @@
         @endforeach
 
         @if ($activePrograms->isEmpty())
-            @foreach ($programFallbacks as $program)
-                <div id="program-fallback-modal-{{ $loop->iteration }}" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" data-program-modal>
+            @foreach ($fallbackProgramGroups as $degree => $programs)
+                @foreach ($programs as $program)
+                <div id="program-fallback-modal-{{ $loop->parent->iteration }}-{{ $loop->iteration }}" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" data-program-modal>
                     <div class="w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl">
                         <div class="flex items-start justify-between gap-4">
                             <div>
@@ -476,6 +501,7 @@
                         <a href="#daftar" data-program-modal-close class="mt-7 inline-flex w-full justify-center rounded-full bg-sky-600 px-6 py-4 font-black text-white shadow-lg shadow-sky-600/20">Daftar Program Ini</a>
                     </div>
                 </div>
+                @endforeach
             @endforeach
         @endif
 
@@ -922,6 +948,7 @@
 
         const programSearch = document.getElementById('program-search');
         const programItems = Array.from(document.querySelectorAll('[data-program-list-item]'));
+        const programHeadings = Array.from(document.querySelectorAll('[data-program-group-heading]'));
         const programSearchEmpty = document.getElementById('program-search-empty');
 
         function refreshProgramList() {
@@ -935,6 +962,11 @@
                 if (matches) {
                     visibleItems += 1;
                 }
+            });
+
+            programHeadings.forEach((heading) => {
+                const degree = heading.dataset.programGroupHeading || '';
+                heading.hidden = ! programItems.some((item) => item.dataset.programDegree === degree && ! item.hidden);
             });
 
             if (programSearchEmpty) {
