@@ -375,49 +375,52 @@
 
         <section id="program" class="px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div class="mx-auto max-w-7xl">
-                <div class="reveal mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                <div class="reveal mb-8 max-w-3xl">
                     <div>
                         <p class="text-sm font-black uppercase tracking-wide text-sky-700">Program Studi</p>
-                        <h2 class="mt-3 text-3xl font-black text-navy sm:text-5xl">Pilih jurusan sesuai rencana karier.</h2>
+                        <h2 class="mt-3 text-3xl font-black text-navy sm:text-5xl">Pilih jurusan sesuai rencana karier Anda</h2>
                     </div>
-                    <a href="#daftar" class="inline-flex rounded-full border border-slate-200 bg-white px-6 py-3 font-black text-navy shadow-sm transition hover:-translate-y-1">Daftar PMB</a>
                 </div>
-                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
+                <div class="reveal mb-6 max-w-xl">
+                    <label class="sr-only" for="program-search">Cari program studi</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"></i>
+                        <input id="program-search" type="search" placeholder="Cari program studi..." class="h-14 w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-base font-semibold text-slate-700 outline-none ring-blue-500/10 transition focus:border-blue-500 focus:ring-4">
+                    </div>
+                </div>
+
+                <div class="reveal overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                    <div id="program-list" class="grid md:grid-cols-2">
                     @forelse ($activePrograms as $program)
-                        <article class="reveal rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                            <div class="flex flex-wrap gap-2">
-                                <span class="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">{{ $program->degree_level ?: 'S1' }}</span>
-                                @if ($program->degree_title)
-                                    <span class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">{{ $program->degree_title }}</span>
-                                @endif
-                            </div>
-                            <h3 class="mt-5 text-2xl font-black text-navy">{{ $program->name }}</h3>
-                            @if ($program->faculty)
-                                <p class="mt-2 text-sm font-bold text-slate-500">{{ $program->faculty }}</p>
-                            @endif
-                            <p class="mt-2 font-semibold text-slate-500">Akreditasi {{ $program->accreditation ?: 'Baik' }}</p>
-                            <div class="mt-6 flex flex-wrap gap-3">
-                                <button type="button" data-program-modal-target="program-modal-{{ $program->id }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-navy transition hover:border-sky-300 hover:bg-sky-50">
-                                    Detail Program Studi
-                                </button>
-                                <a href="#daftar" class="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700">Daftar <i data-lucide="arrow-right" class="h-4 w-4"></i></a>
-                            </div>
-                        </article>
+                        <button
+                            type="button"
+                            data-program-list-item
+                            data-program-name="{{ strtolower($program->name) }}"
+                            data-program-modal-target="program-modal-{{ $program->id }}"
+                            class="group flex h-16 items-center justify-between gap-4 border-b border-[#E5E7EB] px-5 text-left transition hover:bg-[#F8FAFC] md:px-6 md:odd:border-r"
+                        >
+                            <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $program->name }}</span>
+                            <span class="text-xl font-bold text-slate-400 transition group-hover:translate-x-1 group-hover:text-[#2563EB]">→</span>
+                        </button>
                     @empty
                         @foreach ($programFallbacks as $program)
-                            <article class="reveal rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                                <span class="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">{{ $program['degree'] }}</span>
-                                <h3 class="mt-5 text-2xl font-black text-navy">{{ $program['name'] }}</h3>
-                                <p class="mt-2 font-semibold text-slate-500">Akreditasi {{ $program['accreditation'] }}</p>
-                                <div class="mt-6 flex flex-wrap gap-3">
-                                    <button type="button" data-program-modal-target="program-fallback-modal-{{ $loop->iteration }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-navy transition hover:border-sky-300 hover:bg-sky-50">
-                                        Detail Program Studi
-                                    </button>
-                                    <a href="#daftar" class="inline-flex items-center gap-2 rounded-full bg-sky-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700">Daftar <i data-lucide="arrow-right" class="h-4 w-4"></i></a>
-                                </div>
-                            </article>
+                            <button
+                                type="button"
+                                data-program-list-item
+                                data-program-name="{{ strtolower($program['name']) }}"
+                                data-program-modal-target="program-fallback-modal-{{ $loop->iteration }}"
+                                class="group flex h-16 items-center justify-between gap-4 border-b border-[#E5E7EB] px-5 text-left transition hover:bg-[#F8FAFC] md:px-6 md:odd:border-r"
+                            >
+                                <span class="text-base font-bold text-[#0F172A] transition group-hover:text-[#2563EB]">{{ $program['name'] }}</span>
+                                <span class="text-xl font-bold text-slate-400 transition group-hover:translate-x-1 group-hover:text-[#2563EB]">→</span>
+                            </button>
                         @endforeach
                     @endforelse
+                    </div>
+                    <div id="program-search-empty" hidden class="px-5 py-6 text-sm font-bold text-slate-500 md:px-6">
+                        Program studi tidak ditemukan.
+                    </div>
                 </div>
             </div>
         </section>
@@ -916,6 +919,31 @@
         });
         window.addEventListener('resize', updateNewsCarousel);
         updateNewsCarousel();
+
+        const programSearch = document.getElementById('program-search');
+        const programItems = Array.from(document.querySelectorAll('[data-program-list-item]'));
+        const programSearchEmpty = document.getElementById('program-search-empty');
+
+        function refreshProgramList() {
+            const term = programSearch?.value.toLowerCase().trim() || '';
+            let visibleItems = 0;
+
+            programItems.forEach((item) => {
+                const matches = ! term || (item.dataset.programName || '').includes(term);
+                item.hidden = ! matches;
+
+                if (matches) {
+                    visibleItems += 1;
+                }
+            });
+
+            if (programSearchEmpty) {
+                programSearchEmpty.hidden = visibleItems > 0;
+            }
+        }
+
+        programSearch?.addEventListener('input', refreshProgramList);
+        refreshProgramList();
 
         const feeStudyProgram = document.getElementById('fee-study-program');
         const feeClassTrack = document.getElementById('fee-class-track');
