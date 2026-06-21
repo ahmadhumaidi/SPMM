@@ -7,42 +7,52 @@
     $fees = $campus->feeSchemes;
     $firstTrack = $activeTracks->first();
     $lowestRegistration = $fees->where('registration_fee', '>', 0)->min('registration_fee') ?? 100000;
-    $averageMonthlyInstallment = function ($fee): ?int {
+    $secondInstallment = function ($fee): ?int {
         $schedule = $fee->uses_custom_installments
             ? ($fee->custom_installment_schedule_json ?: $fee->installment_schedule_json)
             : $fee->installment_schedule_json;
 
-        $monthlyAmounts = collect($schedule ?: [])
-            ->map(function (array $row): int {
+        $installmentTotal = function (array $row): int {
+            $installment = (int) ($row['development_fee'] ?? 0)
+                + (int) ($row['tuition_fee'] ?? 0)
+                + (int) ($row['ukt'] ?? 0);
+
+            return $installment > 0 ? $installment : (int) ($row['total'] ?? 0);
+        };
+
+        $rows = collect($schedule ?: [])->values();
+        $secondRow = $rows->first(fn (array $row, int $index): bool => (int) ($row['month'] ?? ($index + 1)) === 2);
+        $secondTotal = $secondRow ? $installmentTotal($secondRow) : 0;
+
+        if ($secondTotal > 0) {
+            return $secondTotal;
+        }
+
+        return $rows
+            ->map(function (array $row) use ($installmentTotal): int {
                 $installment = (int) ($row['development_fee'] ?? 0)
                     + (int) ($row['tuition_fee'] ?? 0)
                     + (int) ($row['ukt'] ?? 0);
 
-                return $installment > 0 ? $installment : (int) ($row['total'] ?? 0);
+                return $installment > 0 ? $installment : $installmentTotal($row);
             })
             ->filter(fn (int $amount): bool => $amount > 0)
-            ->values();
-
-        if ($monthlyAmounts->isEmpty()) {
-            return null;
-        }
-
-        return (int) ceil($monthlyAmounts->avg());
+            ->first();
     };
     $lowestMonthly = $fees
         ->where('is_active', true)
-        ->map($averageMonthlyInstallment)
+        ->map($secondInstallment)
         ->filter()
         ->min() ?? 560000;
     $feeSummaries = $fees
         ->where('is_active', true)
-        ->map(function ($fee) use ($averageMonthlyInstallment) {
+        ->map(function ($fee) use ($secondInstallment) {
             $registration = (int) $fee->registration_fee;
             $development = (int) $fee->building_fee;
             $tuitionPerSemester = (int) $fee->monthly_tuition_fee;
             $ukt = (int) $fee->ukt_total;
             $heregistration = (int) $fee->total_initial_payment;
-            $monthlyInstallment = $averageMonthlyInstallment($fee);
+            $monthlyInstallment = $secondInstallment($fee);
 
             return [
                 'study_program_id' => $fee->study_program_id,
