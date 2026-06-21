@@ -2,6 +2,21 @@
 
 namespace App\Providers;
 
+use App\Models\Campus;
+use App\Models\ClassTrack;
+use App\Models\EducationNews;
+use App\Models\FeeScheme;
+use App\Models\Invoice;
+use App\Models\Lead;
+use App\Models\ReferralPartner;
+use App\Models\StudentBiodata;
+use App\Models\StudentDocument;
+use App\Models\StudentNumber;
+use App\Models\StudentPayment;
+use App\Models\StudentProfile;
+use App\Models\StudyProgram;
+use App\Models\User;
+use App\Observers\AuditModelObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        foreach ($this->auditedModels() as $model) {
+            $model::observe(AuditModelObserver::class);
+        }
+
         RateLimiter::for('payment-webhooks', function (Request $request) {
             return Limit::perMinute(120)->by($request->ip());
         });
@@ -22,5 +41,28 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('meta-leads', function (Request $request) {
             return Limit::perMinute(120)->by($request->ip());
         });
+    }
+
+    /**
+     * @return array<int, class-string<\Illuminate\Database\Eloquent\Model>>
+     */
+    private function auditedModels(): array
+    {
+        return [
+            Campus::class,
+            StudyProgram::class,
+            ClassTrack::class,
+            FeeScheme::class,
+            Lead::class,
+            Invoice::class,
+            StudentProfile::class,
+            StudentBiodata::class,
+            StudentDocument::class,
+            StudentNumber::class,
+            StudentPayment::class,
+            EducationNews::class,
+            ReferralPartner::class,
+            User::class,
+        ];
     }
 }

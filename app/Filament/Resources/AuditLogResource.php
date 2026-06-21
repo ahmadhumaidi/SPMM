@@ -12,6 +12,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 class AuditLogResource extends Resource
 {
@@ -42,11 +43,19 @@ class AuditLogResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('event')->badge()->searchable(),
-                TextColumn::make('user.name')->placeholder('System')->searchable(),
+                TextColumn::make('event')
+                    ->label('Aktivitas')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => self::eventLabel($state))
+                    ->searchable(),
+                TextColumn::make('user.name')
+                    ->label('User')
+                    ->placeholder('Sistem')
+                    ->searchable(),
                 TextColumn::make('auditable_type')->label('Model')->formatStateUsing(fn (?string $state): string => class_basename($state ?? '-')),
+                TextColumn::make('metadata.label')->label('Data')->searchable(),
                 TextColumn::make('auditable_id')->label('ID'),
-                TextColumn::make('created_at')->dateTime()->sortable(),
+                TextColumn::make('created_at')->label('Waktu')->dateTime()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('event')
@@ -58,6 +67,25 @@ class AuditLogResource extends Resource
     public static function canCreate(): bool
     {
         return false;
+    }
+
+    private static function eventLabel(string $event): string
+    {
+        return match ($event) {
+            'model_created' => 'Data dibuat',
+            'model_updated' => 'Data diubah',
+            'model_deleted' => 'Data dihapus',
+            'lead_created' => 'Lead dibuat',
+            'lead_assigned' => 'Lead dibagikan',
+            'invoice_created' => 'Invoice dibuat',
+            'invoice_paid' => 'Invoice lunas',
+            'invoice_expired' => 'Invoice expired',
+            'invoice_regenerated' => 'Invoice dibuat ulang',
+            'student_profile_completed' => 'Biodata selesai',
+            'enrollment_status_changed' => 'Status enrollment berubah',
+            'nim_issued' => 'NIM diterbitkan',
+            default => Str::headline(str_replace('_', ' ', $event)),
+        };
     }
 
     public static function getPages(): array
