@@ -36,7 +36,6 @@
         ->min() ?? 560000;
     $feeSummaries = $fees
         ->where('is_active', true)
-        ->take(6)
         ->map(function ($fee) {
             $registration = (int) $fee->registration_fee;
             $development = (int) $fee->building_fee;
@@ -45,6 +44,8 @@
             $heregistration = (int) $fee->total_initial_payment;
 
             return [
+                'study_program_id' => $fee->study_program_id,
+                'class_track_id' => $fee->class_track_id,
                 'program' => $fee->studyProgram?->name ?? 'Semua Program Studi',
                 'track' => $fee->classTrack?->name ?? 'Semua Program Perkuliahan',
                 'model' => $fee->financing_model === 'ukt' ? 'UKT' : 'SPB + SPP',
@@ -512,8 +513,46 @@
                         </div>
                     @else
                         <div class="mt-6 grid gap-4 lg:grid-cols-2">
+                            <label class="grid gap-2 text-sm font-black text-navy">
+                                Pilih Program Studi
+                                <select id="fee-study-program" class="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-700 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4">
+                                    <option value="">Pilih program studi dulu</option>
+                                    @foreach ($activePrograms as $program)
+                                        <option value="{{ $program->id }}">{{ $program->degree_level }} {{ $program->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="grid gap-2 text-sm font-black text-navy">
+                                Pilih Program Perkuliahan
+                                <select id="fee-class-track" disabled class="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-700 outline-none ring-sky-500/20 transition disabled:bg-slate-100 disabled:text-slate-400 focus:border-sky-500 focus:ring-4">
+                                    <option value="">Pilih prodi terlebih dahulu</option>
+                                    @foreach ($activeTracks as $track)
+                                        <option value="{{ $track->id }}">{{ $track->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        </div>
+
+                        <div id="fee-selection-empty" class="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                            <p class="font-black text-navy">Pilih prodi dan program perkuliahan.</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">Rincian biaya akan tampil setelah calon mahasiswa memilih kombinasi program yang diinginkan.</p>
+                        </div>
+
+                        <div id="fee-selection-no-result" hidden class="mt-6 rounded-3xl border border-dashed border-orange-300 bg-orange-50 p-6">
+                            <p class="font-black text-navy">Skema biaya belum tersedia.</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">Belum ada fee scheme aktif untuk kombinasi prodi dan program perkuliahan ini. Silakan hubungi konsultan PMB.</p>
+                            <a href="{{ $whatsappUrl }}" class="mt-4 inline-flex rounded-full bg-gold px-5 py-3 text-sm font-black text-navy">Konsultasi biaya</a>
+                        </div>
+
+                        <div id="fee-selection-results" class="mt-6 grid gap-4 lg:grid-cols-2">
                             @foreach ($feeSummaries as $fee)
-                                <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                <div
+                                    hidden
+                                    data-fee-card
+                                    data-study-program-id="{{ $fee['study_program_id'] }}"
+                                    data-class-track-id="{{ $fee['class_track_id'] }}"
+                                    class="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+                                >
                                     <div class="flex flex-wrap items-start justify-between gap-3">
                                         <div>
                                             <p class="text-sm font-black text-sky-700">{{ $fee['model'] }}</p>
@@ -856,6 +895,80 @@
         });
         window.addEventListener('resize', updateNewsCarousel);
         updateNewsCarousel();
+
+        const feeStudyProgram = document.getElementById('fee-study-program');
+        const feeClassTrack = document.getElementById('fee-class-track');
+        const feeCards = Array.from(document.querySelectorAll('[data-fee-card]'));
+        const feeEmptyState = document.getElementById('fee-selection-empty');
+        const feeNoResultState = document.getElementById('fee-selection-no-result');
+        const allTrackOptions = feeClassTrack ? Array.from(feeClassTrack.options).slice(1) : [];
+
+        function feeCardMatchesStudyProgram(card, studyProgramId) {
+            const cardStudyProgramId = card.dataset.studyProgramId || '';
+
+            return cardStudyProgramId === '' || cardStudyProgramId === studyProgramId;
+        }
+
+        function feeCardMatchesClassTrack(card, classTrackId) {
+            const cardClassTrackId = card.dataset.classTrackId || '';
+
+            return cardClassTrackId === '' || cardClassTrackId === classTrackId;
+        }
+
+        function refreshFeeTrackOptions() {
+            if (!feeStudyProgram || !feeClassTrack) return;
+
+            const selectedStudyProgram = feeStudyProgram.value;
+            feeClassTrack.value = '';
+            feeClassTrack.disabled = ! selectedStudyProgram;
+            feeClassTrack.options[0].textContent = selectedStudyProgram ? 'Pilih program perkuliahan' : 'Pilih prodi terlebih dahulu';
+
+            const matchingCards = feeCards.filter((card) => feeCardMatchesStudyProgram(card, selectedStudyProgram));
+            const hasUniversalTrackFee = matchingCards.some((card) => (card.dataset.classTrackId || '') === '');
+            const availableTrackIds = new Set(matchingCards.map((card) => card.dataset.classTrackId || '').filter(Boolean));
+
+            allTrackOptions.forEach((option) => {
+                option.hidden = selectedStudyProgram ? (! hasUniversalTrackFee && ! availableTrackIds.has(option.value)) : false;
+            });
+        }
+
+        function refreshFeeCards() {
+            if (!feeStudyProgram || !feeClassTrack) return;
+
+            const selectedStudyProgram = feeStudyProgram.value;
+            const selectedClassTrack = feeClassTrack.value;
+            const isComplete = selectedStudyProgram && selectedClassTrack;
+            let visibleCards = 0;
+
+            feeCards.forEach((card) => {
+                const isVisible = Boolean(isComplete)
+                    && feeCardMatchesStudyProgram(card, selectedStudyProgram)
+                    && feeCardMatchesClassTrack(card, selectedClassTrack);
+
+                card.hidden = ! isVisible;
+
+                if (isVisible) {
+                    visibleCards += 1;
+                }
+            });
+
+            if (feeEmptyState) {
+                feeEmptyState.hidden = Boolean(isComplete);
+            }
+
+            if (feeNoResultState) {
+                feeNoResultState.hidden = ! isComplete || visibleCards > 0;
+            }
+        }
+
+        feeStudyProgram?.addEventListener('change', () => {
+            refreshFeeTrackOptions();
+            refreshFeeCards();
+        });
+
+        feeClassTrack?.addEventListener('change', refreshFeeCards);
+        refreshFeeTrackOptions();
+        refreshFeeCards();
 
         document.querySelectorAll('[data-program-modal-target]').forEach((button) => {
             button.addEventListener('click', () => {
