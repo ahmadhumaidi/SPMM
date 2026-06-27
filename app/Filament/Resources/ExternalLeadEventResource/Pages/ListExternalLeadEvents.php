@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ExternalLeadEventResource\Pages;
 
 use App\Filament\Resources\ExternalLeadEventResource;
+use App\Jobs\ImportMetaFormLeadsJob;
 use App\Services\MetaLeadImportService;
 use Filament\Actions;
 use Filament\Forms\Components\TextInput;
@@ -31,14 +32,18 @@ class ListExternalLeadEvents extends ListRecords
                         ->numeric()
                         ->default(100)
                         ->minValue(1)
-                        ->maxValue(500),
+                        ->maxValue(1000),
                 ])
-                ->action(function (array $data, MetaLeadImportService $importer): void {
-                    $result = $importer->importForm((string) $data['form_id'], (int) ($data['limit'] ?? 100));
+                ->action(function (array $data): void {
+                    ImportMetaFormLeadsJob::dispatch(
+                        (string) $data['form_id'],
+                        (int) ($data['limit'] ?? 100),
+                        auth()->id(),
+                    );
 
                     Notification::make()
-                        ->title('Import lead Meta selesai')
-                        ->body("Dibaca: {$result['seen']}. Baru: {$result['processed']}. Duplikat: {$result['duplicates']}. Gagal: {$result['failed']}.")
+                        ->title('Import lead Meta diproses')
+                        ->body('Import berjalan di background. Refresh halaman ini beberapa saat lagi untuk melihat status event dan lead yang masuk.')
                         ->success()
                         ->send();
                 }),
