@@ -163,7 +163,7 @@ class MetaLeadWebhookService
     private function resolveCampus(array $normalized): Campus
     {
         $configured = config('spmm.meta_leads.default_campus_id');
-        $campusValue = $this->firstValue($normalized, ['campus', 'kampus', 'kampus_tujuan', 'pilih_kampus']);
+        $campusValue = $this->firstValue($normalized, ['campus', 'kampus', 'kampus_tujuan', 'pilih_kampus', 'conditional_question_1']);
 
         if (filled($campusValue)) {
             $campus = Campus::query()
@@ -187,7 +187,7 @@ class MetaLeadWebhookService
     private function resolveStudyProgram(array $normalized, Campus $campus): StudyProgram
     {
         $configured = config('spmm.meta_leads.default_study_program_id');
-        $programValue = $this->firstValue($normalized, ['study_program', 'program_studi', 'prodi', 'jurusan']);
+        $programValue = $this->firstValue($normalized, ['study_program', 'program_studi', 'prodi', 'jurusan', 'conditional_question_2']);
 
         if (filled($programValue)) {
             $program = StudyProgram::query()
@@ -215,7 +215,7 @@ class MetaLeadWebhookService
     private function resolveClassTrack(array $normalized, Campus $campus): ClassTrack
     {
         $configured = config('spmm.meta_leads.default_class_track_id');
-        $trackValue = $this->firstValue($normalized, ['class_track', 'program_perkuliahan', 'program_kuliah', 'kelas']);
+        $trackValue = $this->firstValue($normalized, ['class_track', 'program_perkuliahan', 'program_kuliah', 'kelas', 'conditional_question_3']);
 
         if (filled($trackValue)) {
             $track = ClassTrack::query()

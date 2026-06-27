@@ -3,11 +3,24 @@
 namespace App\Filament\Resources\LeadResource\Pages;
 
 use App\Filament\Resources\LeadResource;
+use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLead extends EditRecord
 {
     protected static string $resource = LeadResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\Action::make('follow_up_whatsapp')
+                ->label('Follow Up WA')
+                ->icon('heroicon-o-phone')
+                ->url(fn (): ?string => LeadResource::whatsappFollowUpUrl($this->record))
+                ->openUrlInNewTab()
+                ->visible(fn (): bool => filled($this->record?->whatsapp_number)),
+        ];
+    }
 
     protected function afterSave(): void
     {

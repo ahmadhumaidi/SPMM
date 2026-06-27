@@ -295,6 +295,12 @@ class LeadResource extends Resource
                             Notification::make()->title($exception->getMessage())->danger()->send();
                         }
                     }),
+                Tables\Actions\Action::make('follow_up_whatsapp')
+                    ->label('Follow Up WA')
+                    ->icon('heroicon-o-phone')
+                    ->url(fn (Lead $record): ?string => static::whatsappFollowUpUrl($record))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Lead $record): bool => filled(static::normalizeWhatsappForUrl($record->whatsapp_number))),
                 Tables\Actions\EditAction::make()
                     ->label('Ubah'),
                 Tables\Actions\DeleteAction::make()
@@ -410,5 +416,42 @@ class LeadResource extends Resource
         }
 
         return $query->pluck('name', 'id')->all();
+    }
+
+    public static function whatsappFollowUpUrl(Lead $lead): ?string
+    {
+        $number = static::normalizeWhatsappForUrl($lead->whatsapp_number);
+
+        if (blank($number)) {
+            return null;
+        }
+
+        $staffName = auth()->user()?->name ?: 'Tim PMB';
+        $campusName = $lead->campus?->name ?: 'kampus pilihan Anda';
+        $programName = trim(($lead->studyProgram?->degree_level ? $lead->studyProgram->degree_level.' ' : '').($lead->studyProgram?->name ?? ''));
+        $programText = filled($programName) ? ' program '.$programName : '';
+
+        $message = "Halo {$lead->full_name}, saya {$staffName} dari Kampus Media. Saya ingin follow up pendaftaran Anda untuk {$campusName}{$programText}. Apakah masih berminat melanjutkan proses pendaftaran?";
+
+        return 'https://wa.me/'.$number.'?text='.rawurlencode($message);
+    }
+
+    protected static function normalizeWhatsappForUrl(?string $number): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            return '62'.substr($digits, 1);
+        }
+
+        if (str_starts_with($digits, '8')) {
+            return '62'.$digits;
+        }
+
+        return $digits;
     }
 }
