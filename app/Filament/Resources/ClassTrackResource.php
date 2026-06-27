@@ -95,6 +95,7 @@ class ClassTrackResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->label('Kampus')->sortable()->searchable(),
                 TextColumn::make('name')->label('Program')->searchable()->sortable(),
                 TextColumn::make('status')->label('Status')->badge(),

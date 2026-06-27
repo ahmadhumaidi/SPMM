@@ -71,6 +71,7 @@ class ReferralConversionResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('referralPartner.name')->label('Partner')->searchable(),
                 TextColumn::make('referralPartner.referral_code')->label('Kode')->searchable(),
                 TextColumn::make('lead.full_name')->label('Pendaftar')->searchable(),

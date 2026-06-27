@@ -88,6 +88,7 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('email')->searchable(),
                 TextColumn::make('phone')->searchable(),

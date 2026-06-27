@@ -349,6 +349,43 @@ body:has(.fi-modal-window),
     overflow: visible !important;
 }
 
+.fi-modal,
+.fi-modal-window,
+div[role="dialog"],
+div[aria-modal="true"] {
+    z-index: 100000 !important;
+}
+
+.fi-modal-window,
+.fi-modal-window form,
+.fi-modal-window .fi-section,
+.fi-modal-window .fi-section-content,
+.fi-modal-window .fi-fo-component-ctn,
+.fi-modal-window .fi-fo-field-wrp {
+    overflow: visible !important;
+}
+
+.fi-modal-window:has(.choices.is-open),
+.fi-modal-window .fi-fo-field-wrp:has(.choices.is-open),
+.fi-modal-window .choices,
+.fi-modal-window .choices.is-open {
+    position: relative !important;
+    z-index: 100010 !important;
+}
+
+.fi-modal-window .choices__list--dropdown,
+.fi-modal-window .choices__list[aria-expanded],
+.fi-modal-window .fi-dropdown-panel {
+    position: absolute !important;
+    z-index: 100020 !important;
+}
+
+.fi-ta,
+.fi-ta-ctn,
+.fi-ta-content {
+    z-index: 1 !important;
+}
+
 .fi-ta:has(.fi-dropdown-panel),
 .fi-ta-ctn:has(.fi-dropdown-panel),
 .fi-main:has(.fi-dropdown-panel),

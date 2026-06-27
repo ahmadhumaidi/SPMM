@@ -122,6 +122,7 @@ class ReferralPartnerResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('type')->label('Tipe')->badge(),
                 TextColumn::make('referral_code')->label('Kode')->copyable()->searchable(),

@@ -46,6 +46,7 @@ class WhatsappMessageResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('recipient_number')->searchable(),
                 TextColumn::make('lead.full_name')->searchable()->placeholder('-'),
                 TextColumn::make('template_key')->badge(),

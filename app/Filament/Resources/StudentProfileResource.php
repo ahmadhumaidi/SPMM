@@ -60,6 +60,7 @@ class StudentProfileResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('lead.full_name')->searchable()->sortable(),
                 TextColumn::make('nik')->searchable(),
                 TextColumn::make('nisn')->searchable(),

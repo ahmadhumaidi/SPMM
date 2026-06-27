@@ -240,7 +240,9 @@ class LeadResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('full_name')->searchable()->sortable(),
                 TextColumn::make('email')->searchable()->toggleable(),
                 TextColumn::make('campus.name')->sortable(),

@@ -150,6 +150,7 @@ class StudentPaymentResource extends Resource
                 Group::make('campus.name')->label('Kampus')->collapsible(),
             ])
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('id')->label('NO')->sortable(),
                 TextColumn::make('studentBiodata.selection_number')
                     ->label('NO. SELEKSI')

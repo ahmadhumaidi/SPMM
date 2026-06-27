@@ -122,6 +122,7 @@ class CampusResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 ImageColumn::make('logo_path')
                     ->label('Logo')
                     ->disk('public')

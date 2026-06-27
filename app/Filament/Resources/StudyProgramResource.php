@@ -289,6 +289,7 @@ class StudyProgramResource extends Resource
                     ->collapsible(),
             ])
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->sortable()->searchable(),
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('name')->searchable()->sortable(),

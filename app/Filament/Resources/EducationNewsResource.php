@@ -158,7 +158,9 @@ class EducationNewsResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 ImageColumn::make('image_path')
                     ->label('Gambar')
                     ->disk('public')

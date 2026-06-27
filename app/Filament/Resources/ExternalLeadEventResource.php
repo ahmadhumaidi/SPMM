@@ -74,6 +74,7 @@ class ExternalLeadEventResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('provider')->badge()->sortable(),
                 TextColumn::make('external_id')->label('Leadgen ID')->searchable()->copyable(),
                 TextColumn::make('status')->badge()->sortable(),

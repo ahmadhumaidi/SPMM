@@ -53,6 +53,7 @@ class CourseResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->label('Kampus')->searchable(),
                 TextColumn::make('studyProgram.name')->label('Prodi')->searchable(),
                 TextColumn::make('code')->label('Kode')->searchable()->sortable(),

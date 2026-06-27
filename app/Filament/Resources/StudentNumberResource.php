@@ -41,6 +41,7 @@ class StudentNumberResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('nim')->searchable()->sortable(),
                 TextColumn::make('lead.full_name')->searchable(),
                 TextColumn::make('lead.campus.name')->sortable(),

@@ -73,6 +73,7 @@ class LmsSubmissionResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('assignment.module.courseClass.course.name')->label('Mata Kuliah')->searchable(),
                 TextColumn::make('assignment.title')->label('Tugas')->searchable(),
                 TextColumn::make('lead.full_name')->label('Mahasiswa')->searchable(),

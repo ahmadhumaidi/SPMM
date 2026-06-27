@@ -55,6 +55,7 @@ class AcademicTermResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->label('Kampus')->searchable()->sortable(),
                 TextColumn::make('name')->label('Periode')->searchable()->sortable(),
                 TextColumn::make('academic_year')->label('Tahun')->sortable(),

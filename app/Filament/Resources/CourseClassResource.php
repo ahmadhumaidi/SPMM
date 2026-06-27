@@ -59,6 +59,7 @@ class CourseClassResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('academicTerm.name')->label('Periode')->searchable(),
                 TextColumn::make('course.code')->label('Kode')->searchable(),
                 TextColumn::make('course.name')->label('Mata Kuliah')->searchable(),

@@ -44,6 +44,7 @@ class PaymentEventResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('invoice.invoice_number')->searchable()->placeholder('-'),
                 TextColumn::make('gateway_reference')->searchable(),
                 TextColumn::make('event_type')->badge(),

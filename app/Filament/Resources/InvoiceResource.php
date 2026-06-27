@@ -60,6 +60,7 @@ class InvoiceResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('invoice_number')->searchable()->sortable(),
                 TextColumn::make('lead.full_name')->searchable(),
                 TextColumn::make('amount')->money('IDR')->sortable(),

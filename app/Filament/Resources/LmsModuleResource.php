@@ -62,6 +62,7 @@ class LmsModuleResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('courseClass.course.name')->label('Mata Kuliah')->searchable(),
                 TextColumn::make('courseClass.class_name')->label('Kelas'),
                 TextColumn::make('title')->label('Modul')->searchable(),

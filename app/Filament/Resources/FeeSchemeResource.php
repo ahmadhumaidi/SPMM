@@ -581,6 +581,7 @@ class FeeSchemeResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->searchable()->sortable(),
                 TextColumn::make('studyProgram.name')->placeholder('Semua prodi'),
                 TextColumn::make('classTrack.name')->label('Program perkuliahan')->placeholder('Semua program'),

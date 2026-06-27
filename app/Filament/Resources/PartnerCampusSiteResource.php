@@ -259,6 +259,7 @@ class PartnerCampusSiteResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('name')
                     ->label('Kampus')
                     ->searchable()

@@ -80,6 +80,7 @@ class StudyPlanResource extends Resource
     {
         return $table
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('lead.full_name')->label('Mahasiswa')->searchable(),
                 TextColumn::make('lead.campus.name')->label('Kampus'),
                 TextColumn::make('academicTerm.name')->label('Periode')->searchable(),

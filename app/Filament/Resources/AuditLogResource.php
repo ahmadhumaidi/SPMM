@@ -43,6 +43,7 @@ class AuditLogResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
+                \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('event')
                     ->label('Aktivitas')
                     ->badge()
