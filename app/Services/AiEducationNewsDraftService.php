@@ -61,7 +61,7 @@ class AiEducationNewsDraftService
         $payload = $this->normalizeSeoPayload($payload);
         $this->ensureOpenAiConfigured();
 
-        $trendContext = $this->trendContext($payload['topik_artikel'].' '.$payload['keyword_utama']);
+        $trendContext = $this->seoTrendContext($payload['topik_artikel'].' '.$payload['keyword_utama']);
         $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
         $source = [
             'source_name' => 'Kampus Media AI',
@@ -72,7 +72,7 @@ class AiEducationNewsDraftService
             'published_at' => null,
         ];
         $article = $this->generateKeywordArticle($payload, $trendContext, $editorialKnowledge);
-        $imagePath = $this->generateCoverImagePath($article, $source, $payload['topik_artikel'], $editorialKnowledge);
+        $imagePath = $this->generateFastCoverImagePath($article, $source, $payload['topik_artikel'], $editorialKnowledge);
 
         $news = EducationNews::query()->create([
             'title' => $article['title'],
@@ -532,6 +532,29 @@ class AiEducationNewsDraftService
         ];
     }
 
+    private function seoTrendContext(?string $topic = null): array
+    {
+        return [
+            'topic' => $topic,
+            'education_keywords' => config('spmm.ai_news.trend_keywords', []),
+            'google_trends_indonesia' => [],
+            'seo_focus' => [
+                'kampus terpercaya',
+                'jurusan kuliah',
+                'prospek kerja',
+                'kuliah karyawan',
+                'kelas karyawan',
+                'kuliah online',
+                'hybrid learning',
+                'program RPL',
+                'biaya kuliah',
+                'PDDIKTI',
+                'akreditasi BAN-PT/LAM',
+            ],
+            'editorial_rule' => 'Gunakan keyword pendidikan sebagai inspirasi sudut pandang. Hindari klaim statistik tanpa sumber.',
+        ];
+    }
+
     private function keywordIntent(string $keyword): string
     {
         $text = Str::lower($keyword);
@@ -785,6 +808,17 @@ PROMPT)->squish()->toString();
         if (filled($aiImagePath)) {
             return $aiImagePath;
         }
+
+        return $this->generateFallbackCoverImage($article, $topic, $slug);
+    }
+
+    private function generateFastCoverImagePath(array $article, array $source, ?string $topic = null, array $editorialKnowledge = []): ?string
+    {
+        if (! config('spmm.ai_news.generate_cover_image', true)) {
+            return null;
+        }
+
+        $slug = Str::slug($article['title'] ?? $source['title'] ?? 'artikel-seo') ?: 'artikel-seo';
 
         return $this->generateFallbackCoverImage($article, $topic, $slug);
     }
