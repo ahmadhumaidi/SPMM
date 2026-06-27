@@ -7,6 +7,7 @@ use App\Jobs\ImportMetaFormLeadsJob;
 use App\Services\MetaLeadImportService;
 use Filament\Actions;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 
@@ -33,12 +34,17 @@ class ListExternalLeadEvents extends ListRecords
                         ->default(100)
                         ->minValue(1)
                         ->maxValue(1000),
+                    Toggle::make('reprocess_existing')
+                        ->label('Proses ulang lead yang sudah pernah diimport')
+                        ->helperText('Aktifkan jika mapping kampus/prodi sebelumnya salah. Sistem akan memperbaiki lead lama, bukan membuat double.')
+                        ->default(false),
                 ])
                 ->action(function (array $data): void {
                     ImportMetaFormLeadsJob::dispatch(
                         (string) $data['form_id'],
                         (int) ($data['limit'] ?? 100),
                         auth()->id(),
+                        (bool) ($data['reprocess_existing'] ?? false),
                     );
 
                     Notification::make()
@@ -59,7 +65,7 @@ class ListExternalLeadEvents extends ListRecords
                         ->numeric(),
                 ])
                 ->action(function (array $data, MetaLeadImportService $importer): void {
-                    $event = $importer->importLead((string) $data['leadgen_id']);
+                    $event = $importer->importLead((string) $data['leadgen_id'], true);
 
                     Notification::make()
                         ->title('Import lead Meta selesai')

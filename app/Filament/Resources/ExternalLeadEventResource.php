@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExternalLeadEventResource\Pages;
 use App\Models\ExternalLeadEvent;
+use App\Services\MetaLeadImportService;
 use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Section;
@@ -93,7 +94,18 @@ class ExternalLeadEventResource extends Resource
                 Tables\Filters\SelectFilter::make('provider')
                     ->options(['meta' => 'Meta']),
             ])
-            ->actions([Tables\Actions\ViewAction::make()]);
+            ->actions([
+                Tables\Actions\Action::make('reprocess')
+                    ->label('Proses Ulang')
+                    ->icon('heroicon-o-arrow-path')
+                    ->requiresConfirmation()
+                    ->modalHeading('Proses ulang lead Meta?')
+                    ->modalDescription('Sistem akan mengambil ulang detail Meta dan memperbaiki mapping kampus, prodi, serta program perkuliahan pada lead yang sudah terkait.')
+                    ->action(function (ExternalLeadEvent $record, MetaLeadImportService $importer): void {
+                        $importer->importLead($record->external_id, true);
+                    }),
+                Tables\Actions\ViewAction::make(),
+            ]);
     }
 
     public static function canCreate(): bool

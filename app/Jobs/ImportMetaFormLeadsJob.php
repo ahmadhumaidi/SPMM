@@ -19,18 +19,20 @@ class ImportMetaFormLeadsJob implements ShouldQueue
         public readonly string $formId,
         public readonly int $limit = 100,
         public readonly ?int $requestedByUserId = null,
+        public readonly bool $reprocessExisting = false,
     ) {
         $this->onQueue('default');
     }
 
     public function handle(MetaLeadImportService $importer): void
     {
-        $result = $importer->importForm($this->formId, $this->limit);
+        $result = $importer->importForm($this->formId, $this->limit, $this->reprocessExisting);
 
         Log::info('Meta lead form import finished.', [
             'form_id' => $this->formId,
             'limit' => $this->limit,
             'requested_by_user_id' => $this->requestedByUserId,
+            'reprocess_existing' => $this->reprocessExisting,
             'result' => $result,
         ]);
     }

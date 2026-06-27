@@ -18,7 +18,7 @@ class MetaLeadWebhookService
     ) {
     }
 
-    public function handleLeadgen(array $change, array $entry): ExternalLeadEvent
+    public function handleLeadgen(array $change, array $entry, bool $reprocessExisting = false): ExternalLeadEvent
     {
         $value = $change['value'] ?? [];
         $leadgenId = (string) ($value['leadgen_id'] ?? $value['leadgenId'] ?? '');
@@ -46,7 +46,7 @@ class MetaLeadWebhookService
             ],
         );
 
-        if ($event->wasRecentlyCreated === false && $event->lead_id) {
+        if ($event->wasRecentlyCreated === false && $event->lead_id && ! $reprocessExisting) {
             $event->update(['status' => 'duplicate']);
 
             return $event;
@@ -56,14 +56,16 @@ class MetaLeadWebhookService
             $leadPayload = $this->fetchLeadPayload($leadgenId);
             $normalized = $this->normalizeLeadPayload($leadPayload, $value);
             $registrationData = $this->registrationData($normalized, $leadPayload, $value);
-            $result = $this->registration->register($registrationData);
+            $lead = $event->lead_id && $reprocessExisting
+                ? $this->updateExistingLead($event, $registrationData)
+                : $this->registration->register($registrationData)['lead'];
 
             $event->update([
                 'status' => 'processed',
                 'campus_id' => $registrationData['campus_id'],
                 'study_program_id' => $registrationData['study_program_id'],
                 'class_track_id' => $registrationData['class_track_id'],
-                'lead_id' => $result['lead']->id,
+                'lead_id' => $lead->id,
                 'normalized_payload_json' => [
                     'field_data' => $normalized,
                     'registration_data' => Arr::except($registrationData, ['referral_code']),
@@ -82,6 +84,21 @@ class MetaLeadWebhookService
         }
 
         return $event;
+    }
+
+    private function updateExistingLead(ExternalLeadEvent $event, array $registrationData): \App\Models\Lead
+    {
+        $lead = $event->lead()->firstOrFail();
+
+        $lead->update([
+            'campus_id' => $registrationData['campus_id'],
+            'study_program_id' => $registrationData['study_program_id'],
+            'class_track_id' => $registrationData['class_track_id'],
+            'source_channel' => $registrationData['source_channel'],
+            'source_detail' => $registrationData['source_detail'],
+        ]);
+
+        return $lead;
     }
 
     private function fetchLeadPayload(string $leadgenId): array
@@ -166,11 +183,7 @@ class MetaLeadWebhookService
         $campusValue = $this->firstValue($normalized, ['campus', 'kampus', 'kampus_tujuan', 'pilih_kampus', 'conditional_question_1']);
 
         if (filled($campusValue)) {
-            $campus = Campus::query()
-                ->where('name', 'like', '%'.$campusValue.'%')
-                ->orWhere('slug', Str::slug($campusValue))
-                ->orWhere('subdomain', Str::slug($campusValue))
-                ->first();
+            $campus = $this->findCampusByMetaValue((string) $campusValue);
 
             if ($campus) {
                 return $campus;
@@ -184,19 +197,34 @@ class MetaLeadWebhookService
         return Campus::query()->orderBy('name')->firstOrFail();
     }
 
+    private function findCampusByMetaValue(string $campusValue): ?Campus
+    {
+        $needle = $this->normalizeComparableText($campusValue);
+        $slug = Str::slug($campusValue);
+
+        return Campus::query()
+            ->orderByRaw('length(name) desc')
+            ->get()
+            ->first(function (Campus $campus) use ($needle, $slug): bool {
+                $name = $this->normalizeComparableText((string) $campus->name);
+                $campusSlug = (string) $campus->slug;
+                $subdomain = (string) $campus->subdomain;
+
+                return $needle === $name
+                    || ($name !== '' && str_contains($needle, $name))
+                    || ($needle !== '' && str_contains($name, $needle))
+                    || ($campusSlug !== '' && ($slug === $campusSlug || str_contains($slug, $campusSlug)))
+                    || ($subdomain !== '' && ($slug === $subdomain || str_contains($slug, $subdomain)));
+            });
+    }
+
     private function resolveStudyProgram(array $normalized, Campus $campus): StudyProgram
     {
         $configured = config('spmm.meta_leads.default_study_program_id');
         $programValue = $this->firstValue($normalized, ['study_program', 'program_studi', 'prodi', 'jurusan', 'conditional_question_2']);
 
         if (filled($programValue)) {
-            $program = StudyProgram::query()
-                ->where('campus_id', $campus->id)
-                ->where(function ($query) use ($programValue): void {
-                    $query->where('name', 'like', '%'.$programValue.'%')
-                        ->orWhereRaw("lower(degree_level || ' ' || name) like ?", ['%'.Str::lower($programValue).'%']);
-                })
-                ->first();
+            $program = $this->findStudyProgramByMetaValue((string) $programValue, $campus);
 
             if ($program) {
                 return $program;
@@ -210,6 +238,30 @@ class MetaLeadWebhookService
         }
 
         return StudyProgram::query()->where('campus_id', $campus->id)->orderBy('degree_level')->orderBy('name')->firstOrFail();
+    }
+
+    private function findStudyProgramByMetaValue(string $programValue, Campus $campus): ?StudyProgram
+    {
+        $needle = $this->normalizeComparableText($programValue);
+        $withoutDegree = $this->normalizeComparableText((string) preg_replace('/^(d3|d4|s1|s2|s3|profesi)\s*[-:]?\s*/i', '', $programValue));
+
+        return StudyProgram::query()
+            ->where('campus_id', $campus->id)
+            ->orderBy('degree_level')
+            ->orderBy('name')
+            ->get()
+            ->first(function (StudyProgram $program) use ($needle, $withoutDegree): bool {
+                $name = $this->normalizeComparableText((string) $program->name);
+                $degreeAndName = $this->normalizeComparableText(trim((string) $program->degree_level.' '.(string) $program->name));
+
+                return $needle === $name
+                    || $needle === $degreeAndName
+                    || ($needle !== '' && str_contains($degreeAndName, $needle))
+                    || ($name !== '' && str_contains($needle, $name))
+                    || ($withoutDegree !== '' && str_contains($name, $withoutDegree))
+                    || ($withoutDegree !== '' && str_contains($withoutDegree, $name))
+                    || ($withoutDegree !== '' && str_contains($degreeAndName, $withoutDegree));
+            });
     }
 
     private function resolveClassTrack(array $normalized, Campus $campus): ClassTrack
@@ -246,5 +298,15 @@ class MetaLeadWebhookService
         }
 
         return null;
+    }
+
+    private function normalizeComparableText(string $value): string
+    {
+        return Str::of($value)
+            ->lower()
+            ->replace(['.', ',', '-', '/', '\\', '&'], ' ')
+            ->replaceMatches('/\s+/', ' ')
+            ->trim()
+            ->toString();
     }
 }

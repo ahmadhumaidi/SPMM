@@ -12,7 +12,7 @@ class MetaLeadImportService
     ) {
     }
 
-    public function importForm(string $formId, int $limit = 100): array
+    public function importForm(string $formId, int $limit = 100, bool $reprocessExisting = false): array
     {
         $token = config('spmm.meta_leads.page_access_token');
 
@@ -60,7 +60,7 @@ class MetaLeadImportService
                     'id' => config('spmm.meta_leads.page_id'),
                     'time' => now()->timestamp,
                     'source' => 'manual_import',
-                ]);
+                ], $reprocessExisting);
 
                 if ($event->status === 'processed') {
                     $processed++;
@@ -79,7 +79,7 @@ class MetaLeadImportService
         return compact('processed', 'duplicates', 'failed', 'seen');
     }
 
-    public function importLead(string $leadgenId): ExternalLeadEvent
+    public function importLead(string $leadgenId, bool $reprocessExisting = true): ExternalLeadEvent
     {
         return $this->webhookService->handleLeadgen([
             'field' => 'leadgen',
@@ -88,6 +88,6 @@ class MetaLeadImportService
             'id' => config('spmm.meta_leads.page_id'),
             'time' => now()->timestamp,
             'source' => 'manual_import',
-        ]);
+        ], $reprocessExisting);
     }
 }
