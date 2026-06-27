@@ -101,6 +101,12 @@ class CampusResource extends Resource
                         ->visibility('public')
                         ->maxSize(2048)
                         ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                        ->maxFiles(1)
+                        ->fetchFileInformation(false)
+                        ->deletable()
+                        ->downloadable()
+                        ->openable()
+                        ->previewable()
                         ->helperText('Upload PNG, JPG, atau WebP maksimal 2 MB.')
                         ->columnSpanFull(),
                 ]),

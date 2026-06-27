@@ -243,16 +243,19 @@
                     </div>
                 </div>
                 <div class="reveal">
-                    <p class="text-sm font-black uppercase tracking-wide text-sky-700">Program Populer</p>
-                    <h2 class="mt-3 text-3xl font-black tracking-normal text-navy sm:text-5xl">Banyak pilihan jurusan untuk karier masa depan.</h2>
-                    <div class="mt-6 flex flex-wrap gap-3">
-                        @forelse ($popularPrograms as $program)
-                            <span class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-700">{{ $program }}</span>
-                        @empty
-                            @foreach (['Manajemen', 'Akuntansi', 'Teknik Informatika', 'Sistem Informasi', 'Bisnis Digital', 'Ilmu Hukum', 'Psikologi', 'Ilmu Komunikasi'] as $program)
-                                <span class="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-black text-slate-700">{{ $program }}</span>
-                            @endforeach
-                        @endforelse
+                    <p class="text-sm font-black uppercase tracking-wide text-sky-700">Dampak Kampus Media</p>
+                    <h2 class="mt-3 text-3xl font-black tracking-normal text-navy sm:text-5xl">Semakin banyak calon mahasiswa memulai perjalanan kuliahnya di sini.</h2>
+                    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
+                            <span class="text-sm font-black uppercase tracking-wide text-sky-700">Yang sudah daftar melalui Kampus Media</span>
+                            <strong class="mt-3 block text-4xl font-black text-navy sm:text-5xl">1000+</strong>
+                            <p class="mt-2 text-lg font-bold text-slate-600">Mahasiswa</p>
+                        </div>
+                        <div class="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
+                            <span class="text-sm font-black uppercase tracking-wide text-sky-700">Alumni</span>
+                            <strong class="mt-3 block text-4xl font-black text-navy sm:text-5xl">300+</strong>
+                            <p class="mt-2 text-lg font-bold text-slate-600">Alumni</p>
+                        </div>
                     </div>
                     <a href="#kampus" class="mt-8 inline-flex rounded-full bg-gold px-7 py-4 font-black text-navy shadow-lg shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">Lihat Kampus</a>
                 </div>

@@ -115,6 +115,12 @@ class EducationNewsResource extends Resource
                         ->disk('public')
                         ->directory('education-news')
                         ->visibility('public')
+                        ->maxFiles(1)
+                        ->fetchFileInformation(false)
+                        ->deletable()
+                        ->downloadable()
+                        ->openable()
+                        ->previewable()
                         ->columnSpanFull(),
                     Textarea::make('excerpt')
                         ->label('Ringkasan')

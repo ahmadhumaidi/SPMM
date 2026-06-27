@@ -123,8 +123,16 @@ class PartnerCampusSiteResource extends Resource
                     FileUpload::make('website_settings.hero_image_path')
                         ->label('Gambar mahasiswa / kampus')
                         ->image()
+                        ->disk('public')
                         ->directory('campus-website')
+                        ->visibility('public')
                         ->imageEditor()
+                        ->maxFiles(1)
+                        ->fetchFileInformation(false)
+                        ->deletable()
+                        ->downloadable()
+                        ->openable()
+                        ->previewable()
                         ->columnSpanFull(),
                 ]),
             Section::make('Kontak & Promo')
@@ -181,7 +189,13 @@ class PartnerCampusSiteResource extends Resource
                                 ->imageEditor()
                                 ->disk('public')
                                 ->directory('campus-testimonials')
-                                ->visibility('public'),
+                                ->visibility('public')
+                                ->maxFiles(1)
+                                ->fetchFileInformation(false)
+                                ->deletable()
+                                ->downloadable()
+                                ->openable()
+                                ->previewable(),
                             TextInput::make('name')->label('Nama')->required()->maxLength(120),
                             TextInput::make('role')->label('Keterangan')->placeholder('Karyawan Swasta')->maxLength(120),
                             Textarea::make('quote')->label('Testimoni')->rows(3)->required(),
@@ -204,6 +218,12 @@ class PartnerCampusSiteResource extends Resource
                                 ->disk('public')
                                 ->directory('campus-gallery')
                                 ->visibility('public')
+                                ->maxFiles(1)
+                                ->fetchFileInformation(false)
+                                ->deletable()
+                                ->downloadable()
+                                ->openable()
+                                ->previewable()
                                 ->required(),
                             TextInput::make('title')
                                 ->label('Judul')
