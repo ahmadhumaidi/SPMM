@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EnrollmentStatus;
 use App\Enums\LeadStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\ProspectStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,7 @@ class Lead extends Model
         'origin_school',
         'graduation_year',
         'lead_status',
+        'prospect_status',
         'payment_status',
         'enrollment_status',
         'pemberkasan_token',
@@ -41,6 +43,7 @@ class Lead extends Model
         return [
             'graduation_year' => 'integer',
             'lead_status' => LeadStatus::class,
+            'prospect_status' => ProspectStatus::class,
             'payment_status' => PaymentStatus::class,
             'enrollment_status' => EnrollmentStatus::class,
             'locked_at' => 'datetime',
@@ -110,6 +113,11 @@ class Lead extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(LeadActivity::class);
+    }
+
+    public function prospectEvents(): HasMany
+    {
+        return $this->hasMany(LeadProspectEvent::class);
     }
 
     public function studentDocuments(): HasMany

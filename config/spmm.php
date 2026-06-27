@@ -106,4 +106,12 @@ return [
         'default_study_program_id' => env('META_LEADS_DEFAULT_STUDY_PROGRAM_ID'),
         'default_class_track_id' => env('META_LEADS_DEFAULT_CLASS_TRACK_ID'),
     ],
+
+    'meta_conversions' => [
+        'pixel_id' => env('META_CAPI_PIXEL_ID'),
+        'access_token' => env('META_CAPI_ACCESS_TOKEN'),
+        'graph_version' => env('META_CAPI_GRAPH_VERSION', env('META_GRAPH_VERSION', 'v20.0')),
+        'test_event_code' => env('META_CAPI_TEST_EVENT_CODE'),
+        'action_source' => env('META_CAPI_ACTION_SOURCE', 'system_generated'),
+    ],
 ];

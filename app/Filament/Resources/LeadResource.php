@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\LeadStatus;
+use App\Enums\ProspectStatus;
 use App\Filament\Resources\LeadResource\Pages;
 use App\Models\Campus;
 use App\Models\ClassTrack;
@@ -11,6 +12,7 @@ use App\Models\StudyProgram;
 use App\Models\User;
 use App\Services\InvoiceRegenerationService;
 use App\Services\LeadAssignmentService;
+use App\Services\LeadProspectStatusService;
 use App\Support\FilamentResourceScope;
 use DomainException;
 use Filament\Notifications\Notification;
@@ -114,6 +116,10 @@ class LeadResource extends Resource
                         ->label('Status lead')
                         ->options(static::leadStatusOptions())
                         ->required(),
+                    Select::make('prospect_status')
+                        ->label('Status prospek')
+                        ->options(static::prospectStatusOptions())
+                        ->native(false),
                     TextInput::make('payment_status')->label('Status pembayaran')->disabled(),
                     TextInput::make('enrollment_status')->label('Status enrollment')->disabled(),
                     DateTimePicker::make('locked_at')->label('Dikunci pada')->disabled(),
@@ -244,6 +250,12 @@ class LeadResource extends Resource
                     ->label('Status lead')
                     ->formatStateUsing(fn ($state): string => static::leadStatusLabel($state?->value ?? $state))
                     ->badge(),
+                TextColumn::make('prospect_status')
+                    ->label('Prospek')
+                    ->formatStateUsing(fn ($state): string => static::prospectStatusLabel($state?->value ?? $state))
+                    ->color(fn ($state): string => static::prospectStatusColor($state?->value ?? $state))
+                    ->badge()
+                    ->placeholder('-'),
                 TextColumn::make('source_channel')
                     ->label('Sumber lead')
                     ->formatStateUsing(fn (?string $state): string => static::sourceLabel($state))
@@ -260,6 +272,9 @@ class LeadResource extends Resource
                 Tables\Filters\SelectFilter::make('lead_status')->options(
                     static::leadStatusOptions()
                 ),
+                Tables\Filters\SelectFilter::make('prospect_status')
+                    ->label('Status prospek')
+                    ->options(static::prospectStatusOptions()),
             ])
             ->actions([
                 Tables\Actions\Action::make('assign')
@@ -301,6 +316,25 @@ class LeadResource extends Resource
                     ->url(fn (Lead $record): ?string => static::whatsappFollowUpUrl($record))
                     ->openUrlInNewTab()
                     ->visible(fn (Lead $record): bool => filled(static::normalizeWhatsappForUrl($record->whatsapp_number))),
+                Tables\Actions\ActionGroup::make(
+                    collect(ProspectStatus::cases())
+                        ->map(fn (ProspectStatus $status): Tables\Actions\Action => Tables\Actions\Action::make('prospect_'.$status->value)
+                            ->label(static::prospectStatusLabel($status->value))
+                            ->icon(static::prospectStatusIcon($status->value))
+                            ->color(static::prospectStatusColor($status->value))
+                            ->action(function (Lead $record, LeadProspectStatusService $service) use ($status): void {
+                                $event = $service->update($record, $status->value, auth()->user());
+
+                                Notification::make()
+                                    ->title('Status prospek diperbarui')
+                                    ->body('Meta event: '.$event->meta_status)
+                                    ->success()
+                                    ->send();
+                            }))
+                        ->all()
+                )
+                    ->label('Update Prospek')
+                    ->icon('heroicon-o-signal'),
                 Tables\Actions\EditAction::make()
                     ->label('Ubah'),
                 Tables\Actions\DeleteAction::make()
@@ -377,6 +411,13 @@ class LeadResource extends Resource
             ->all();
     }
 
+    public static function prospectStatusOptions(): array
+    {
+        return collect(ProspectStatus::cases())
+            ->mapWithKeys(fn (ProspectStatus $status): array => [$status->value => static::prospectStatusLabel($status->value)])
+            ->all();
+    }
+
     protected static function leadStatusLabel(?string $status): string
     {
         return match ($status) {
@@ -402,6 +443,39 @@ class LeadResource extends Resource
             'manual' => 'Manual',
             'referral', 'affiliate', 'affiliator' => 'Affiliator',
             default => filled($source) ? str($source)->replace('_', ' ')->title()->toString() : 'Website',
+        };
+    }
+
+    public static function prospectStatusLabel(?string $status): string
+    {
+        return match ($status) {
+            ProspectStatus::Cold->value => 'Cold',
+            ProspectStatus::Warm->value => 'Warm',
+            ProspectStatus::Hot->value => 'Hot',
+            ProspectStatus::Closing->value => 'Closing',
+            default => filled($status) ? str($status)->replace('_', ' ')->title()->toString() : '-',
+        };
+    }
+
+    public static function prospectStatusColor(?string $status): string
+    {
+        return match ($status) {
+            ProspectStatus::Cold->value => 'gray',
+            ProspectStatus::Warm->value => 'warning',
+            ProspectStatus::Hot->value => 'danger',
+            ProspectStatus::Closing->value => 'success',
+            default => 'gray',
+        };
+    }
+
+    public static function prospectStatusIcon(?string $status): string
+    {
+        return match ($status) {
+            ProspectStatus::Cold->value => 'heroicon-o-minus-circle',
+            ProspectStatus::Warm->value => 'heroicon-o-sparkles',
+            ProspectStatus::Hot->value => 'heroicon-o-fire',
+            ProspectStatus::Closing->value => 'heroicon-o-check-circle',
+            default => 'heroicon-o-signal',
         };
     }
 

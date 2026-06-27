@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources\LeadResource\Pages;
 
+use App\Enums\ProspectStatus;
 use App\Filament\Resources\LeadResource;
+use App\Services\LeadProspectStatusService;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditLead extends EditRecord
@@ -19,6 +22,26 @@ class EditLead extends EditRecord
                 ->url(fn (): ?string => LeadResource::whatsappFollowUpUrl($this->record))
                 ->openUrlInNewTab()
                 ->visible(fn (): bool => filled($this->record?->whatsapp_number)),
+            Actions\ActionGroup::make(
+                collect(ProspectStatus::cases())
+                    ->map(fn (ProspectStatus $status): Actions\Action => Actions\Action::make('prospect_'.$status->value)
+                        ->label(LeadResource::prospectStatusLabel($status->value))
+                        ->icon(LeadResource::prospectStatusIcon($status->value))
+                        ->color(LeadResource::prospectStatusColor($status->value))
+                        ->action(function (LeadProspectStatusService $service) use ($status): void {
+                            $event = $service->update($this->record, $status->value, auth()->user());
+                            $this->record = $this->record->fresh();
+
+                            Notification::make()
+                                ->title('Status prospek diperbarui')
+                                ->body('Meta event: '.$event->meta_status)
+                                ->success()
+                                ->send();
+                        }))
+                    ->all()
+            )
+                ->label('Update Prospek')
+                ->icon('heroicon-o-signal'),
         ];
     }
 
