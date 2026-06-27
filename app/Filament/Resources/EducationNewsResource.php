@@ -17,7 +17,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Notifications\Notification;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -94,6 +93,12 @@ class EducationNewsResource extends Resource
                         ->label('Kategori')
                         ->default('Pendidikan')
                         ->maxLength(120),
+                    TextInput::make('topik_artikel')
+                        ->label('Topik Artikel')
+                        ->maxLength(255),
+                    TextInput::make('keyword_utama')
+                        ->label('Keyword Utama')
+                        ->maxLength(255),
                     TextInput::make('author_name')
                         ->label('Penulis')
                         ->default('Kampus Media')
@@ -127,6 +132,12 @@ class EducationNewsResource extends Resource
                         ->rows(3)
                         ->maxLength(500)
                         ->columnSpanFull(),
+                    Textarea::make('meta_description')
+                        ->label('Meta Description')
+                        ->rows(2)
+                        ->maxLength(500)
+                        ->helperText('Disarankan maksimal 160 karakter untuk SEO.')
+                        ->columnSpanFull(),
                     RichEditor::make('content')
                         ->label('Isi Berita')
                         ->columnSpanFull(),
@@ -148,6 +159,33 @@ class EducationNewsResource extends Resource
                     Toggle::make('generated_by_ai')
                         ->label('Dibuat AI')
                         ->disabled(),
+                    Toggle::make('ai_generated')
+                        ->label('AI Generated')
+                        ->disabled(),
+                    TextInput::make('tipe_konten')
+                        ->label('Tipe Konten')
+                        ->maxLength(120),
+                    TextInput::make('keyword_tambahan')
+                        ->label('Keyword Tambahan')
+                        ->maxLength(500),
+                    TextInput::make('target_pembaca')
+                        ->label('Target Pembaca')
+                        ->maxLength(255),
+                    TextInput::make('nama_kampus')
+                        ->label('Nama Kampus')
+                        ->maxLength(255),
+                    TextInput::make('lokasi')
+                        ->label('Lokasi')
+                        ->maxLength(255),
+                    TextInput::make('gaya_bahasa')
+                        ->label('Gaya Bahasa')
+                        ->maxLength(120),
+                    TextInput::make('tipe_artikel')
+                        ->label('Tipe Artikel')
+                        ->maxLength(120),
+                    TextInput::make('panjang_artikel')
+                        ->label('Panjang Artikel')
+                        ->maxLength(120),
                     DateTimePicker::make('ai_generated_at')
                         ->label('Waktu generate AI')
                         ->seconds(false),
@@ -182,9 +220,15 @@ class EducationNewsResource extends Resource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
-                IconColumn::make('generated_by_ai')
+                TextColumn::make('ai_generated')
                     ->label('AI')
-                    ->boolean(),
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'AI' : 'Manual')
+                    ->color(fn (bool $state): string => $state ? 'info' : 'gray'),
+                TextColumn::make('keyword_utama')
+                    ->label('Keyword')
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('source_name')
                     ->label('Sumber')
                     ->placeholder('-')

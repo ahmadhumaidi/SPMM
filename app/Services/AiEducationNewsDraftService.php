@@ -56,27 +56,29 @@ class AiEducationNewsDraftService
         return $news;
     }
 
-    public function createSeoArticleDraft(string $keyword, ?array $campusIds = null): EducationNews
+    public function createSeoArticleDraft(array $payload, ?array $campusIds = null): EducationNews
     {
-        $keyword = Str::of($keyword)->squish()->limit(160)->toString();
-        $trendContext = $this->trendContext($keyword);
+        $payload = $this->normalizeSeoPayload($payload);
+        $trendContext = $this->trendContext($payload['topik_artikel'].' '.$payload['keyword_utama']);
         $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
         $source = [
             'source_name' => 'Kampus Media AI',
-            'title' => $keyword,
+            'title' => $payload['topik_artikel'],
             'url' => null,
             'hash' => null,
             'excerpt' => null,
             'published_at' => null,
         ];
-        $article = $this->generateKeywordArticle($keyword, $trendContext, $editorialKnowledge);
-        $imagePath = $this->generateCoverImagePath($article, $source, $keyword, $editorialKnowledge);
+        $article = $this->generateKeywordArticle($payload, $trendContext, $editorialKnowledge);
+        $imagePath = $this->generateCoverImagePath($article, $source, $payload['topik_artikel'], $editorialKnowledge);
 
         $news = EducationNews::query()->create([
             'title' => $article['title'],
-            'slug' => $this->uniqueSlug($article['title']),
-            'category' => $article['category'],
+            'slug' => $this->uniqueSlug($article['slug'] ?? $article['title']),
+            'category' => $payload['category'],
+            'topik_artikel' => $payload['topik_artikel'],
             'excerpt' => $article['excerpt'],
+            'meta_description' => $article['meta_description'],
             'content' => $article['content'],
             'image_path' => $imagePath,
             'author_name' => 'Kampus Media AI',
@@ -85,13 +87,24 @@ class AiEducationNewsDraftService
             'source_hash' => null,
             'source_published_at' => null,
             'generated_by_ai' => filled(config('spmm.ai_news.openai_api_key')),
+            'ai_generated' => true,
+            'tipe_konten' => 'artikel_seo_ai',
+            'keyword_utama' => $payload['keyword_utama'],
+            'keyword_tambahan' => $payload['keyword_tambahan'],
+            'target_pembaca' => $payload['target_pembaca'],
+            'nama_kampus' => $payload['nama_kampus'],
+            'lokasi' => $payload['lokasi'],
+            'gaya_bahasa' => $payload['gaya_bahasa'],
+            'tipe_artikel' => $payload['tipe_artikel'],
+            'panjang_artikel' => $payload['panjang_artikel'],
             'ai_generated_at' => now(),
             'ai_prompt_json' => [
                 'mode' => 'seo_article',
-                'keyword' => $keyword,
+                'payload' => $payload,
+                'prompt' => $this->seoPromptInstruction($payload),
                 'trend_context' => $trendContext,
                 'editorial_knowledge' => $editorialKnowledge,
-                'image_prompt' => $this->imagePrompt($article, $source, $keyword, $editorialKnowledge),
+                'image_prompt' => $this->imagePrompt($article, $source, $payload['topik_artikel'], $editorialKnowledge),
                 'image_path' => $imagePath,
                 'fallback_used' => $article['fallback_used'],
             ],
@@ -279,13 +292,13 @@ class AiEducationNewsDraftService
         }
     }
 
-    private function generateKeywordArticle(string $keyword, array $trendContext = [], array $editorialKnowledge = []): array
+    private function generateKeywordArticle(array $payload, array $trendContext = [], array $editorialKnowledge = []): array
     {
-        $fallback = $this->fallbackKeywordArticle($keyword, $trendContext, $editorialKnowledge);
+        $fallback = $this->fallbackKeywordArticle($payload, $trendContext, $editorialKnowledge);
         $apiKey = config('spmm.ai_news.openai_api_key');
 
         if (blank($apiKey)) {
-            return $fallback;
+            throw new RuntimeException('OPENAI_API_KEY belum dikonfigurasi.');
         }
 
         try {
@@ -296,25 +309,38 @@ class AiEducationNewsDraftService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Anda adalah SEO content strategist dan penulis artikel pendidikan Indonesia untuk Kampus Media. Buat artikel evergreen yang orisinal, mudah dibaca, dan membantu calon mahasiswa mengambil keputusan. Jangan mengarang data spesifik seperti ranking resmi, biaya pasti, akreditasi kampus tertentu, atau jaminan kerja.',
+                            'content' => 'Anda adalah SEO content strategist dan penulis artikel pendidikan Indonesia untuk Kampus Media. Buat artikel orisinal, natural, mudah dibaca, dan membantu calon mahasiswa mengambil keputusan. Jangan mengarang data spesifik seperti ranking resmi, biaya pasti, akreditasi kampus tertentu, atau jaminan kerja.',
                         ],
                         [
                             'role' => 'user',
                             'content' => json_encode([
-                                'instruction' => 'Tulis artikel SEO full berdasarkan kata kunci yang diberikan. Artikel tidak perlu berbasis berita RSS. Buat artikel evergreen yang bisa ranking di Google, punya struktur jelas, dan relevan dengan Kampus Media.',
-                                'keyword' => $keyword,
+                                'instruction' => $this->seoPromptInstruction($payload),
+                                'topik_artikel' => $payload['topik_artikel'],
+                                'keyword_utama' => $payload['keyword_utama'],
+                                'keyword_tambahan' => $payload['keyword_tambahan'],
+                                'kategori' => $payload['category'],
+                                'target_pembaca' => $payload['target_pembaca'],
+                                'nama_kampus' => $payload['nama_kampus'],
+                                'lokasi' => $payload['lokasi'],
+                                'tipe_artikel' => $payload['tipe_artikel'],
+                                'gaya_bahasa' => $payload['gaya_bahasa'],
+                                'panjang_artikel' => $payload['panjang_artikel'],
                                 'format' => [
                                     'title' => 'judul SEO maksimal 90 karakter dan natural',
-                                    'category' => 'pilih salah satu: Pendidikan, Karier, Kampus, Jurusan, RPL, Kuliah Karyawan',
-                                    'excerpt' => 'meta description/ringkasan maksimal 280 karakter',
-                                    'content_html' => 'HTML sederhana 900-1400 kata: pembuka, 5-8 h2, paragraf pendek, ul/li, FAQ pendek bila relevan, dan CTA halus. Jangan gunakan h1.',
+                                    'meta_description' => 'maksimal 160 karakter',
+                                    'slug' => 'slug URL SEO lowercase pakai tanda hubung',
+                                    'excerpt' => 'ringkasan maksimal 280 karakter',
+                                    'content_html' => 'HTML sederhana sesuai panjang artikel: pembuka, beberapa h2, paragraf pendek, ul/li, kesimpulan, CTA ringan bila relevan. Jangan gunakan h1.',
+                                    'primary_keyword' => 'keyword utama',
+                                    'secondary_keywords' => 'array keyword turunan',
+                                    'internal_link_suggestions' => 'array saran internal link',
                                 ],
                                 'seo_requirements' => [
                                     'jawab intent pencarian sejak paragraf pertama',
                                     'gunakan keyword utama secara natural di judul, pembuka, salah satu h2, dan penutup',
-                                    'sertakan keyword turunan seperti kampus terpercaya, prospek kerja, biaya kuliah, kuliah karyawan, kelas karyawan, kuliah online, hybrid, atau RPL hanya bila relevan',
-                                    'tambahkan bagian praktis: cara memilih, hal yang perlu dicek, kesalahan umum, dan langkah berikutnya',
-                                    'tambahkan CTA ke Kampus Media sebagai portal pembanding kampus dan PMB',
+                                    'jangan terlalu hard selling',
+                                    'pastikan artikel tidak terlihat seperti hasil AI yang kaku',
+                                    'tambahkan CTA ringan ke Kampus Media bila relevan',
                                 ],
                                 'trend_context' => $trendContext,
                                 'kampus_media_editorial_knowledge' => $editorialKnowledge,
@@ -325,24 +351,34 @@ class AiEducationNewsDraftService
                 ]);
 
             if (! $response->successful()) {
-                return $fallback;
+                throw new RuntimeException('OpenAI mengembalikan respons gagal.');
             }
 
             $payload = json_decode($response->json('choices.0.message.content', ''), true);
 
             if (! is_array($payload)) {
-                return $fallback;
+                throw new RuntimeException('Format respons OpenAI tidak sesuai.');
             }
 
             return [
                 'title' => Str::of($payload['title'] ?? $fallback['title'])->squish()->limit(100)->toString(),
-                'category' => Str::of($payload['category'] ?? $fallback['category'])->squish()->limit(120)->toString(),
+                'slug' => Str::slug($payload['slug'] ?? $payload['title'] ?? $fallback['title']),
+                'category' => $fallback['category'],
                 'excerpt' => Str::of($payload['excerpt'] ?? $fallback['excerpt'])->squish()->limit(500)->toString(),
-                'content' => $payload['content_html'] ?? $fallback['content'],
+                'meta_description' => Str::of($payload['meta_description'] ?? $fallback['meta_description'])->squish()->limit(180)->toString(),
+                'content' => $this->appendSeoExtras(
+                    $payload['content_html'] ?? $fallback['content'],
+                    $payload['primary_keyword'] ?? $fallback['primary_keyword'],
+                    $payload['secondary_keywords'] ?? $fallback['secondary_keywords'],
+                    $payload['internal_link_suggestions'] ?? $fallback['internal_link_suggestions'],
+                ),
+                'primary_keyword' => $payload['primary_keyword'] ?? $fallback['primary_keyword'],
+                'secondary_keywords' => $payload['secondary_keywords'] ?? $fallback['secondary_keywords'],
+                'internal_link_suggestions' => $payload['internal_link_suggestions'] ?? $fallback['internal_link_suggestions'],
                 'fallback_used' => false,
             ];
-        } catch (Throwable) {
-            return $fallback;
+        } catch (Throwable $exception) {
+            throw new RuntimeException('Generate AI gagal. Silakan coba lagi atau periksa konfigurasi API.', previous: $exception);
         }
     }
 
@@ -429,42 +465,59 @@ class AiEducationNewsDraftService
         ];
     }
 
-    private function fallbackKeywordArticle(string $keyword, array $trendContext = [], array $editorialKnowledge = []): array
+    private function fallbackKeywordArticle(array $payload, array $trendContext = [], array $editorialKnowledge = []): array
     {
+        $keyword = $payload['keyword_utama'];
+        $topic = $payload['topik_artikel'];
         $keywordPlain = Str::of($keyword)->squish()->toString();
         $keywordText = e($keywordPlain);
-        $intent = $this->keywordIntent($keywordPlain);
-        $variant = abs(crc32($keywordPlain.'|'.$intent)) % 5;
-        $title = $this->seoFallbackTitle($keywordPlain, $intent, $variant);
+        $intent = $this->keywordIntent($keywordPlain.' '.$topic.' '.$payload['category']);
+        $variant = abs(crc32($keywordPlain.'|'.$topic.'|'.$payload['category'].'|'.$payload['tipe_artikel'])) % 5;
+        $title = $this->seoFallbackTitle($topic, $keywordPlain, $payload, $intent, $variant);
         $keywords = collect($trendContext['education_keywords'] ?? [])
             ->shuffle()
             ->take(5)
             ->implode(', ');
         $cta = e($editorialKnowledge['preferred_cta'] ?? 'Konsultasikan pilihan kampus, jurusan, dan biaya kuliah melalui Kampus Media.');
-        $sections = $this->seoFallbackSections($keywordPlain, $intent, $variant);
-        $category = match ($intent) {
-            'rpl' => 'RPL',
-            'kelas_karyawan' => 'Kuliah Karyawan',
-            'jurusan' => 'Jurusan',
-            'biaya' => 'Biaya Kuliah',
-            'karier' => 'Karier',
-            default => 'Pendidikan',
-        };
+        $sections = $this->seoFallbackSections($payload, $intent, $variant);
+        $secondaryKeywords = $this->secondarySeoKeywords($payload, $trendContext);
+        $internalLinks = $this->internalLinkSuggestions($payload);
+        $metaDescription = Str::of("Pelajari {$topic}: {$keywordPlain}, pilihan kampus, biaya, jadwal, dan prospek kuliah bersama Kampus Media.")
+            ->squish()
+            ->limit(160)
+            ->toString();
+        $audienceSentence = filled($payload['target_pembaca'])
+            ? ' Artikel ini ditujukan untuk '.e($payload['target_pembaca']).'.'
+            : '';
+        $locationSentence = filled($payload['lokasi'])
+            ? ' Jika relevan, konteks lokasi yang digunakan adalah '.e($payload['lokasi']).'.'
+            : '';
+        $campusSentence = filled($payload['nama_kampus'])
+            ? ' Nama kampus yang dapat dijadikan konteks adalah '.e($payload['nama_kampus']).', tanpa membuat klaim yang belum diverifikasi.'
+            : '';
+
+        $content = collect([
+            '<p><strong>'.e($topic).'</strong> berkaitan erat dengan pencarian <strong>'.$keywordText.'</strong>.'.$audienceSentence.$locationSentence.$campusSentence.' Artikel ini dibuat dengan gaya '.e(Str::lower($payload['gaya_bahasa'])).' agar mudah dipahami dan tetap SEO friendly.</p>',
+            ...$sections,
+            filled($keywords) ? '<p>Untuk memperkaya sudut pandang, sistem juga mempertimbangkan keyword pendidikan yang dekat dengan minat pencarian seperti '.e($keywords).'.</p>' : '',
+            '<h2>Kesimpulan</h2>',
+            '<p>'.e($topic).' perlu dipahami secara praktis: cek kebutuhan pribadi, bandingkan kampus, pahami biaya, lihat akreditasi, dan pastikan jalur kuliah sesuai rencana karier.</p>',
+            '<h2>Langkah berikutnya</h2>',
+            '<p>Mulailah dengan membandingkan kampus, program studi, biaya, akreditasi, jadwal kuliah, dan model pembelajaran. Jika sudah bekerja, pertimbangkan kelas karyawan, kuliah online, hybrid learning, atau jalur RPL sesuai kebutuhan.</p>',
+            '<h2>Peran Kampus Media</h2>',
+            '<p>'.e($cta).'</p>',
+        ])->implode('');
 
         return [
             'title' => $title,
-            'category' => $category,
-            'excerpt' => Str::of("Panduan memahami {$keyword} untuk calon mahasiswa yang ingin memilih jurusan, kampus, dan jalur kuliah yang sesuai tujuan karier.")->squish()->limit(280)->toString(),
-            'content' => collect([
-                '<p><strong>'.$keywordText.'</strong> adalah topik yang perlu dibaca sebagai panduan keputusan, bukan sekadar istilah populer. Artikel ini membantu calon mahasiswa memahami konteks, pilihan kuliah, dan langkah praktis sebelum mendaftar.</p>',
-                ...$sections,
-                filled($keywords) ? '<p>Untuk memperkaya sudut pandang, sistem juga mempertimbangkan keyword pendidikan yang dekat dengan minat pencarian seperti '.e($keywords).'.</p>' : '',
-                '<h2>Langkah berikutnya</h2>',
-                '<p>Mulailah dengan membandingkan kampus, program studi, biaya, akreditasi, jadwal kuliah, dan model pembelajaran. Jika sudah bekerja, pertimbangkan kelas karyawan, kuliah online, hybrid learning, atau jalur RPL sesuai kebutuhan.</p>',
-                '<h2>Peran Kampus Media</h2>',
-                '<p>'.e($cta).'</p>',
-                '<p>Draft artikel SEO ini dibuat otomatis berdasarkan kata kunci. Admin disarankan menambah contoh kampus, program studi, atau data biaya yang relevan sebelum dipublikasikan.</p>',
-            ])->implode(''),
+            'slug' => Str::slug($title),
+            'category' => $payload['category'],
+            'excerpt' => Str::of($metaDescription)->limit(280)->toString(),
+            'meta_description' => $metaDescription,
+            'content' => $this->appendSeoExtras($content, $keywordPlain, $secondaryKeywords, $internalLinks),
+            'primary_keyword' => $keywordPlain,
+            'secondary_keywords' => $secondaryKeywords,
+            'internal_link_suggestions' => $internalLinks,
             'fallback_used' => true,
         ];
     }
@@ -483,49 +536,51 @@ class AiEducationNewsDraftService
         };
     }
 
-    private function seoFallbackTitle(string $keyword, string $intent, int $variant): string
+    private function seoFallbackTitle(string $topic, string $keyword, array $payload, string $intent, int $variant): string
     {
-        $headline = Str::of($keyword)->headline();
+        $topicHeadline = Str::of($topic)->headline()->toString();
+        $keywordHeadline = Str::of($keyword)->headline()->toString();
 
         $title = match ($intent) {
             'rpl' => match ($variant) {
-                1 => 'Panduan RPL untuk Pekerja dan Profesional',
-                2 => 'Cara Memahami RPL Sebelum Lanjut Kuliah',
-                default => 'RPL: Pengertian, Syarat Umum, dan Manfaatnya',
+                1 => 'Panduan '.$topicHeadline.' untuk Pekerja dan Profesional',
+                2 => 'Cara Memahami '.$keywordHeadline.' Sebelum Lanjut Kuliah',
+                default => $topicHeadline.': Pengertian, Syarat Umum, dan Manfaatnya',
             },
             'kelas_karyawan' => match ($variant) {
-                1 => 'Kuliah Karyawan: Cara Memilih Kelas yang Tepat',
-                2 => 'Kelas Karyawan, Online, atau Hybrid: Mana yang Cocok?',
-                default => 'Panduan Kuliah Sambil Kerja untuk Karyawan',
+                1 => $topicHeadline.': Cara Memilih Kelas yang Tepat',
+                2 => $keywordHeadline.', Online, atau Hybrid: Mana yang Cocok?',
+                default => 'Panduan '.$topicHeadline.' untuk Karyawan',
             },
             'jurusan' => match ($variant) {
-                1 => 'Jurusan Favorit di Indonesia dan Cara Memilihnya',
-                2 => 'Cara Memilih Jurusan Kuliah Sesuai Karier',
-                default => $headline->prepend('Panduan Memilih ')->toString(),
+                1 => $topicHeadline.' dan Cara Memilihnya',
+                2 => 'Cara Memilih '.$keywordHeadline.' Sesuai Karier',
+                default => 'Panduan Memilih '.$topicHeadline,
             },
             'biaya' => match ($variant) {
-                1 => 'Cara Membaca Biaya Kuliah Sebelum Mendaftar',
-                2 => 'Biaya Kuliah, SPP, UKT, dan Cicilan: Apa Bedanya?',
-                default => $headline->prepend('Panduan ')->toString(),
+                1 => 'Cara Membaca '.$topicHeadline.' Sebelum Mendaftar',
+                2 => $keywordHeadline.': Komponen dan Tips Membandingkan',
+                default => 'Panduan '.$topicHeadline,
             },
             'karier' => match ($variant) {
-                1 => 'Prospek Kerja Jurusan Kuliah yang Perlu Dicek',
-                2 => 'Cara Menghubungkan Kuliah dengan Rencana Karier',
-                default => $headline->append(': Prospek dan Tips Memilih')->toString(),
+                1 => $topicHeadline.' yang Perlu Dicek',
+                2 => 'Cara Menghubungkan '.$keywordHeadline.' dengan Karier',
+                default => $topicHeadline.': Prospek dan Tips Memilih',
             },
             default => match ($variant) {
-                1 => $headline->prepend('Cara Memahami ')->toString(),
-                2 => $headline->append(': Panduan untuk Calon Mahasiswa')->toString(),
-                default => $headline->prepend('Panduan ')->toString(),
+                1 => 'Cara Memahami '.$topicHeadline,
+                2 => $topicHeadline.': Panduan untuk Calon Mahasiswa',
+                default => 'Panduan '.$topicHeadline,
             },
         };
 
         return Str::of($title)->squish()->limit(90)->toString();
     }
 
-    private function seoFallbackSections(string $keyword, string $intent, int $variant): array
+    private function seoFallbackSections(array $payload, string $intent, int $variant): array
     {
-        $keywordText = e($keyword);
+        $keywordText = e($payload['keyword_utama']);
+        $topicText = e($payload['topik_artikel']);
 
         $introSection = match ($intent) {
             'rpl' => '<h2>Apa yang perlu dipahami tentang RPL?</h2><p>RPL atau Rekognisi Pembelajaran Lampau adalah jalur pengakuan atas pengalaman kerja, pelatihan, sertifikasi, atau pembelajaran nonformal. Hasil pengakuannya tetap mengikuti asesmen dan kebijakan kampus.</p>',
@@ -533,7 +588,7 @@ class AiEducationNewsDraftService
             'jurusan' => '<h2>Mengapa memilih jurusan tidak boleh asal ikut tren?</h2><p>Jurusan populer belum tentu cocok untuk semua orang. Calon mahasiswa perlu melihat minat, kemampuan, kurikulum, prospek kerja, dan peluang pengembangan karier.</p>',
             'biaya' => '<h2>Komponen biaya yang perlu dicek</h2><p>Biaya kuliah dapat terdiri dari pendaftaran, herregistrasi, SPB atau development fee, SPP per semester, UKT, dan biaya pendukung lain. Pastikan semuanya transparan sebelum daftar.</p>',
             'karier' => '<h2>Hubungan kuliah dan prospek karier</h2><p>Kuliah dapat membantu membangun kompetensi, jejaring, portofolio, dan kredibilitas akademik. Namun, prospek kerja tetap dipengaruhi kemampuan, pengalaman, dan kebutuhan industri.</p>',
-            default => '<h2>Mengapa topik ini penting?</h2><p>Bagi calon mahasiswa, memahami '.$keywordText.' membantu proses memilih kampus, jurusan, jadwal, biaya, dan jalur kuliah dengan lebih terarah.</p>',
+            default => '<h2>Mengapa '.$topicText.' penting?</h2><p>Bagi calon mahasiswa, memahami '.$keywordText.' membantu proses memilih kampus, jurusan, jadwal, biaya, dan jalur kuliah dengan lebih terarah.</p>',
         };
 
         $checklist = match ($intent) {
@@ -558,6 +613,152 @@ class AiEducationNewsDraftService
             $checklist,
             $variantSection,
         ];
+    }
+
+    private function normalizeSeoPayload(array $payload): array
+    {
+        $normalized = [
+            'topik_artikel' => Str::of($payload['topik_artikel'] ?? '')->squish()->limit(160)->toString(),
+            'keyword_utama' => Str::of($payload['keyword_utama'] ?? '')->squish()->limit(160)->toString(),
+            'category' => Str::of($payload['category'] ?? 'Pendidikan')->squish()->limit(120)->toString(),
+            'gaya_bahasa' => Str::of($payload['gaya_bahasa'] ?? 'Informatif')->squish()->limit(120)->toString(),
+            'nama_kampus' => Str::of($payload['nama_kampus'] ?? '')->squish()->limit(160)->toString(),
+            'target_pembaca' => Str::of($payload['target_pembaca'] ?? '')->squish()->limit(160)->toString(),
+            'keyword_tambahan' => Str::of($payload['keyword_tambahan'] ?? '')->squish()->limit(500)->toString(),
+            'lokasi' => Str::of($payload['lokasi'] ?? '')->squish()->limit(160)->toString(),
+            'tipe_artikel' => Str::of($payload['tipe_artikel'] ?? 'Artikel SEO')->squish()->limit(120)->toString(),
+            'panjang_artikel' => Str::of($payload['panjang_artikel'] ?? 'Sedang: 700-900 kata')->squish()->limit(120)->toString(),
+        ];
+
+        if (blank($normalized['topik_artikel']) || blank($normalized['keyword_utama']) || blank($normalized['category']) || blank($normalized['gaya_bahasa'])) {
+            throw new RuntimeException('Topik Artikel, Keyword Utama, Kategori, dan Gaya Bahasa wajib diisi.');
+        }
+
+        return $normalized;
+    }
+
+    private function seoPromptInstruction(array $payload): string
+    {
+        return Str::of(<<<PROMPT
+Buatkan artikel SEO dengan topik: {$payload['topik_artikel']}.
+Keyword utama: {$payload['keyword_utama']}.
+Keyword tambahan: {$payload['keyword_tambahan']}.
+Kategori artikel: {$payload['category']}.
+Target pembaca: {$payload['target_pembaca']}.
+Nama kampus jika relevan: {$payload['nama_kampus']}.
+Lokasi jika relevan: {$payload['lokasi']}.
+Tipe artikel: {$payload['tipe_artikel']}.
+Gunakan gaya bahasa: {$payload['gaya_bahasa']}.
+Panjang artikel: {$payload['panjang_artikel']}.
+
+Buat artikel yang natural, informatif, mudah dipahami, dan SEO friendly.
+Jangan terlalu hard selling.
+Sertakan:
+1. Judul SEO
+2. Meta description maksimal 160 karakter
+3. Slug URL
+4. Artikel utama
+5. Keyword utama
+6. Keyword turunan
+7. Saran internal link
+
+Struktur artikel utama:
+- Paragraf pembuka
+- Pembahasan utama dengan beberapa subjudul H2
+- Manfaat atau poin penting
+- Kesimpulan
+- Call to action ringan jika relevan
+
+Pastikan artikel tidak terlihat seperti hasil AI yang kaku.
+PROMPT)->squish()->toString();
+    }
+
+    private function secondarySeoKeywords(array $payload, array $trendContext): array
+    {
+        $manual = collect(explode(',', (string) $payload['keyword_tambahan']))
+            ->map(fn (string $keyword): string => Str::of($keyword)->squish()->toString())
+            ->filter();
+
+        $contextual = collect([
+            $payload['category'],
+            $payload['topik_artikel'],
+            'Kampus Media',
+            'kampus terpercaya',
+            'biaya kuliah',
+            'prospek kerja',
+        ]);
+
+        $trends = collect($trendContext['education_keywords'] ?? [])->take(6);
+
+        return $manual
+            ->merge($contextual)
+            ->merge($trends)
+            ->unique()
+            ->take(10)
+            ->values()
+            ->all();
+    }
+
+    private function internalLinkSuggestions(array $payload): array
+    {
+        $links = [
+            '/kampus' => 'Daftar kampus mitra Kampus Media',
+            '/daftar' => 'Form pendaftaran calon mahasiswa',
+        ];
+
+        if (Str::contains(Str::lower($payload['category'].' '.$payload['topik_artikel']), ['rpl'])) {
+            $links['/kampus?program=RPL'] = 'Pilihan kampus dengan program RPL';
+        }
+
+        if (Str::contains(Str::lower($payload['category'].' '.$payload['topik_artikel']), ['karyawan', 'online', 'hybrid'])) {
+            $links['/kampus?program=Kelas%20Professional'] = 'Pilihan kuliah fleksibel untuk karyawan';
+        }
+
+        return collect($links)
+            ->map(fn (string $label, string $url): array => ['url' => $url, 'label' => $label])
+            ->values()
+            ->all();
+    }
+
+    private function appendSeoExtras(string $content, ?string $primaryKeyword, array|string|null $secondaryKeywords, array|string|null $internalLinks): string
+    {
+        $secondary = collect(is_array($secondaryKeywords) ? $secondaryKeywords : explode(',', (string) $secondaryKeywords))
+            ->map(fn (mixed $keyword): string => is_array($keyword) ? (string) ($keyword['keyword'] ?? '') : (string) $keyword)
+            ->map(fn (string $keyword): string => Str::of($keyword)->squish()->toString())
+            ->filter()
+            ->unique()
+            ->values();
+
+        $links = collect(is_array($internalLinks) ? $internalLinks : [])
+            ->map(function (mixed $link): ?array {
+                if (is_array($link)) {
+                    return [
+                        'url' => (string) ($link['url'] ?? '#'),
+                        'label' => (string) ($link['label'] ?? $link['title'] ?? $link['url'] ?? 'Internal link'),
+                    ];
+                }
+
+                return null;
+            })
+            ->filter();
+
+        $extras = collect();
+
+        if (filled($primaryKeyword) || $secondary->isNotEmpty()) {
+            $extras->push('<h2>Keyword Artikel</h2>');
+            $extras->push('<p><strong>Keyword utama:</strong> '.e((string) $primaryKeyword).'</p>');
+
+            if ($secondary->isNotEmpty()) {
+                $extras->push('<p><strong>Keyword turunan:</strong> '.e($secondary->implode(', ')).'</p>');
+            }
+        }
+
+        if ($links->isNotEmpty()) {
+            $extras->push('<h2>Saran Internal Link</h2>');
+            $extras->push('<ul>'.$links->map(fn (array $link): string => '<li><a href="'.e($link['url']).'">'.e($link['label']).'</a></li>')->implode('').'</ul>');
+        }
+
+        return $content.$extras->implode('');
     }
 
     private function generateCoverImagePath(array $article, array $source, ?string $topic = null, array $editorialKnowledge = []): ?string
