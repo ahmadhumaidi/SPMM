@@ -396,14 +396,24 @@ class AiEducationNewsDraftService
             ],
         };
 
+        $sourceContext = match ($variant) {
+            1 => 'Bagi calon mahasiswa, isu ini bisa dibaca sebagai sinyal bahwa pilihan jurusan perlu dihubungkan dengan kebutuhan kerja nyata, bukan hanya nama program studi.',
+            2 => 'Dari sisi keluarga, berita ini juga mengingatkan pentingnya membaca skema biaya sejak awal, termasuk pendaftaran, herregistrasi, SPP, SPB, UKT, dan pilihan cicilan.',
+            3 => 'Untuk pekerja, isu ini relevan karena pilihan kuliah tidak selalu harus berhenti di kelas reguler. Kelas karyawan, hybrid, online, dan RPL dapat menjadi opsi yang lebih adaptif.',
+            4 => 'Dalam konteks PMB, informasi seperti ini perlu disaring bersama data resmi kampus, status PDDIKTI, akreditasi, dan transparansi layanan pendaftaran.',
+            default => 'Konteks ini dapat membantu calon mahasiswa melihat pendidikan tinggi sebagai keputusan jangka panjang yang menyentuh waktu, biaya, kompetensi, dan arah karier.',
+        };
+
         return [
             'title' => Str::of($angle['title'])->squish()->limit(90)->toString(),
             'category' => $angle['category'],
             'excerpt' => Str::of($sourceExcerpt)->limit(280)->toString(),
             'content' => collect([
-                '<p>Kampus Media merangkum isu <strong>'.e($sourceTitle).'</strong> sebagai bahan pertimbangan untuk calon mahasiswa yang sedang mencari informasi seputar '.e($topicText).'.</p>',
+                '<p>Kampus Media merangkum isu <strong>'.e($sourceTitle).'</strong> sebagai berita pendidikan yang relevan untuk calon mahasiswa yang sedang mencari informasi seputar '.e($topicText).'.</p>',
                 '<p>'.e($angle['intro']).'</p>',
                 '<blockquote>'.e($sourceExcerpt).'</blockquote>',
+                '<h2>Konteks berita untuk calon mahasiswa</h2>',
+                '<p>'.e($sourceContext).'</p>',
                 '<h2>'.e($angle['h2']).'</h2>',
                 '<p>'.e($angle['body']).'</p>',
                 filled($keywords) ? '<p>Angle draft ini juga mempertimbangkan kedekatan topik dengan minat pencarian pendidikan seperti '.e($keywords).'.</p>' : '',
@@ -423,42 +433,130 @@ class AiEducationNewsDraftService
     {
         $keywordPlain = Str::of($keyword)->squish()->toString();
         $keywordText = e($keywordPlain);
-        $variant = abs(crc32($keywordPlain)) % 4;
-        $title = match ($variant) {
-            1 => Str::of($keywordPlain)->headline()->prepend('Cara Memilih ')->limit(90)->toString(),
-            2 => Str::of($keywordPlain)->headline()->append(': Prospek dan Tips Kuliah')->limit(90)->toString(),
-            3 => Str::of($keywordPlain)->headline()->prepend('Apa Itu ')->append('? Ini Panduannya')->limit(90)->toString(),
-            default => Str::of($keywordPlain)->headline()->prepend('Panduan ')->limit(90)->toString(),
-        };
+        $intent = $this->keywordIntent($keywordPlain);
+        $variant = abs(crc32($keywordPlain.'|'.$intent)) % 5;
+        $title = $this->seoFallbackTitle($keywordPlain, $intent, $variant);
         $keywords = collect($trendContext['education_keywords'] ?? [])
             ->shuffle()
             ->take(5)
             ->implode(', ');
         $cta = e($editorialKnowledge['preferred_cta'] ?? 'Konsultasikan pilihan kampus, jurusan, dan biaya kuliah melalui Kampus Media.');
-        $sectionTwo = match ($variant) {
-            1 => '<h2>Cara menilai pilihan yang paling cocok</h2><p>Mulailah dari tujuan pribadi, kondisi waktu, kemampuan biaya, dan rencana karier. Setelah itu, cocokkan dengan kampus, program studi, dan model kuliah yang tersedia.</p>',
-            2 => '<h2>Prospek yang perlu dilihat sebelum memilih</h2><p>Prospek tidak hanya berarti nama pekerjaan, tetapi juga kemampuan yang dicari industri, peluang naik jabatan, sertifikasi, dan portofolio yang bisa dibangun.</p>',
-            3 => '<h2>Kesalahan umum yang perlu dihindari</h2><p>Jangan memilih kampus hanya karena promosi. Cek legalitas, akreditasi, biaya, jadwal, kurikulum, dan layanan akademik sebelum mengambil keputusan.</p>',
-            default => '<h2>Mengapa topik ini penting?</h2><p>Bagi calon mahasiswa baru, pekerja, maupun lulusan D3 yang ingin lanjut kuliah, memahami '.$keywordText.' membantu proses memilih program studi dengan lebih terarah.</p>',
+        $sections = $this->seoFallbackSections($keywordPlain, $intent, $variant);
+        $category = match ($intent) {
+            'rpl' => 'RPL',
+            'kelas_karyawan' => 'Kuliah Karyawan',
+            'jurusan' => 'Jurusan',
+            'biaya' => 'Biaya Kuliah',
+            'karier' => 'Karier',
+            default => 'Pendidikan',
         };
 
         return [
             'title' => $title,
-            'category' => 'Pendidikan',
+            'category' => $category,
             'excerpt' => Str::of("Panduan memahami {$keyword} untuk calon mahasiswa yang ingin memilih jurusan, kampus, dan jalur kuliah yang sesuai tujuan karier.")->squish()->limit(280)->toString(),
             'content' => collect([
-                '<p><strong>'.$keywordText.'</strong> menjadi salah satu topik yang sering dicari calon mahasiswa ketika mulai membandingkan pilihan kuliah. Keputusan memilih jurusan dan kampus sebaiknya tidak hanya mengikuti tren, tetapi juga mempertimbangkan minat, kemampuan, biaya, akreditasi, dan prospek karier.</p>',
-                $sectionTwo,
-                '<h2>Hal yang perlu dipertimbangkan</h2>',
-                '<ul><li>Minat dan kemampuan pribadi.</li><li>Prospek kerja dan kebutuhan industri.</li><li>Akreditasi kampus dan program studi.</li><li>Legalitas kampus melalui PDDIKTI.</li><li>Skema biaya, cicilan, dan jadwal kuliah.</li><li>Ketersediaan kelas karyawan, online, hybrid, atau RPL.</li></ul>',
+                '<p><strong>'.$keywordText.'</strong> adalah topik yang perlu dibaca sebagai panduan keputusan, bukan sekadar istilah populer. Artikel ini membantu calon mahasiswa memahami konteks, pilihan kuliah, dan langkah praktis sebelum mendaftar.</p>',
+                ...$sections,
                 filled($keywords) ? '<p>Untuk memperkaya sudut pandang, sistem juga mempertimbangkan keyword pendidikan yang dekat dengan minat pencarian seperti '.e($keywords).'.</p>' : '',
-                '<h2>Tips memilih jurusan dan kampus</h2>',
-                '<p>Mulailah dari tujuan karier, lalu cocokkan dengan kurikulum, gelar, biaya, jadwal, dan dukungan kampus. Jika sudah bekerja, pertimbangkan kelas karyawan, kuliah online, hybrid learning, atau jalur RPL sesuai kebutuhan.</p>',
+                '<h2>Langkah berikutnya</h2>',
+                '<p>Mulailah dengan membandingkan kampus, program studi, biaya, akreditasi, jadwal kuliah, dan model pembelajaran. Jika sudah bekerja, pertimbangkan kelas karyawan, kuliah online, hybrid learning, atau jalur RPL sesuai kebutuhan.</p>',
                 '<h2>Peran Kampus Media</h2>',
                 '<p>'.e($cta).'</p>',
-                '<p>Draft artikel ini dibuat otomatis sebagai bahan awal. Admin disarankan meninjau, menambah data, dan menyesuaikan gaya bahasa sebelum dipublikasikan.</p>',
+                '<p>Draft artikel SEO ini dibuat otomatis berdasarkan kata kunci. Admin disarankan menambah contoh kampus, program studi, atau data biaya yang relevan sebelum dipublikasikan.</p>',
             ])->implode(''),
             'fallback_used' => true,
+        ];
+    }
+
+    private function keywordIntent(string $keyword): string
+    {
+        $text = Str::lower($keyword);
+
+        return match (true) {
+            Str::contains($text, ['rpl', 'rekognisi', 'pengalaman kerja']) => 'rpl',
+            Str::contains($text, ['karyawan', 'sambil kerja', 'kelas malam', 'weekend']) => 'kelas_karyawan',
+            Str::contains($text, ['jurusan', 'prodi', 'program studi', 'favorit']) => 'jurusan',
+            Str::contains($text, ['biaya', 'spp', 'ukt', 'cicilan', 'murah']) => 'biaya',
+            Str::contains($text, ['karier', 'prospek', 'kerja', 'gaji']) => 'karier',
+            default => 'umum',
+        };
+    }
+
+    private function seoFallbackTitle(string $keyword, string $intent, int $variant): string
+    {
+        $headline = Str::of($keyword)->headline();
+
+        $title = match ($intent) {
+            'rpl' => match ($variant) {
+                1 => 'Panduan RPL untuk Pekerja dan Profesional',
+                2 => 'Cara Memahami RPL Sebelum Lanjut Kuliah',
+                default => 'RPL: Pengertian, Syarat Umum, dan Manfaatnya',
+            },
+            'kelas_karyawan' => match ($variant) {
+                1 => 'Kuliah Karyawan: Cara Memilih Kelas yang Tepat',
+                2 => 'Kelas Karyawan, Online, atau Hybrid: Mana yang Cocok?',
+                default => 'Panduan Kuliah Sambil Kerja untuk Karyawan',
+            },
+            'jurusan' => match ($variant) {
+                1 => 'Jurusan Favorit di Indonesia dan Cara Memilihnya',
+                2 => 'Cara Memilih Jurusan Kuliah Sesuai Karier',
+                default => $headline->prepend('Panduan Memilih ')->toString(),
+            },
+            'biaya' => match ($variant) {
+                1 => 'Cara Membaca Biaya Kuliah Sebelum Mendaftar',
+                2 => 'Biaya Kuliah, SPP, UKT, dan Cicilan: Apa Bedanya?',
+                default => $headline->prepend('Panduan ')->toString(),
+            },
+            'karier' => match ($variant) {
+                1 => 'Prospek Kerja Jurusan Kuliah yang Perlu Dicek',
+                2 => 'Cara Menghubungkan Kuliah dengan Rencana Karier',
+                default => $headline->append(': Prospek dan Tips Memilih')->toString(),
+            },
+            default => match ($variant) {
+                1 => $headline->prepend('Cara Memahami ')->toString(),
+                2 => $headline->append(': Panduan untuk Calon Mahasiswa')->toString(),
+                default => $headline->prepend('Panduan ')->toString(),
+            },
+        };
+
+        return Str::of($title)->squish()->limit(90)->toString();
+    }
+
+    private function seoFallbackSections(string $keyword, string $intent, int $variant): array
+    {
+        $keywordText = e($keyword);
+
+        $introSection = match ($intent) {
+            'rpl' => '<h2>Apa yang perlu dipahami tentang RPL?</h2><p>RPL atau Rekognisi Pembelajaran Lampau adalah jalur pengakuan atas pengalaman kerja, pelatihan, sertifikasi, atau pembelajaran nonformal. Hasil pengakuannya tetap mengikuti asesmen dan kebijakan kampus.</p>',
+            'kelas_karyawan' => '<h2>Mengapa kelas karyawan banyak dicari?</h2><p>Kelas karyawan membantu pekerja tetap kuliah tanpa meninggalkan pekerjaan. Modelnya bisa malam, akhir pekan, online, hybrid, atau kombinasi sesuai kebijakan kampus.</p>',
+            'jurusan' => '<h2>Mengapa memilih jurusan tidak boleh asal ikut tren?</h2><p>Jurusan populer belum tentu cocok untuk semua orang. Calon mahasiswa perlu melihat minat, kemampuan, kurikulum, prospek kerja, dan peluang pengembangan karier.</p>',
+            'biaya' => '<h2>Komponen biaya yang perlu dicek</h2><p>Biaya kuliah dapat terdiri dari pendaftaran, herregistrasi, SPB atau development fee, SPP per semester, UKT, dan biaya pendukung lain. Pastikan semuanya transparan sebelum daftar.</p>',
+            'karier' => '<h2>Hubungan kuliah dan prospek karier</h2><p>Kuliah dapat membantu membangun kompetensi, jejaring, portofolio, dan kredibilitas akademik. Namun, prospek kerja tetap dipengaruhi kemampuan, pengalaman, dan kebutuhan industri.</p>',
+            default => '<h2>Mengapa topik ini penting?</h2><p>Bagi calon mahasiswa, memahami '.$keywordText.' membantu proses memilih kampus, jurusan, jadwal, biaya, dan jalur kuliah dengan lebih terarah.</p>',
+        };
+
+        $checklist = match ($intent) {
+            'rpl' => '<ul><li>Siapkan riwayat pekerjaan, sertifikat, portofolio, dan dokumen pendukung.</li><li>Tanyakan mekanisme asesmen RPL di kampus tujuan.</li><li>Pastikan program studi tersedia dan sesuai pengalaman.</li><li>Jangan menganggap hasil konversi SKS pasti sama untuk semua kampus.</li></ul>',
+            'kelas_karyawan' => '<ul><li>Cek jadwal kuliah malam, weekend, online, atau hybrid.</li><li>Pastikan lokasi atau platform belajar mudah diakses.</li><li>Bandingkan biaya bulanan dan biaya awal.</li><li>Pilih jurusan yang mendukung perkembangan karier.</li></ul>',
+            'jurusan' => '<ul><li>Lihat mata kuliah inti dan profil lulusan.</li><li>Cek prospek kerja dan kebutuhan industri.</li><li>Bandingkan akreditasi dan legalitas program studi.</li><li>Pilih berdasarkan minat dan kemampuan, bukan hanya tren.</li></ul>',
+            'biaya' => '<ul><li>Hitung biaya awal dan cicilan bulan berjalan.</li><li>Bandingkan SPP, UKT, SPB, dan biaya herregistrasi.</li><li>Tanyakan keringanan atau skema pembayaran.</li><li>Pastikan biaya yang ditampilkan sama dengan invoice resmi.</li></ul>',
+            'karier' => '<ul><li>Identifikasi bidang kerja yang ingin dituju.</li><li>Cek kemampuan yang dibutuhkan industri.</li><li>Pilih jurusan dengan kurikulum yang relevan.</li><li>Bangun portofolio selama kuliah.</li></ul>',
+            default => '<ul><li>Cek legalitas kampus melalui PDDIKTI.</li><li>Bandingkan akreditasi BAN-PT/LAM.</li><li>Lihat program studi, jadwal, dan biaya.</li><li>Pastikan jalur kuliah sesuai kondisi pribadi.</li></ul>',
+        };
+
+        $variantSection = match ($variant) {
+            1 => '<h2>Kesalahan umum yang sering terjadi</h2><p>Banyak calon mahasiswa memilih terlalu cepat karena tertarik promosi. Padahal, keputusan kuliah sebaiknya dibuat setelah membandingkan data resmi, biaya, jadwal, dan dukungan akademik.</p>',
+            2 => '<h2>Cara membandingkan beberapa pilihan</h2><p>Buat daftar kampus dan program studi, lalu beri catatan untuk biaya, akreditasi, jadwal, prospek, dan kemudahan pendaftaran. Cara sederhana ini membuat pilihan lebih objektif.</p>',
+            3 => '<h2>Siapa yang paling cocok dengan pilihan ini?</h2><p>Pilihan terbaik biasanya bergantung pada kondisi. Lulusan SMA/SMK, karyawan, lulusan D3, peserta RPL, dan orang tua punya kebutuhan informasi yang berbeda.</p>',
+            default => '<h2>Hal yang perlu dipertimbangkan</h2><p>Pertimbangkan minat, waktu, biaya, dukungan keluarga, kesiapan belajar, serta target karier. Jangan lupa mengecek informasi resmi dari kampus tujuan.</p>',
+        };
+
+        return [
+            $introSection,
+            '<h2>Checklist sebelum mengambil keputusan</h2>',
+            $checklist,
+            $variantSection,
         ];
     }
 
