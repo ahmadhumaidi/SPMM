@@ -318,12 +318,13 @@ class AiEducationNewsDraftService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Anda adalah SEO content strategist dan penulis artikel pendidikan Indonesia untuk Kampus Media. Buat artikel orisinal, natural, mudah dibaca, dan membantu calon mahasiswa mengambil keputusan. Jangan mengarang data spesifik seperti ranking resmi, biaya pasti, akreditasi kampus tertentu, atau jaminan kerja.',
+                            'content' => 'Anda adalah SEO content strategist dan penulis artikel pendidikan Indonesia untuk Kampus Media. Buat artikel orisinal, natural, mudah dibaca, dan membantu calon mahasiswa mengambil keputusan. Jangan mengarang data spesifik seperti ranking resmi, biaya pasti, akreditasi kampus tertentu, atau jaminan kerja. Balas hanya dalam JSON valid tanpa markdown.',
                         ],
                         [
                             'role' => 'user',
                             'content' => json_encode([
                                 'instruction' => $this->seoPromptInstruction($payload),
+                                'response_rule' => 'Balas hanya JSON valid dengan key: title, meta_description, slug, excerpt, content_html, primary_keyword, secondary_keywords, internal_link_suggestions. Jangan bungkus dengan markdown.',
                                 'topik_artikel' => $payload['topik_artikel'],
                                 'keyword_utama' => $payload['keyword_utama'],
                                 'keyword_tambahan' => $payload['keyword_tambahan'],
