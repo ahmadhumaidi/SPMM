@@ -37,7 +37,7 @@ class ListExternalLeadEvents extends ListRecords
                     Toggle::make('reprocess_existing')
                         ->label('Proses ulang lead yang sudah pernah diimport')
                         ->helperText('Aktifkan jika mapping kampus/prodi sebelumnya salah. Sistem akan memperbaiki lead lama, bukan membuat double.')
-                        ->default(false),
+                        ->default(true),
                 ])
                 ->action(function (array $data): void {
                     ImportMetaFormLeadsJob::dispatch(

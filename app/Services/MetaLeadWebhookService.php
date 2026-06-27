@@ -207,12 +207,21 @@ class MetaLeadWebhookService
             ->get()
             ->first(function (Campus $campus) use ($needle, $slug): bool {
                 $name = $this->normalizeComparableText((string) $campus->name);
+                $compactNeedle = str_replace(' ', '', $needle);
+                $compactName = str_replace(' ', '', $name);
                 $campusSlug = (string) $campus->slug;
                 $subdomain = (string) $campus->subdomain;
+                $sharedTokens = array_intersect(
+                    $this->importantTokens($needle),
+                    $this->importantTokens($name),
+                );
 
                 return $needle === $name
                     || ($name !== '' && str_contains($needle, $name))
                     || ($needle !== '' && str_contains($name, $needle))
+                    || ($compactName !== '' && str_contains($compactNeedle, $compactName))
+                    || ($compactNeedle !== '' && str_contains($compactName, $compactNeedle))
+                    || count($sharedTokens) >= 2
                     || ($campusSlug !== '' && ($slug === $campusSlug || str_contains($slug, $campusSlug)))
                     || ($subdomain !== '' && ($slug === $subdomain || str_contains($slug, $subdomain)));
             });
@@ -308,5 +317,36 @@ class MetaLeadWebhookService
             ->replaceMatches('/\s+/', ' ')
             ->trim()
             ->toString();
+    }
+
+    /**
+     * Keep only words that help identify a campus. This catches cases like
+     * "Universitas Kristen Cipta Wacana Malang" -> "Cipta Wacana University".
+     *
+     * @return array<int, string>
+     */
+    private function importantTokens(string $value): array
+    {
+        $stopWords = [
+            'universitas',
+            'university',
+            'kampus',
+            'college',
+            'sekolah',
+            'tinggi',
+            'kristen',
+            'malang',
+            'bogor',
+            'bandung',
+            'jakarta',
+            'surabaya',
+        ];
+
+        return collect(explode(' ', $value))
+            ->map(fn (string $token): string => trim($token))
+            ->filter(fn (string $token): bool => strlen($token) >= 3 && ! in_array($token, $stopWords, true))
+            ->unique()
+            ->values()
+            ->all();
     }
 }
