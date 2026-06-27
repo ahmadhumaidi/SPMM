@@ -13,6 +13,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ListEducationNews extends ListRecords
@@ -167,10 +168,16 @@ class ListEducationNews extends ListRecords
 
                         $this->redirect(EducationNewsResource::getUrl('index'));
                     } catch (Throwable $exception) {
+                        Log::warning('Generate SEO AI article failed.', [
+                            'message' => $exception->getMessage(),
+                            'previous' => $exception->getPrevious()?->getMessage(),
+                        ]);
+
                         Notification::make()
                             ->title('Generate AI gagal')
                             ->body('Generate AI gagal. Silakan coba lagi atau periksa konfigurasi API.')
                             ->danger()
+                            ->persistent()
                             ->send();
                     }
                 }),

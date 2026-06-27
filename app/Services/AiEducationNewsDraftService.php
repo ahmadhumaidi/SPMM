@@ -59,6 +59,8 @@ class AiEducationNewsDraftService
     public function createSeoArticleDraft(array $payload, ?array $campusIds = null): EducationNews
     {
         $payload = $this->normalizeSeoPayload($payload);
+        $this->ensureOpenAiConfigured();
+
         $trendContext = $this->trendContext($payload['topik_artikel'].' '.$payload['keyword_utama']);
         $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
         $source = [
@@ -117,6 +119,13 @@ class AiEducationNewsDraftService
         }
 
         return $news;
+    }
+
+    private function ensureOpenAiConfigured(): void
+    {
+        if (blank(config('spmm.ai_news.openai_api_key'))) {
+            throw new RuntimeException('OPENAI_API_KEY belum dikonfigurasi.');
+        }
     }
 
     private function nextSourceItem(?string $topic = null): array
