@@ -5,9 +5,10 @@
     $avatarInitial = mb_substr($studentName, 0, 1);
     $invoice = $lead->latestInvoice;
     $virtualAccount = $invoice?->va_number ?: ($invoice?->gateway_reference ?: '-');
-    $totalPlan = $payments->sum('amount');
-    $totalPaid = $payments->whereIn('status', ['paid', 'waived'])->sum('amount');
-    $totalActive = $payments->whereNotIn('status', ['paid', 'waived'])->sum('amount');
+    $billablePayments = $billablePayments ?? $payments;
+    $totalPlan = $billablePayments->sum('amount');
+    $totalPaid = $billablePayments->whereIn('status', ['paid', 'waived'])->sum('amount');
+    $totalActive = $billablePayments->whereNotIn('status', ['paid', 'waived'])->sum('amount');
     $activePayments = $activePayments ?? collect();
     $activePaymentTotal = $activePaymentTotal ?? 0;
     $billingMonthLabel = $billingMonthLabel ?? now()->translatedFormat('F Y');
@@ -57,7 +58,7 @@
     <header class="sticky top-0 z-40 border-b border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <a href="{{ route('student-portal.dashboard') }}" class="flex items-center gap-3">
-                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-navy to-cyanx font-black text-white">KN</span>
+                @include('student-portal.partials.campus-logo', ['campus' => $lead->campus])
                 <span>
                     <span class="block font-black text-navy dark:text-white">Pembayaran</span>
                     <span class="block text-xs font-bold text-slate-500 dark:text-slate-400">Terkoneksi realita sistem pusat</span>
@@ -74,6 +75,23 @@
     </header>
 
     <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <div class="mb-6 rounded-[1.5rem] border border-cyan-200 bg-cyan-50 p-5 font-bold text-cyan-900 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-100">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-6 rounded-[1.5rem] border border-red-200 bg-red-50 p-5 text-red-900 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-100">
+                <strong class="block font-black">Upload bukti pembayaran belum berhasil.</strong>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm font-semibold">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <section class="overflow-hidden rounded-[2rem] bg-gradient-to-br from-navy via-[#0b2d63] to-cyan-700 p-6 text-white shadow-glow lg:p-8">
             <div class="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-center">
                 <div>
@@ -102,6 +120,12 @@
                         </span>
                     </div>
                     <strong class="mt-4 block text-2xl font-black text-navy dark:text-white">Rp {{ number_format($card[1], 0, ',', '.') }}</strong>
+                    @if ($card[0] === 'Sudah Lunas' && $totalPaid > 0)
+                        <a href="{{ route('student-portal.payments.receipt') }}" target="_blank" class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-navy px-4 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-1 dark:bg-white dark:text-navy">
+                            <i data-lucide="printer" class="h-4 w-4"></i>
+                            Cetak Kwitansi
+                        </a>
+                    @endif
                 </article>
             @endforeach
         </section>
@@ -146,6 +170,92 @@
             </div>
         </section>
 
+        <section id="bayar-sekarang" class="mt-6 overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-soft dark:border-white/10 dark:bg-white/10">
+            <div class="grid gap-0 lg:grid-cols-[.95fr_1.05fr]">
+                <div class="bg-gradient-to-br from-navy via-[#0b2d63] to-cyan-700 p-6 text-white lg:p-8">
+                    <p class="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-wide text-cyan-100">Bayar Sekarang</p>
+                    <h2 class="mt-5 text-3xl font-black">Transfer ke rekening resmi Mahera Media</h2>
+                    <p class="mt-3 text-sm font-semibold leading-7 text-sky-100">Setelah transfer sesuai nominal tagihan aktif, upload struk pembayaran agar tim keuangan bisa melakukan verifikasi.</p>
+
+                    <div class="mt-6 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+                        <p class="text-xs font-black uppercase tracking-wide text-cyan-100">Bank tujuan</p>
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <p class="text-xs font-bold text-sky-100">Bank</p>
+                                <strong class="mt-1 block text-2xl font-black">Mandiri</strong>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-sky-100">Atas nama</p>
+                                <strong class="mt-1 block text-2xl font-black">Mahera Media</strong>
+                            </div>
+                        </div>
+                        <div class="mt-5 rounded-2xl bg-white p-4 text-navy">
+                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Nomor rekening</p>
+                            <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <strong class="text-3xl font-black tracking-wide">1440029473219</strong>
+                                <button type="button" data-copy-account class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyanx px-4 py-3 text-sm font-black text-white shadow-glow">
+                                    <i data-lucide="copy" class="h-4 w-4"></i>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 lg:p-8">
+                    <p class="text-sm font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Upload Struk</p>
+                    <h3 class="mt-1 text-2xl font-black text-navy dark:text-white">Kirim bukti transfer</h3>
+                    <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Status pembayaran menjadi menunggu verifikasi sampai disetujui tim keuangan.</p>
+
+                    @if ($activePayments->isNotEmpty())
+                        <div class="mt-5 rounded-3xl bg-cyan-50 p-5 dark:bg-cyan-500/10">
+                            <p class="text-xs font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-200">Total tagihan aktif</p>
+                            <strong class="mt-1 block text-3xl font-black text-navy dark:text-white">Rp {{ number_format($activePaymentTotal, 0, ',', '.') }}</strong>
+                        </div>
+
+                        <form method="POST" action="{{ route('student-portal.payments.proof') }}" enctype="multipart/form-data" class="mt-5 grid gap-4">
+                            @csrf
+                            <label class="grid gap-2">
+                                <span class="text-sm font-black text-slate-700 dark:text-slate-200">Pilih tagihan yang dibayar</span>
+                                <select name="student_payment_id" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 font-bold outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
+                                    @foreach ($activePayments as $payment)
+                                        <option value="{{ $payment->id }}">
+                                            {{ $payment->payment_label ?: ($payment->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$payment->month) }} - Rp {{ number_format($payment->amount, 0, ',', '.') }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="grid gap-2">
+                                <span class="text-sm font-black text-slate-700 dark:text-slate-200">Upload struk transfer</span>
+                                <input type="file" name="proof_path" accept=".jpg,.jpeg,.png,.pdf" required class="rounded-2xl border border-slate-200 bg-white p-3 text-sm font-bold file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 8 MB.</span>
+                            </label>
+                            <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyanx px-6 py-4 font-black text-white shadow-glow transition hover:-translate-y-1">
+                                <i data-lucide="upload-cloud" class="h-5 w-5"></i>
+                                Kirim Struk untuk Verifikasi
+                            </button>
+                        </form>
+                    @else
+                        <div class="mt-5 rounded-3xl bg-slate-50 p-6 text-center dark:bg-white/5">
+                            <i data-lucide="badge-check" class="mx-auto h-10 w-10 text-cyan-600 dark:text-cyan-200"></i>
+                            <strong class="mt-3 block text-navy dark:text-white">Tidak ada tagihan aktif untuk dibayar.</strong>
+                            <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Form upload struk akan muncul saat ada tagihan berjalan yang belum lunas.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @if ($activePayments->isNotEmpty())
+                <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 lg:px-8">
+                    Pastikan nominal transfer sesuai tagihan yang dipilih. Pembayaran baru dianggap lunas setelah struk diverifikasi oleh tim keuangan.
+                </div>
+            @else
+                <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 lg:px-8">
+                    Rekening ini hanya digunakan saat ada tagihan aktif yang tampil di akun mahasiswa.
+                </div>
+            @endif
+        </section>
+
         <section class="mt-6 overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-soft dark:border-white/10 dark:bg-white/10">
             <div class="flex flex-col gap-3 border-b border-slate-100 p-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -169,7 +279,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-white/10">
-                        @forelse ($payments as $payment)
+                        @forelse ($billablePayments as $payment)
                             @php
                                 $isPaid = in_array($payment->status, ['paid', 'waived'], true);
                                 $badgeClass = $isPaid
@@ -208,6 +318,11 @@
         document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
             root.classList.toggle('dark');
             localStorage.setItem('student-theme', root.classList.contains('dark') ? 'dark' : 'light');
+        });
+        document.querySelector('[data-copy-account]')?.addEventListener('click', async (event) => {
+            await navigator.clipboard?.writeText('1440029473219');
+            event.currentTarget.innerHTML = '<i data-lucide="check" class="h-4 w-4"></i> Tersalin';
+            lucide.createIcons();
         });
         lucide.createIcons();
     </script>

@@ -6,18 +6,18 @@ use App\Models\Invoice;
 use App\Models\Lead;
 use App\Services\Payment\Contracts\PaymentGateway;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class MockPaymentGateway implements PaymentGateway
 {
     public function createInvoice(Lead $lead, array $payload): InvoiceResult
     {
-        $reference = 'MOCK-'.Str::upper(Str::random(16));
+        $reference = '000'.str_pad((string) $lead->id, 7, '0', STR_PAD_LEFT);
 
         return new InvoiceResult(
             gatewayReference: $reference,
             paymentUrl: url("/mock-payment/{$reference}"),
-            paymentMethod: $payload['payment_method'] ?? 'mock',
+            paymentMethod: $payload['payment_method'] ?? 'virtual_account',
+            vaNumber: $reference,
         );
     }
 
@@ -42,3 +42,5 @@ class MockPaymentGateway implements PaymentGateway
         return $invoice->status->value;
     }
 }
+
+

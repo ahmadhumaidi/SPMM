@@ -11,6 +11,7 @@ use App\Services\Whatsapp\WhatsappManager;
 use App\Services\AuditLogger;
 use App\Services\ReferralService;
 use App\Services\StudentBiodataProvisioner;
+use App\Services\StudentPaymentScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,6 +25,7 @@ class PaymentWebhookService
         private readonly AuditLogger $audit,
         private readonly ReferralService $referrals,
         private readonly StudentBiodataProvisioner $studentBiodata,
+        private readonly StudentPaymentScheduleService $studentPayments,
     ) {
     }
 
@@ -68,8 +70,9 @@ class PaymentWebhookService
                 ]);
 
                 $lead = $invoice->lead->fresh();
+                $this->studentPayments->generateForLead($lead, invoice: $invoice, includeHerregistration: true);
                 $this->studentBiodata->createForPaidRegistration($lead);
-                $this->referrals->markPaid($lead);
+                $this->referrals->syncMilestones($lead);
                 $this->whatsapp->driver()->sendPaymentSuccess($lead, $invoice);
                 $this->whatsapp->driver()->sendPemberkasanLink($lead);
                 $this->audit->record('invoice_paid', $invoice, ['lead_id' => $lead->id]);

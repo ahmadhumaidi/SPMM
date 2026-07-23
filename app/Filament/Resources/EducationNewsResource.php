@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EducationNewsResource\Pages;
 use App\Models\EducationNews;
 use App\Support\FilamentResourceScope;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -44,7 +45,7 @@ class EducationNewsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with(['campuses', 'publishedBy']);
+        $query = parent::getEloquentQuery()->with(['campuses', 'publishedBy', 'createdBy']);
 
         if (FilamentResourceScope::isSuperAdmin()) {
             return $query;
@@ -113,8 +114,37 @@ class EducationNewsResource extends Resource
                         ->disabled()
                         ->dehydrated(false)
                         ->placeholder('Belum dipublish'),
+                    Select::make('created_by_user_id')
+                        ->label('Dibuat oleh')
+                        ->relationship('createdBy', 'name')
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->placeholder('Sistem / belum tercatat'),
                     FileUpload::make('image_path')
                         ->label('Gambar Berita')
+                        ->hintAction(
+                            FormAction::make('removeImage')
+                                ->label('Hapus gambar')
+                                ->icon('heroicon-o-trash')
+                                ->iconButton()
+                                ->color('danger')
+                                ->visible(fn (?EducationNews $record): bool => filled($record?->image_path))
+                                ->requiresConfirmation()
+                                ->action(function (?EducationNews $record, callable $set): void {
+                                    if (! $record || blank($record->image_path)) {
+                                        return;
+                                    }
+
+                                    \Illuminate\Support\Facades\Storage::disk('public')->delete($record->image_path);
+                                    $record->forceFill(['image_path' => null])->save();
+                                    $set('image_path', null);
+
+                                    Notification::make()
+                                        ->title('Gambar berhasil dihapus')
+                                        ->success()
+                                        ->send();
+                                })
+                        )
                         ->image()
                         ->imageEditor()
                         ->disk('public')
@@ -125,7 +155,11 @@ class EducationNewsResource extends Resource
                         ->deletable()
                         ->downloadable()
                         ->openable()
-                        ->previewable()
+                        ->previewable(false)
+                        ->deleteUploadedFileUsing(function (string $file): void {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($file);
+                        })
+                        ->helperText('Klik icon tong sampah di kanan atas field untuk menghapus gambar lama, lalu upload gambar baru.')
                         ->columnSpanFull(),
                     Textarea::make('excerpt')
                         ->label('Ringkasan')
@@ -206,7 +240,12 @@ class EducationNewsResource extends Resource
                 TextColumn::make('title')
                     ->label('Judul')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->limit(180)
+                    ->tooltip(fn (EducationNews $record): string => $record->title)
+                    ->extraHeaderAttributes(['style' => 'min-width: 520px;'])
+                    ->extraAttributes(['style' => 'min-width: 520px; max-width: 680px; white-space: normal; line-height: 1.5;']),
                 TextColumn::make('campuses.name')
                     ->label('Kampus')
                     ->placeholder('Umum')
@@ -214,32 +253,9 @@ class EducationNewsResource extends Resource
                     ->limitList(3)
                     ->expandableLimitedList()
                     ->searchable(),
-                TextColumn::make('category')
-                    ->label('Kategori')
-                    ->badge(),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge(),
-                TextColumn::make('ai_generated')
-                    ->label('AI')
-                    ->badge()
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'AI' : 'Manual')
-                    ->color(fn (bool $state): string => $state ? 'info' : 'gray'),
-                TextColumn::make('keyword_utama')
-                    ->label('Keyword')
-                    ->placeholder('-')
-                    ->toggleable(),
-                TextColumn::make('source_name')
-                    ->label('Sumber')
-                    ->placeholder('-')
-                    ->toggleable(),
-                TextColumn::make('published_at')
-                    ->label('Publish')
-                    ->dateTime('d M Y H:i')
-                    ->sortable(),
-                TextColumn::make('publishedBy.name')
-                    ->label('Diverifikasi oleh')
-                    ->placeholder('-')
+                TextColumn::make('createdBy.name')
+                    ->label('Dibuat oleh')
+                    ->placeholder('Sistem')
                     ->toggleable(),
             ])
             ->filters([
@@ -256,8 +272,26 @@ class EducationNewsResource extends Resource
                     ->preload(),
             ])
             ->actions([
+                Tables\Actions\Action::make('detail')
+                    ->label('Detail')
+                    ->tooltip('Lihat detail')
+                    ->grouped(false)
+                    ->icon('heroicon-o-eye')
+                    ->iconButton()
+                    ->color('gray')
+                    ->modalHeading(fn (EducationNews $record): string => 'Detail: '.$record->title)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalWidth('3xl')
+                    ->modalContent(fn (EducationNews $record): \Illuminate\Contracts\View\View => view('filament.resources.education-news-resource.detail-modal', [
+                        'record' => $record,
+                    ])),
                 Tables\Actions\Action::make('publish')
                     ->label('Publish')
+                    ->tooltip('Publish berita')
+                    ->grouped(false)
+                    ->icon('heroicon-o-check-circle')
+                    ->iconButton()
                     ->visible(fn (EducationNews $record): bool => $record->status !== 'published')
                     ->requiresConfirmation()
                     ->action(function (EducationNews $record): void {
@@ -272,8 +306,16 @@ class EducationNewsResource extends Resource
                             ->success()
                             ->send();
                     }),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Ubah')
+                    ->tooltip('Ubah berita')
+                    ->grouped(false)
+                    ->iconButton(),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->tooltip('Hapus berita')
+                    ->grouped(false)
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

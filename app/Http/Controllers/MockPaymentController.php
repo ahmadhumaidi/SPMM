@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\PaymentEvent;
 use App\Services\ReferralService;
 use App\Services\StudentBiodataProvisioner;
+use App\Services\StudentPaymentScheduleService;
 use App\Services\Whatsapp\WhatsappManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 
 class MockPaymentController extends Controller
 {
-    public function pay(string $reference, WhatsappManager $whatsapp, ReferralService $referrals, StudentBiodataProvisioner $studentBiodata): JsonResponse
+    public function pay(string $reference, WhatsappManager $whatsapp, ReferralService $referrals, StudentBiodataProvisioner $studentBiodata, StudentPaymentScheduleService $studentPayments): JsonResponse
     {
         abort_unless(app()->environment('local'), 404);
 
@@ -24,7 +25,7 @@ class MockPaymentController extends Controller
             ->where('gateway_reference', $reference)
             ->firstOrFail();
 
-        DB::transaction(function () use ($invoice, $reference, $whatsapp, $referrals, $studentBiodata): void {
+        DB::transaction(function () use ($invoice, $reference, $whatsapp, $referrals, $studentBiodata, $studentPayments): void {
             PaymentEvent::create([
                 'invoice_id' => $invoice->id,
                 'gateway_reference' => $reference,
@@ -48,8 +49,9 @@ class MockPaymentController extends Controller
                 ]);
 
                 $lead = $lead->fresh();
+                $studentPayments->generateForLead($lead, invoice: $invoice, includeHerregistration: true);
                 $studentBiodata->createForPaidRegistration($lead);
-                $referrals->markPaid($lead);
+                $referrals->syncMilestones($lead);
                 $whatsapp->driver()->sendPaymentSuccess($lead, $invoice);
                 $whatsapp->driver()->sendPemberkasanLink($lead);
             }

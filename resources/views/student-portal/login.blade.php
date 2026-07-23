@@ -11,7 +11,12 @@
         <section class="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl shadow-slate-200">
             <p class="text-sm font-black uppercase tracking-wide text-sky-700">Portal Mahasiswa</p>
             <h1 class="mt-2 text-3xl font-black text-slate-950">Login Kampus Media</h1>
-            <p class="mt-3 leading-7 text-slate-600">Masuk menggunakan email dan password sementara yang dikirim setelah pendaftaran.</p>
+
+            @if (session('status'))
+                <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold leading-6 text-emerald-700">
+                    {{ session('status') }}
+                </div>
+            @endif
 
             <form method="POST" action="{{ route('student-portal.authenticate') }}" class="mt-7 grid gap-4">
                 @csrf
@@ -26,6 +31,7 @@
                     @error('password') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                 </label>
                 <button class="h-12 rounded-2xl bg-slate-950 font-black text-white">Masuk</button>
+                <a href="{{ route('student-portal.password.request') }}" class="text-center text-sm font-black text-sky-700">Lupa password?</a>
             </form>
         </section>
     </main>

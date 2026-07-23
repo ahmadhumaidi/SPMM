@@ -23,6 +23,14 @@ class StudentPayment extends Model
         'amount',
         'due_date',
         'status',
+        'payment_method',
+        'proof_path',
+        'submitted_at',
+        'payment_type',
+        'verification_status',
+        'verified_by_user_id',
+        'verified_at',
+        'verification_notes',
         'paid_at',
         'notes',
         'source_row_json',
@@ -38,6 +46,8 @@ class StudentPayment extends Model
             'ukt' => 'integer',
             'amount' => 'integer',
             'due_date' => 'date',
+            'submitted_at' => 'datetime',
+            'verified_at' => 'datetime',
             'paid_at' => 'datetime',
             'source_row_json' => 'array',
         ];
@@ -56,5 +66,10 @@ class StudentPayment extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by_user_id');
     }
 }

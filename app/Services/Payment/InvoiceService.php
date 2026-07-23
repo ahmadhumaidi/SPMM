@@ -32,10 +32,12 @@ class InvoiceService
 
             $invoiceNumber = 'INV-'.now()->format('Ymd').'-'.Str::upper(Str::random(8));
 
+            $invoiceAmount = max((int) ($feeScheme->registration_fee ?? 0), 0);
+
             $invoice = $lead->invoices()->create([
                 'invoice_number' => $invoiceNumber,
                 'payment_gateway' => config('spmm.payment.provider'),
-                'amount' => $feeScheme->total_initial_payment,
+                'amount' => $invoiceAmount,
                 'status' => InvoiceStatus::Pending,
                 'expires_at' => now()->addHours(config('spmm.payment.invoice_expiry_hours')),
                 'regenerated_from_invoice_id' => $regeneratedFrom?->id,

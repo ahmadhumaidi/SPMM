@@ -11,7 +11,7 @@ class FilamentResourceScope
     {
         $user = auth()->user();
 
-        if ($user === null || $user->isSuperAdmin()) {
+        if ($user === null || $user->isSuperAdmin() || static::isDirector()) {
             return $query;
         }
 
@@ -26,7 +26,7 @@ class FilamentResourceScope
     {
         $user = auth()->user();
 
-        if ($user === null || $user->isSuperAdmin()) {
+        if ($user === null || $user->isSuperAdmin() || static::isDirector()) {
             return $query;
         }
 
@@ -41,7 +41,7 @@ class FilamentResourceScope
     {
         $user = auth()->user();
 
-        if ($user === null || $user->isSuperAdmin()) {
+        if ($user === null || $user->isSuperAdmin() || static::isDirector()) {
             return $query;
         }
 
@@ -66,6 +66,11 @@ class FilamentResourceScope
         return auth()->user()?->role === UserRole::KoordinatorPmb;
     }
 
+    public static function isDirector(): bool
+    {
+        return auth()->user()?->role === UserRole::Direktur;
+    }
+
     public static function isStaff(): bool
     {
         return auth()->user()?->role === UserRole::StaffPmb;
@@ -78,12 +83,12 @@ class FilamentResourceScope
 
     public static function canAccessPortalPublic(): bool
     {
-        return static::isSuperAdmin() || static::isCoordinator() || static::isStaff();
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
     }
 
     public static function canAccessReports(): bool
     {
-        return static::isSuperAdmin() || static::isCoordinator() || static::isStaff();
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
     }
 
     public static function canAccessPddikti(): bool
@@ -98,16 +103,21 @@ class FilamentResourceScope
 
     public static function canAccessAffiliates(): bool
     {
-        return static::isSuperAdmin() || static::isCoordinator() || static::isStaff();
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
     }
 
     public static function canAccessPayments(): bool
     {
-        return static::isSuperAdmin() || static::isCoordinator() || static::isStaff();
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
+    }
+
+    public static function canVerifyPayments(): bool
+    {
+        return static::canAccessPayments();
     }
 
     public static function canAccessStudentRecords(): bool
     {
-        return static::isSuperAdmin() || static::isCoordinator() || static::isStaff();
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
     }
 }

@@ -10,12 +10,12 @@ class LeadPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [UserRole::SuperAdmin, UserRole::KoordinatorPmb, UserRole::StaffPmb], true);
+        return in_array($user->role, [UserRole::SuperAdmin, UserRole::Direktur, UserRole::KoordinatorPmb, UserRole::StaffPmb], true);
     }
 
     public function view(User $user, Lead $lead): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->role === UserRole::Direktur) {
             return true;
         }
 
@@ -30,6 +30,10 @@ class LeadPolicy
     {
         if ($user->isSuperAdmin()) {
             return true;
+        }
+
+        if ($user->role === UserRole::Direktur) {
+            return false;
         }
 
         if ($user->role === UserRole::KoordinatorPmb) {

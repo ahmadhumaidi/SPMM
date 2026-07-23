@@ -32,9 +32,11 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->font('Inter')
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->renderHook(
                 'panels::head.end',
-                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=21">'),
+                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=23">'),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

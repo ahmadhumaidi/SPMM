@@ -61,7 +61,7 @@ class PartnerCampusSiteResource extends Resource
                         ->disabled(),
                     TextInput::make('subdomain')
                         ->label('Subdomain')
-                        ->helperText('Contoh: mahera-jakarta. Nanti menjadi mahera-jakarta.kampusmedia.cloud')
+                        ->helperText('Contoh: mahera-jakarta. Otomatis menjadi https://mahera-jakarta.kampus.media')
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
                     TextInput::make('custom_domain')
@@ -88,7 +88,7 @@ class PartnerCampusSiteResource extends Resource
                     Placeholder::make('subdomain_preview')
                         ->label('URL subdomain produksi')
                         ->content(fn (Campus $record): string => filled($record->subdomain)
-                            ? $record->subdomain.'.kampusmedia.cloud'
+                            ? 'https://'.$record->subdomain.'.kampus.media'
                             : 'Isi subdomain terlebih dahulu.'),
                     Placeholder::make('custom_domain_preview')
                         ->label('URL custom domain')
@@ -126,13 +126,12 @@ class PartnerCampusSiteResource extends Resource
                         ->disk('public')
                         ->directory('campus-website')
                         ->visibility('public')
-                        ->imageEditor()
                         ->maxFiles(1)
                         ->fetchFileInformation(false)
                         ->deletable()
                         ->downloadable()
                         ->openable()
-                        ->previewable()
+                        ->previewable(false)
                         ->columnSpanFull(),
                 ]),
             Section::make('Kontak & Promo')
@@ -186,7 +185,6 @@ class PartnerCampusSiteResource extends Resource
                             FileUpload::make('photo_path')
                                 ->label('Foto')
                                 ->image()
-                                ->imageEditor()
                                 ->disk('public')
                                 ->directory('campus-testimonials')
                                 ->visibility('public')
@@ -195,7 +193,7 @@ class PartnerCampusSiteResource extends Resource
                                 ->deletable()
                                 ->downloadable()
                                 ->openable()
-                                ->previewable(),
+                                ->previewable(false),
                             TextInput::make('name')->label('Nama')->required()->maxLength(120),
                             TextInput::make('role')->label('Keterangan')->placeholder('Karyawan Swasta')->maxLength(120),
                             Textarea::make('quote')->label('Testimoni')->rows(3)->required(),
@@ -214,7 +212,6 @@ class PartnerCampusSiteResource extends Resource
                             FileUpload::make('image_path')
                                 ->label('Foto')
                                 ->image()
-                                ->imageEditor()
                                 ->disk('public')
                                 ->directory('campus-gallery')
                                 ->visibility('public')
@@ -223,7 +220,7 @@ class PartnerCampusSiteResource extends Resource
                                 ->deletable()
                                 ->downloadable()
                                 ->openable()
-                                ->previewable()
+                                ->previewable(false)
                                 ->required(),
                             TextInput::make('title')
                                 ->label('Judul')
@@ -267,7 +264,7 @@ class PartnerCampusSiteResource extends Resource
                 TextColumn::make('subdomain')
                     ->label('Subdomain')
                     ->placeholder('Belum diatur')
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state.'.kampusmedia.cloud' : 'Belum diatur')
+                    ->formatStateUsing(fn (?string $state): string => $state ? $state.'.kampus.media' : 'Belum diatur')
                     ->copyable(),
                 TextColumn::make('custom_domain')
                     ->label('Custom domain')

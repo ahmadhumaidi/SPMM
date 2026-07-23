@@ -1,14 +1,17 @@
 <x-filament-panels::page>
     @php
         $record->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
+        $schedulePayments = $record->studentPayments
+            ->filter(fn ($payment) => $payment->payment_type !== 'manual')
+            ->values();
         $selectionNumber = $record->studentBiodata?->selection_number ?? \App\Filament\Resources\StudentPaymentResource::selectionNumberFor($record);
         $virtualAccount = $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-');
         $registrationInvoice = $record->latestInvoice;
-        $formPayment = $record->studentPayments->firstWhere('month', 0);
-        $semesterPayments = $record->studentPayments->where('month', '>', 0)->values();
+        $formPayment = $schedulePayments->firstWhere('month', 0);
+        $semesterPayments = $schedulePayments->where('month', '>', 0)->values();
         $semesterGroups = $semesterPayments->groupBy(fn ($payment) => (int) ceil($payment->month / 6));
-        $paidTotal = $record->studentPayments->where('status', 'paid')->sum('amount');
-        $plannedTotal = $record->studentPayments->sum('amount');
+        $paidTotal = $schedulePayments->where('status', 'paid')->sum('amount');
+        $plannedTotal = $schedulePayments->sum('amount');
         $herregistrationTotal = $semesterPayments->sum('amount');
     @endphp
 

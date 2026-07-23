@@ -44,6 +44,7 @@ class EducationNews extends Model
         'status',
         'published_at',
         'published_by_user_id',
+        'created_by_user_id',
     ];
 
     protected function casts(): array
@@ -60,6 +61,12 @@ class EducationNews extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (EducationNews $news): void {
+            if (blank($news->created_by_user_id) && auth()->check()) {
+                $news->created_by_user_id = auth()->id();
+            }
+        });
+
         static::saving(function (EducationNews $news): void {
             if (
                 $news->status === 'published'
@@ -84,5 +91,10 @@ class EducationNews extends Model
     public function publishedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'published_by_user_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }

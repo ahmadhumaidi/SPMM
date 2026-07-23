@@ -7,6 +7,7 @@ use App\Models\ReferralPartner;
 use App\Models\StudentAccount;
 use App\Models\User;
 use App\Support\FilamentResourceScope;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -16,6 +17,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class ReferralPartnerResource extends Resource
@@ -26,9 +28,9 @@ class ReferralPartnerResource extends Resource
 
     protected static ?string $navigationGroup = 'Afiliasi';
 
-    protected static ?string $navigationLabel = 'Link Referral';
+    protected static ?string $navigationLabel = 'Affiliator';
 
-    protected static ?string $modelLabel = 'Link Referral';
+    protected static ?string $modelLabel = 'Affiliator';
 
     protected static ?int $navigationSort = 1;
 
@@ -91,6 +93,71 @@ class ReferralPartnerResource extends Resource
                     ->all())
                 ->searchable()
                 ->visible(fn ($get): bool => $get('type') === 'mahasiswa'),
+            TextInput::make('email')
+                ->label('Email')
+                ->email()
+                ->maxLength(255)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            TextInput::make('password')
+                ->label('Password dashboard')
+                ->password()
+                ->revealable()
+                ->minLength(8)
+                ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
+                ->dehydrated(fn (?string $state): bool => filled($state))
+                ->visible(fn ($get): bool => $get('type') === 'umum')
+                ->helperText('Isi hanya jika ingin membuat atau mengganti password affiliator umum.'),
+            TextInput::make('phone')
+                ->label('No HP/WA')
+                ->maxLength(32)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            Textarea::make('address')
+                ->label('Alamat KTP')
+                ->visible(fn ($get): bool => $get('type') === 'umum')
+                ->columnSpanFull(),
+            TextInput::make('source_information')
+                ->label('Sumber informasi')
+                ->maxLength(255)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            TextInput::make('npwp')
+                ->label('NPWP')
+                ->maxLength(32)
+                ->visible(fn ($get): bool => $get('type') === 'umum')
+                ->helperText('Pajak komisi ditanggung oleh penerima komisi.'),
+            TextInput::make('bank_name')
+                ->label('Bank')
+                ->maxLength(100)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            TextInput::make('bank_account_number')
+                ->label('Nomor rekening')
+                ->maxLength(64)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            TextInput::make('bank_account_name')
+                ->label('Atas nama rekening')
+                ->maxLength(255)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            FileUpload::make('identity_card_path')
+                ->label('KTP')
+                ->disk('public')
+                ->directory('affiliate-identity-cards')
+                ->fetchFileInformation(false)
+                ->openable()
+                ->downloadable()
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            FileUpload::make('digital_signature_path')
+                ->label('Tanda tangan digital')
+                ->disk('public')
+                ->directory('affiliate-signatures')
+                ->image()
+                ->fetchFileInformation(false)
+                ->openable()
+                ->downloadable()
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
+            TextInput::make('terms_document_path')
+                ->label('Dokumen syarat dan ketentuan')
+                ->disabled()
+                ->dehydrated(false)
+                ->visible(fn ($get): bool => $get('type') === 'umum'),
             TextInput::make('referral_code')
                 ->label('Kode referral')
                 ->required()
@@ -98,6 +165,13 @@ class ReferralPartnerResource extends Resource
                 ->maxLength(64)
                 ->default(fn (): string => 'REF-'.Str::upper(Str::random(8)))
                 ->helperText('Link: /daftar?ref=KODE'),
+            TextInput::make('dashboard_token')
+                ->label('Token dashboard')
+                ->default(fn (): string => Str::random(64))
+                ->maxLength(80)
+                ->visible(fn ($get): bool => $get('type') === 'umum')
+                ->dehydrated(fn ($get): bool => $get('type') === 'umum')
+                ->helperText('Link dashboard affiliator dibuat otomatis dari token ini.'),
             TextInput::make('commission_amount')
                 ->label('Komisi')
                 ->prefix('Rp')
@@ -125,15 +199,29 @@ class ReferralPartnerResource extends Resource
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('type')->label('Tipe')->badge(),
+                TextColumn::make('email')->label('Email')->searchable()->toggleable(),
+                TextColumn::make('phone')->label('No HP/WA')->searchable()->toggleable(),
+                TextColumn::make('npwp')->label('NPWP')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('referral_code')->label('Kode')->copyable()->searchable(),
                 TextColumn::make('referral_link')
                     ->label('Link')
-                    ->state(fn (ReferralPartner $record): string => rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/').'/daftar?ref='.$record->referral_code)
+                    ->state(fn (ReferralPartner $record): string => rtrim(config('spmm.public_url', 'https://kampus.media'), '/').'/daftar?ref='.$record->referral_code)
                     ->copyable()
                     ->limit(44),
+                TextColumn::make('dashboard_link')
+                    ->label('Dashboard')
+                    ->state(fn (ReferralPartner $record): string => $record->dashboard_token ? 'https://affiliate.kampus.media/dashboard/'.$record->dashboard_token : '-')
+                    ->copyable()
+                    ->limit(44)
+                    ->toggleable(),
                 TextColumn::make('conversions_count')->counts('conversions')->label('Pendaftar'),
                 TextColumn::make('commission_amount')->label('Komisi')->money('IDR')->sortable(),
                 TextColumn::make('status')->label('Status')->badge(),
+                TextColumn::make('email_verified_at')
+                    ->label('Verifikasi Email')
+                    ->state(fn (ReferralPartner $record): string => $record->email_verified_at ? 'Terverifikasi' : 'Belum')
+                    ->badge()
+                    ->color(fn (string $state): string => $state === 'Terverifikasi' ? 'success' : 'warning'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

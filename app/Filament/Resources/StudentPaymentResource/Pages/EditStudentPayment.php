@@ -8,6 +8,8 @@ use App\Enums\PaymentStatus;
 use App\Filament\Resources\StudentPaymentResource;
 use App\Models\StudentPayment;
 use App\Services\StudentBiodataProvisioner;
+use App\Services\ReferralService;
+use App\Services\StudentPaymentScheduleService;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -31,7 +33,11 @@ class EditStudentPayment extends EditRecord
 
         $this->record->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
 
-        $this->paymentRows = $this->record->studentPayments
+        $schedulePayments = $this->record->studentPayments
+            ->filter(fn (StudentPayment $payment): bool => $payment->payment_type !== 'manual')
+            ->values();
+
+        $this->paymentRows = $schedulePayments
             ->mapWithKeys(fn (StudentPayment $payment): array => [
                 $payment->id => [
                     'month' => $payment->month,
@@ -49,12 +55,12 @@ class EditStudentPayment extends EditRecord
             ])
             ->all();
 
-        $this->planningFirstPaymentDate = $this->record->studentPayments
+        $this->planningFirstPaymentDate = $schedulePayments
             ->firstWhere('month', 1)
             ?->due_date
             ?->format('Y-m-d');
 
-        $this->planningSecondPaymentDate = $this->record->studentPayments
+        $this->planningSecondPaymentDate = $schedulePayments
             ->firstWhere('month', 2)
             ?->due_date
             ?->format('Y-m-d');
@@ -74,7 +80,11 @@ class EditStudentPayment extends EditRecord
         $firstDate = Carbon::parse($this->planningFirstPaymentDate)->startOfDay();
         $secondDate = Carbon::parse($this->planningSecondPaymentDate)->startOfDay();
 
-        foreach ($this->record->studentPayments()->where('month', '>', 0)->orderBy('month')->get() as $payment) {
+        foreach ($this->record->studentPayments()
+            ->where(fn ($query) => $query->whereNull('payment_type')->orWhere('payment_type', '!=', 'manual'))
+            ->where('month', '>', 0)
+            ->orderBy('month')
+            ->get() as $payment) {
             $month = (int) $payment->month;
 
             if ($month === 1) {
@@ -108,6 +118,7 @@ class EditStudentPayment extends EditRecord
     public function savePayments(): void
     {
         $registrationMarkedPaid = false;
+        $shouldSyncReferral = false;
 
         foreach ($this->paymentRows as $paymentId => $row) {
             $payment = $this->record->studentPayments->firstWhere('id', (int) $paymentId)
@@ -133,10 +144,18 @@ class EditStudentPayment extends EditRecord
             if ((int) $payment->month === 0 && ($row['status'] ?? null) === 'paid') {
                 $registrationMarkedPaid = true;
             }
+
+            if ($payment->payment_type !== 'manual' && (int) $payment->month > 0 && in_array($row['status'] ?? null, ['paid', 'waived'], true)) {
+                $shouldSyncReferral = true;
+            }
         }
 
         if ($registrationMarkedPaid) {
-            $this->markRegistrationAsPaid(app(StudentBiodataProvisioner::class));
+            $this->markRegistrationAsPaid(app(StudentBiodataProvisioner::class), app(StudentPaymentScheduleService::class));
+        }
+
+        if ($shouldSyncReferral) {
+            app(ReferralService::class)->syncMilestones($this->record->fresh(['referralConversion', 'studentPayments']));
         }
 
         $this->record->refresh()->load(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
@@ -147,7 +166,7 @@ class EditStudentPayment extends EditRecord
             ->send();
     }
 
-    protected function markRegistrationAsPaid(StudentBiodataProvisioner $studentBiodata): void
+    protected function markRegistrationAsPaid(StudentBiodataProvisioner $studentBiodata, StudentPaymentScheduleService $studentPayments): void
     {
         if ($this->record->latestInvoice && $this->record->latestInvoice->status !== InvoiceStatus::Paid) {
             $this->record->latestInvoice->update([
@@ -163,7 +182,10 @@ class EditStudentPayment extends EditRecord
             'locked_at' => $this->record->locked_at ?? now(),
         ]);
 
-        $studentBiodata->createForPaidRegistration($this->record->fresh(['classTrack', 'studentBiodata', 'studentNumber']));
+        $lead = $this->record->fresh(['classTrack', 'studentBiodata', 'studentNumber', 'latestInvoice']);
+
+        $studentPayments->generateForLead($lead, invoice: $lead->latestInvoice, includeHerregistration: true);
+        $studentBiodata->createForPaidRegistration($lead);
     }
 
     protected function getRedirectUrl(): string

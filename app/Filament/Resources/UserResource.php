@@ -39,17 +39,9 @@ class UserResource extends Resource
             TextInput::make('phone')->maxLength(32),
             TextInput::make('password')->password()->required(fn (string $operation): bool => $operation === 'create')->dehydrated(fn (?string $state): bool => filled($state)),
             Select::make('role')
-                ->options(fn (): array => auth()->user()?->isSuperAdmin()
-                    ? [
-                        UserRole::SuperAdmin->value => 'Super Admin',
-                        UserRole::KoordinatorPmb->value => 'Koordinator PMB',
-                        UserRole::StaffPmb->value => 'Staff PMB',
-                    ]
-                    : [
-                        UserRole::StaffPmb->value => 'Staff PMB',
-                    ])
+                ->options(fn (?User $record): array => static::roleOptions($record))
                 ->default(fn (): string => FilamentResourceScope::isCoordinator() ? UserRole::StaffPmb->value : UserRole::StaffPmb->value)
-                ->disabled(fn (?User $record): bool => FilamentResourceScope::isCoordinator() && $record?->exists)
+                ->disabled(fn (?User $record): bool => (FilamentResourceScope::isCoordinator() && $record?->exists) || $record?->role === UserRole::SuperAdmin)
                 ->dehydrated()
                 ->required(),
             Select::make('status')->options([
@@ -99,6 +91,7 @@ class UserResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('role')->options([
                     UserRole::SuperAdmin->value => 'Super Admin',
+                    UserRole::Direktur->value => 'Direktur',
                     UserRole::KoordinatorPmb->value => 'Koordinator PMB',
                     UserRole::StaffPmb->value => 'Staff PMB',
                 ]),
@@ -129,5 +122,26 @@ class UserResource extends Resource
     public static function canDeleteAny(): bool
     {
         return FilamentResourceScope::isSuperAdmin();
+    }
+
+    protected static function roleOptions(?User $record = null): array
+    {
+        if (! auth()->user()?->isSuperAdmin()) {
+            return [
+                UserRole::StaffPmb->value => 'Staff PMB',
+            ];
+        }
+
+        $options = [
+            UserRole::Direktur->value => 'Direktur',
+            UserRole::KoordinatorPmb->value => 'Koordinator PMB',
+            UserRole::StaffPmb->value => 'Staff PMB',
+        ];
+
+        if ($record?->role === UserRole::SuperAdmin) {
+            return [UserRole::SuperAdmin->value => 'Super Admin'] + $options;
+        }
+
+        return $options;
     }
 }

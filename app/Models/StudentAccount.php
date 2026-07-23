@@ -16,6 +16,8 @@ class StudentAccount extends Model
         'email',
         'password',
         'verification_token',
+        'password_reset_token',
+        'password_reset_sent_at',
         'email_verified_at',
         'last_login_at',
     ];
@@ -23,6 +25,7 @@ class StudentAccount extends Model
     protected $hidden = [
         'password',
         'verification_token',
+        'password_reset_token',
     ];
 
     protected function casts(): array
@@ -30,6 +33,7 @@ class StudentAccount extends Model
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'password_reset_sent_at' => 'datetime',
         ];
     }
 

@@ -35,7 +35,11 @@ class InvoiceResource extends Resource
             TextInput::make('lead.full_name')->label('Lead')->disabled(),
             TextInput::make('payment_gateway')->disabled(),
             TextInput::make('gateway_reference')->disabled(),
-            TextInput::make('amount')->prefix('Rp')->disabled(),
+            TextInput::make('amount')
+                ->label('Tagihan aktif')
+                ->prefix('Rp')
+                ->formatStateUsing(fn (?Invoice $record): int => static::activeBillingAmount($record))
+                ->disabled(),
             TextInput::make('payment_method')->disabled(),
             TextInput::make('payment_url')->disabled()->columnSpanFull(),
             TextInput::make('status')->disabled(),
@@ -46,7 +50,8 @@ class InvoiceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['lead.studentPayments']);
         $user = auth()->user();
 
         if ($user?->isSuperAdmin()) {
@@ -63,7 +68,10 @@ class InvoiceResource extends Resource
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('invoice_number')->searchable()->sortable(),
                 TextColumn::make('lead.full_name')->searchable(),
-                TextColumn::make('amount')->money('IDR')->sortable(),
+                TextColumn::make('amount')
+                    ->label('Tagihan Aktif')
+                    ->state(fn (Invoice $record): int => static::activeBillingAmount($record))
+                    ->money('IDR'),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('payment_gateway'),
                 TextColumn::make('expires_at')->dateTime()->sortable(),
@@ -86,5 +94,35 @@ class InvoiceResource extends Resource
             'index' => Pages\ListInvoices::route('/'),
             'view' => Pages\ViewInvoice::route('/{record}'),
         ];
+    }
+
+    private static function activeBillingAmount(?Invoice $invoice): int
+    {
+        if (! $invoice?->lead) {
+            return 0;
+        }
+
+        $payments = $invoice->lead->relationLoaded('studentPayments')
+            ? $invoice->lead->studentPayments
+            : $invoice->lead->studentPayments()->get();
+
+        $scheduledPayments = $payments
+            ->filter(fn ($payment): bool => $payment->payment_type !== 'manual')
+            ->values();
+
+        $registrationPayment = $scheduledPayments->firstWhere('month', 0);
+        $registrationPaid = $registrationPayment && in_array($registrationPayment->status, ['paid', 'waived'], true);
+
+        if (! $registrationPaid) {
+            return (int) $scheduledPayments
+                ->filter(fn ($payment): bool => (int) $payment->month === 0)
+                ->filter(fn ($payment): bool => ! in_array($payment->status, ['paid', 'waived'], true))
+                ->sum('amount');
+        }
+
+        return (int) $scheduledPayments
+            ->filter(fn ($payment): bool => $payment->due_date && $payment->due_date->lte(now()->endOfDay()))
+            ->filter(fn ($payment): bool => ! in_array($payment->status, ['paid', 'waived'], true))
+            ->sum('amount');
     }
 }

@@ -170,8 +170,10 @@ class LeadResource extends Resource
                     FileUpload::make('photo_path')
                         ->label('Foto')
                         ->image()
+                        ->disk('public')
                         ->directory('student-photos')
                         ->imageEditor()
+                        ->fetchFileInformation(false)
                         ->columnSpanFull(),
                 ]),
             Section::make('2. Biodata Mahasiswa')

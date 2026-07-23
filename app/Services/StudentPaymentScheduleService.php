@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class StudentPaymentScheduleService
 {
-    public function generateForLead(Lead $lead, ?FeeScheme $feeScheme = null, ?Invoice $invoice = null): Collection
+    public function generateForLead(Lead $lead, ?FeeScheme $feeScheme = null, ?Invoice $invoice = null, bool $includeHerregistration = true): Collection
     {
         $feeScheme ??= $this->resolveFeeScheme($lead);
 
@@ -61,6 +61,10 @@ class StudentPaymentScheduleService
                 ],
                 $registrationPayload
             ));
+        }
+
+        if (! $includeHerregistration) {
+            return $records;
         }
 
         foreach ($schedule as $row) {

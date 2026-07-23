@@ -10,7 +10,7 @@ class InvoicePolicy
 {
     public function view(User $user, Invoice $invoice): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->role === UserRole::Direktur) {
             return true;
         }
 

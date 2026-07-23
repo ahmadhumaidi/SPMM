@@ -5,15 +5,22 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ReferralConversionResource\Pages;
 use App\Models\ReferralConversion;
 use App\Support\FilamentResourceScope;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 
 class ReferralConversionResource extends Resource
 {
@@ -37,27 +44,95 @@ class ReferralConversionResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            TextInput::make('referralPartner.name')->label('Partner')->disabled(),
-            TextInput::make('lead.full_name')->label('Pendaftar')->disabled(),
-            DateTimePicker::make('registered_at')->label('Tanggal daftar'),
-            DateTimePicker::make('paid_at')->label('Tanggal bayar'),
-            DateTimePicker::make('active_at')->label('Tanggal aktif'),
-            TextInput::make('commission_amount')->label('Komisi')->prefix('Rp')->numeric(),
-            Select::make('commission_status')
-                ->label('Status komisi')
-                ->options([
-                    'pending' => 'Pending',
-                    'approved' => 'Approved',
-                    'paid' => 'Paid',
-                    'cancelled' => 'Cancelled',
+            Section::make('Informasi Referral')
+                ->schema([
+                    Placeholder::make('partner_name')
+                        ->label('Partner')
+                        ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->name ?? '-'),
+                    Placeholder::make('partner_code')
+                        ->label('Kode referral')
+                        ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->referral_code ?? '-'),
+                    Placeholder::make('lead_name')
+                        ->label('Pendaftar')
+                        ->content(fn (?ReferralConversion $record): string => $record?->lead?->full_name ?? '-'),
+                    Placeholder::make('campus_name')
+                        ->label('Kampus')
+                        ->content(fn (?ReferralConversion $record): string => $record?->lead?->campus?->name ?? '-'),
+                    Placeholder::make('study_program_name')
+                        ->label('Prodi')
+                        ->content(fn (?ReferralConversion $record): string => $record?->lead?->studyProgram?->name ?? '-'),
+                    DateTimePicker::make('registered_at')->label('Tanggal daftar'),
+                    DateTimePicker::make('paid_at')->label('Tanggal herregistrasi'),
+                    DateTimePicker::make('active_at')->label('Tanggal aktif'),
                 ])
-                ->required(),
+                ->columns(2),
+            Section::make('Rekening Affiliator')
+                ->schema([
+                    Placeholder::make('bank_name')
+                        ->label('Bank')
+                        ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->bank_name ?? '-'),
+                    Placeholder::make('bank_account_number')
+                        ->label('No. rekening')
+                        ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->bank_account_number ?? '-'),
+                    Placeholder::make('bank_account_name')
+                        ->label('Atas nama')
+                        ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->bank_account_name ?? '-'),
+                ])
+                ->columns(3),
+            Section::make('Komisi Herregistrasi')
+                ->schema([
+                    TextInput::make('herregistration_commission_amount')->label('Nominal')->prefix('Rp')->numeric(),
+                    Select::make('herregistration_commission_status')
+                        ->label('Status')
+                        ->options(static::commissionStatusOptions())
+                        ->required(),
+                    DateTimePicker::make('herregistration_paid_at')->label('Tanggal herregistrasi lunas'),
+                    FileUpload::make('herregistration_payout_proof_path')
+                        ->label('Bukti transfer')
+                        ->disk('public')
+                        ->directory('affiliate-payout-proofs')
+                        ->fetchFileInformation(false)
+                        ->openable()
+                        ->downloadable(),
+                    Textarea::make('herregistration_payout_notes')->label('Catatan payout')->columnSpanFull(),
+                ])
+                ->columns(2),
+            Section::make('Komisi Semester 1')
+                ->schema([
+                    TextInput::make('semester1_commission_amount')->label('Nominal')->prefix('Rp')->numeric(),
+                    Select::make('semester1_commission_status')
+                        ->label('Status')
+                        ->options(static::commissionStatusOptions())
+                        ->required(),
+                    DateTimePicker::make('semester1_paid_at')->label('Tanggal semester 1 lunas'),
+                    FileUpload::make('semester1_payout_proof_path')
+                        ->label('Bukti transfer')
+                        ->disk('public')
+                        ->directory('affiliate-payout-proofs')
+                        ->fetchFileInformation(false)
+                        ->openable()
+                        ->downloadable(),
+                    Textarea::make('semester1_payout_notes')->label('Catatan payout')->columnSpanFull(),
+                ])
+                ->columns(2),
+            Section::make('Status Keseluruhan')
+                ->schema([
+                    TextInput::make('commission_amount')->label('Total komisi layak')->prefix('Rp')->numeric(),
+                    Select::make('commission_status')
+                        ->label('Status total')
+                        ->options(static::commissionStatusOptions())
+                        ->required(),
+                    Placeholder::make('payable_preview')
+                        ->label('Nominal siap dibayar')
+                        ->content(fn (?ReferralConversion $record): string => $record ? 'Rp '.number_format(static::payableCommission($record), 0, ',', '.') : '-'),
+                ])
+                ->columns(3),
         ])->columns(2);
     }
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with(['lead.campus', 'referralPartner']);
+        $query = parent::getEloquentQuery()->with(['lead.campus', 'lead.studyProgram', 'referralPartner']);
 
         if (FilamentResourceScope::isSuperAdmin()) {
             return $query;
@@ -73,16 +148,97 @@ class ReferralConversionResource extends Resource
             ->columns([
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('referralPartner.name')->label('Partner')->searchable(),
-                TextColumn::make('referralPartner.referral_code')->label('Kode')->searchable(),
                 TextColumn::make('lead.full_name')->label('Pendaftar')->searchable(),
                 TextColumn::make('lead.campus.name')->label('Kampus'),
-                TextColumn::make('lead.studyProgram.name')->label('Prodi'),
-                TextColumn::make('registered_at')->label('Daftar')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('paid_at')->label('Bayar')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('commission_amount')->label('Komisi')->money('IDR')->sortable(),
-                TextColumn::make('commission_status')->label('Status')->badge(),
+                TextColumn::make('herregistration_commission_status')
+                    ->label('Komisi Herreg')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => static::commissionStatusLabel($state))
+                    ->color(fn (?string $state): string => static::commissionStatusColor($state)),
+                TextColumn::make('semester1_paid_at')->label('Semester 1')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('semester1_commission_status')
+                    ->label('Komisi Smt 1')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => static::commissionStatusLabel($state))
+                    ->color(fn (?string $state): string => static::commissionStatusColor($state)),
+                TextColumn::make('payable_commission')
+                    ->label('Siap Dibayar')
+                    ->state(fn (ReferralConversion $record): int => static::payableCommission($record))
+                    ->money('IDR')
+                    ->sortable(false),
+            ])
+            ->filters([
+                SelectFilter::make('herregistration_commission_status')
+                    ->label('Status Komisi Herregistrasi')
+                    ->options(static::commissionStatusOptions()),
+                SelectFilter::make('semester1_commission_status')
+                    ->label('Status Komisi Semester 1')
+                    ->options(static::commissionStatusOptions()),
+                SelectFilter::make('commission_status')
+                    ->label('Status Total')
+                    ->options(static::commissionStatusOptions()),
             ])
             ->actions([
+                Action::make('payHerregistration')
+                    ->label('Bayar Layak')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->form([
+                        FileUpload::make('herregistration_payout_proof_path')
+                            ->label('Bukti transfer')
+                            ->disk('public')
+                            ->directory('affiliate-payout-proofs')
+                            ->openable()
+                            ->downloadable()
+                            ->required()
+                            ->maxSize(4096),
+                        Textarea::make('herregistration_payout_notes')
+                            ->label('Catatan untuk affiliator')
+                            ->placeholder('Contoh: Transfer komisi herregistrasi sudah diproses.'),
+                    ])
+                    ->modalHeading('Tandai komisi herregistrasi sudah dibayar?')
+                    ->modalDescription(fn (ReferralConversion $record): string => 'Nominal: Rp '.number_format((int) $record->herregistration_commission_amount, 0, ',', '.'))
+                    ->visible(fn (ReferralConversion $record): bool => $record->herregistration_commission_status === 'approved')
+                    ->action(function (ReferralConversion $record, array $data): void {
+                        $record->update([
+                            'herregistration_commission_status' => 'paid',
+                            'herregistration_payout_proof_path' => $data['herregistration_payout_proof_path'] ?? null,
+                            'herregistration_payout_notes' => $data['herregistration_payout_notes'] ?? null,
+                        ]);
+
+                        static::refreshOverallCommissionStatus($record->refresh());
+                    }),
+                Action::make('paySemester1')
+                    ->label('Bayar Semester 1')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->form([
+                        FileUpload::make('semester1_payout_proof_path')
+                            ->label('Bukti transfer')
+                            ->disk('public')
+                            ->directory('affiliate-payout-proofs')
+                            ->openable()
+                            ->downloadable()
+                            ->required()
+                            ->maxSize(4096),
+                        Textarea::make('semester1_payout_notes')
+                            ->label('Catatan untuk affiliator')
+                            ->placeholder('Contoh: Transfer komisi semester 1 sudah diproses.'),
+                    ])
+                    ->modalHeading('Tandai komisi semester 1 sudah dibayar?')
+                    ->modalDescription(fn (ReferralConversion $record): string => 'Nominal: Rp '.number_format((int) $record->semester1_commission_amount, 0, ',', '.'))
+                    ->visible(fn (ReferralConversion $record): bool => $record->semester1_commission_status === 'approved')
+                    ->action(function (ReferralConversion $record, array $data): void {
+                        $record->update([
+                            'semester1_commission_status' => 'paid',
+                            'semester1_payout_proof_path' => $data['semester1_payout_proof_path'] ?? null,
+                            'semester1_payout_notes' => $data['semester1_payout_notes'] ?? null,
+                        ]);
+
+                        static::refreshOverallCommissionStatus($record->refresh());
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([]);
@@ -94,5 +250,56 @@ class ReferralConversionResource extends Resource
             'index' => Pages\ListReferralConversions::route('/'),
             'edit' => Pages\EditReferralConversion::route('/{record}/edit'),
         ];
+    }
+
+    public static function commissionStatusOptions(): array
+    {
+        return [
+            'pending' => 'Belum layak',
+            'approved' => 'Layak dibayar',
+            'paid' => 'Sudah dibayar',
+            'cancelled' => 'Dibatalkan',
+        ];
+    }
+
+    public static function commissionStatusLabel(?string $state): string
+    {
+        return static::commissionStatusOptions()[$state] ?? ($state ? str($state)->replace('_', ' ')->title()->toString() : '-');
+    }
+
+    public static function commissionStatusColor(?string $state): string
+    {
+        return match ($state) {
+            'approved' => 'warning',
+            'paid' => 'success',
+            'cancelled' => 'danger',
+            default => 'gray',
+        };
+    }
+
+    public static function payableCommission(ReferralConversion $record): int
+    {
+        return (int) ($record->herregistration_commission_status === 'approved' ? $record->herregistration_commission_amount : 0)
+            + (int) ($record->semester1_commission_status === 'approved' ? $record->semester1_commission_amount : 0);
+    }
+
+    public static function refreshOverallCommissionStatus(ReferralConversion $record): void
+    {
+        $herStatus = $record->herregistration_commission_status;
+        $semesterStatus = $record->semester1_commission_status;
+
+        $record->update([
+            'commission_status' => match (true) {
+                $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
+                in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
+                $herStatus === 'cancelled' && $semesterStatus === 'cancelled' => 'cancelled',
+                default => 'pending',
+            },
+        ]);
+    }
+
+    public static function payoutProofUrl(?string $path): ?string
+    {
+        return $path ? Storage::disk('public')->url($path) : null;
     }
 }

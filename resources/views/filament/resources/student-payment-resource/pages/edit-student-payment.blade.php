@@ -2,10 +2,13 @@
     @php
         $record = $this->record;
         $record->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
+        $schedulePayments = $record->studentPayments
+            ->filter(fn ($payment) => $payment->payment_type !== 'manual')
+            ->values();
         $selectionNumber = $record->studentBiodata?->selection_number ?? \App\Filament\Resources\StudentPaymentResource::selectionNumberFor($record);
         $virtualAccount = $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-');
-        $formPayment = $record->studentPayments->firstWhere('month', 0);
-        $semesterPayments = $record->studentPayments->where('month', '>', 0)->values();
+        $formPayment = $schedulePayments->firstWhere('month', 0);
+        $semesterPayments = $schedulePayments->where('month', '>', 0)->values();
         $semesterGroups = $semesterPayments->groupBy(fn ($payment) => (int) ceil($payment->month / 6));
     @endphp
 
@@ -47,11 +50,11 @@
             <div class="spmm-payment-planning-fields">
                 <label>
                     <span>Pembayaran ke-1</span>
-                    <input type="date" wire:model.defer="planningFirstPaymentDate">
+                    <input type="date" wire:model.change="planningFirstPaymentDate">
                 </label>
                 <label>
                     <span>Pembayaran ke-2</span>
-                    <input type="date" wire:model.defer="planningSecondPaymentDate">
+                    <input type="date" wire:model.change="planningSecondPaymentDate">
                 </label>
                 <button type="button" wire:click="runPlanning">Jalankan Perencanaan</button>
             </div>
@@ -91,7 +94,7 @@
                                     <input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.registration_fee">
                                 </td>
                                 <td><input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.amount"></td>
-                                <td><input type="date" wire:model.defer="paymentRows.{{ $formPayment->id }}.due_date"></td>
+                                <td><input type="date" wire:model.change="paymentRows.{{ $formPayment->id }}.due_date"></td>
                                 <td>
                                     <select wire:model.defer="paymentRows.{{ $formPayment->id }}.status">
                                         <option value="unpaid">Belum dibayar</option>
@@ -132,7 +135,7 @@
                                         </div>
                                     </td>
                                     <td><input type="number" wire:model.defer="paymentRows.{{ $payment->id }}.amount"></td>
-                                    <td><input type="date" wire:model.defer="paymentRows.{{ $payment->id }}.due_date"></td>
+                                    <td><input type="date" wire:model.change="paymentRows.{{ $payment->id }}.due_date"></td>
                                     <td>
                                         <select wire:model.defer="paymentRows.{{ $payment->id }}.status">
                                             <option value="unpaid">Belum dibayar</option>

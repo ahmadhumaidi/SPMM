@@ -62,6 +62,7 @@ class User extends Authenticatable implements FilamentUser
         return $this->status === UserStatus::Active
             && in_array($this->role, [
                 UserRole::SuperAdmin,
+                UserRole::Direktur,
                 UserRole::KoordinatorPmb,
                 UserRole::StaffPmb,
             ], true);

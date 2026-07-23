@@ -121,8 +121,10 @@ class StudentBiodataResourceSchema
                     FileUpload::make('photo_path')
                         ->label('Foto')
                         ->image()
+                        ->disk('public')
                         ->directory('student-photos')
                         ->imageEditor()
+                        ->fetchFileInformation(false)
                         ->columnSpanFull(),
                 ]),
             Section::make('Biodata Mahasiswa')

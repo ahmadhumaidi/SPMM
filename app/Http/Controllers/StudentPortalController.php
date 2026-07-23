@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
+use App\Filament\Resources\ManualStudentPaymentResource;
 use App\Models\StudentAccount;
 use App\Models\ClassTrack;
 use App\Models\FeeScheme;
@@ -12,13 +15,22 @@ use App\Models\ReferralPartner;
 use App\Models\StudyPlanItem;
 use App\Models\StudyProgram;
 use App\Models\StudentDocument;
+use App\Models\StudentPayment;
+use App\Models\User;
+use App\Support\ReceiptPdfRenderer;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Throwable;
 
 class StudentPortalController extends Controller
 {
@@ -77,6 +89,68 @@ class StudentPortalController extends Controller
         return redirect()->route('student-portal.dashboard')->with('status', 'Email berhasil diverifikasi.');
     }
 
+    public function forgotPassword(): View
+    {
+        return view('student-portal.forgot-password');
+    }
+
+    public function sendPasswordReset(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+        ]);
+
+        $account = StudentAccount::query()
+            ->with('lead')
+            ->where('email', $data['email'])
+            ->first();
+
+        if ($account) {
+            $account->update([
+                'password_reset_token' => Str::random(64),
+                'password_reset_sent_at' => now(),
+            ]);
+
+            $this->sendStudentPasswordResetEmail($account);
+        }
+
+        return back()->with('status', 'Jika email terdaftar, link reset password sudah dikirim. Silakan cek inbox, spam, atau promosi.');
+    }
+
+    public function resetPassword(string $token): View
+    {
+        $account = $this->resolvePasswordResetAccount($token);
+
+        return view('student-portal.reset-password', [
+            'token' => $token,
+            'email' => $account->email,
+        ]);
+    }
+
+    public function updateResetPassword(Request $request, string $token): RedirectResponse
+    {
+        $account = $this->resolvePasswordResetAccount($token);
+
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak sama.',
+        ]);
+
+        $account->update([
+            'password' => Hash::make($data['password']),
+            'password_reset_token' => null,
+            'password_reset_sent_at' => null,
+        ]);
+
+        return redirect()->route('student-portal.login')->with('status', 'Password berhasil diganti. Silakan login menggunakan password baru.');
+    }
+
     public function dashboard(Request $request): View|RedirectResponse
     {
         $account = $this->currentAccount($request);
@@ -87,11 +161,9 @@ class StudentPortalController extends Controller
             return redirect()->route('student-portal.login');
         }
 
-        $currentMonthPayments = $account->lead->studentPayments
-            ->filter(fn ($payment): bool => $payment->due_date?->isSameMonth(now()) ?? false)
-            ->filter(fn ($payment): bool => ! in_array($payment->status, ['paid', 'waived'], true))
-            ->sortBy('due_date')
-            ->values();
+        $billablePayments = $this->billableStudentPayments($account->lead->studentPayments);
+
+        $currentMonthPayments = $this->activeStudentPayments($billablePayments);
 
         $activeBillTotal = $currentMonthPayments->sum('amount');
         $billingMonthLabel = Carbon::now()->translatedFormat('F Y');
@@ -279,19 +351,126 @@ class StudentPortalController extends Controller
             ->orderBy('month')
             ->orderBy('due_date')
             ->get();
-        $activePayments = $payments
-            ->filter(fn ($payment): bool => $payment->due_date?->isSameMonth(now()) ?? false)
-            ->filter(fn ($payment): bool => ! in_array($payment->status, ['paid', 'waived'], true))
-            ->sortBy('due_date')
-            ->values();
+        $billablePayments = $this->billableStudentPayments($payments);
+        $activePayments = $this->activeStudentPayments($billablePayments);
 
         return view('student-portal.payments', [
             'account' => $account,
             'payments' => $payments,
+            'billablePayments' => $billablePayments,
             'activePayments' => $activePayments,
             'activePaymentTotal' => $activePayments->sum('amount'),
             'billingMonthLabel' => Carbon::now()->translatedFormat('F Y'),
         ]);
+    }
+
+    public function paymentReceipt(Request $request): Response|RedirectResponse
+    {
+        $account = $this->currentAccount($request);
+
+        if (! $account) {
+            return redirect()->route('student-portal.login');
+        }
+
+        $lead = $account->lead->fresh(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'studentNumber', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('paid_at')->orderBy('month')]);
+        $paidPayments = $this->billableStudentPayments($lead->studentPayments)
+            ->filter(fn ($payment): bool => in_array($payment->status, ['paid', 'waived'], true))
+            ->values();
+
+        abort_if($paidPayments->isEmpty(), 404);
+
+        return ReceiptPdfRenderer::render('admin.student-payment-receipt', [
+            'lead' => $lead,
+            'paidPayments' => $paidPayments,
+            'receiptNumber' => 'KWT-'.now()->format('Ymd').'-'.str_pad((string) $lead->id, 5, '0', STR_PAD_LEFT),
+            'totalPaid' => (int) $paidPayments->sum('amount'),
+            'receiptUrl' => route('admin.student-payments.receipt', $lead),
+        ], 'kwitansi-'.$lead->id.'.pdf');
+    }
+    public function uploadPaymentProof(Request $request): RedirectResponse
+    {
+        $account = $this->currentAccount($request);
+
+        if (! $account) {
+            return redirect()->route('student-portal.login');
+        }
+
+        $data = $request->validate([
+            'student_payment_id' => ['required', 'integer'],
+            'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:8192'],
+        ], [
+            'student_payment_id.required' => 'Pilih tagihan yang akan dibayar.',
+            'proof_path.required' => 'Bukti pembayaran wajib diupload.',
+            'proof_path.mimes' => 'Bukti pembayaran harus berupa JPG, PNG, atau PDF.',
+            'proof_path.max' => 'Ukuran bukti pembayaran maksimal 8 MB.',
+        ]);
+
+        $payment = $account->lead->studentPayments()
+            ->whereKey($data['student_payment_id'])
+            ->firstOrFail();
+
+        $billableIds = $this->billableStudentPayments(
+            $account->lead->studentPayments()->orderBy('month')->get()
+        )->pluck('id');
+
+        abort_unless($billableIds->contains($payment->id), 403);
+
+        if (in_array($payment->status, ['paid', 'waived'], true)) {
+            return back()->with('status', 'Tagihan ini sudah lunas.');
+        }
+
+        $path = $request->file('proof_path')->store('student-payment-proofs/'.$account->lead_id, 'public');
+        $manualPayment = $this->pendingManualPaymentFor($account->lead_id, $payment);
+
+        if ($manualPayment?->proof_path) {
+            Storage::disk('public')->delete($manualPayment->proof_path);
+        }
+
+        $manualPayload = [
+            'lead_id' => $account->lead_id,
+            'fee_scheme_id' => $payment->fee_scheme_id,
+            'invoice_id' => $payment->invoice_id,
+            'month' => $manualPayment?->month ?? ManualStudentPaymentResource::nextManualMonthFor($account->lead_id),
+            'payment_label' => $payment->payment_label ?: ((int) $payment->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$payment->month),
+            'registration_fee' => (int) $payment->registration_fee,
+            'development_fee' => (int) $payment->development_fee,
+            'tuition_fee' => (int) $payment->tuition_fee,
+            'ukt' => (int) $payment->ukt,
+            'amount' => (int) $payment->amount,
+            'due_date' => $payment->due_date,
+            'status' => 'pending',
+            'payment_method' => 'transfer_rekening_cv',
+            'proof_path' => $path,
+            'submitted_at' => now(),
+            'payment_type' => 'manual',
+            'verification_status' => 'pending',
+            'verification_notes' => null,
+            'source_row_json' => array_merge($payment->source_row_json ?: [], [
+                'type' => 'student_payment_proof_upload',
+                'rr_student_payment_id' => $payment->id,
+                'rr_month' => $payment->month,
+                'rr_payment_label' => $payment->payment_label ?: ((int) $payment->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$payment->month),
+            ]),
+        ];
+
+        if ($manualPayment) {
+            $manualPayment->update($manualPayload);
+        } else {
+            $manualPayment = StudentPayment::query()->create($manualPayload);
+        }
+
+        $payment->update([
+            'status' => 'pending',
+            'payment_method' => 'transfer_rekening_cv',
+            'proof_path' => $path,
+            'submitted_at' => now(),
+            'verification_status' => 'pending',
+            'verification_notes' => null,
+        ]);
+
+        $this->notifyAdminsPaymentProofSubmitted($manualPayment->refresh(), $payment->refresh());
+
+        return back()->with('status', 'Bukti pembayaran berhasil dikirim. Tim keuangan akan memvalidasi pembayaran kamu.');
     }
 
     public function affiliateDashboard(Request $request): View|RedirectResponse
@@ -324,12 +503,21 @@ class StudentPortalController extends Controller
             'account' => $account,
             'partner' => $partner,
             'conversions' => $conversions,
-            'referralLink' => rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/').'/daftar?ref='.$partner->referral_code,
+            'referralLink' => rtrim(config('spmm.public_url', 'https://kampus.media'), '/').'/daftar?ref='.$partner->referral_code,
             'registeredCount' => $conversions->count(),
-            'paidCount' => $conversions->whereNotNull('paid_at')->count(),
-            'approvedCommission' => $conversions->where('commission_status', 'approved')->sum('commission_amount'),
-            'paidCommission' => $conversions->where('commission_status', 'paid')->sum('commission_amount'),
-            'pendingCommission' => $conversions->whereIn('commission_status', ['pending', 'approved'])->sum('commission_amount'),
+            'paidCount' => $conversions->whereNotNull('herregistration_paid_at')->count(),
+            'approvedCommission' => $conversions->sum(fn ($conversion): int =>
+                (in_array($conversion->herregistration_commission_status, ['approved'], true) ? (int) $conversion->herregistration_commission_amount : 0)
+                + (in_array($conversion->semester1_commission_status, ['approved'], true) ? (int) $conversion->semester1_commission_amount : 0)
+            ),
+            'paidCommission' => $conversions->sum(fn ($conversion): int =>
+                ($conversion->herregistration_commission_status === 'paid' ? (int) $conversion->herregistration_commission_amount : 0)
+                + ($conversion->semester1_commission_status === 'paid' ? (int) $conversion->semester1_commission_amount : 0)
+            ),
+            'pendingCommission' => $conversions->sum(fn ($conversion): int =>
+                (in_array($conversion->herregistration_commission_status, ['pending', 'approved'], true) ? (int) $conversion->herregistration_commission_amount : 0)
+                + (in_array($conversion->semester1_commission_status, ['pending', 'approved'], true) ? (int) $conversion->semester1_commission_amount : 0)
+            ),
         ]);
     }
 
@@ -555,6 +743,119 @@ class StudentPortalController extends Controller
         return $code;
     }
 
+    private function pendingManualPaymentFor(int $leadId, StudentPayment $rrPayment): ?StudentPayment
+    {
+        return StudentPayment::query()
+            ->where('lead_id', $leadId)
+            ->where('payment_type', 'manual')
+            ->whereIn('verification_status', ['pending', 'unverified'])
+            ->latest('id')
+            ->get()
+            ->first(fn (StudentPayment $payment): bool => (int) data_get($payment->source_row_json, 'rr_student_payment_id') === (int) $rrPayment->id);
+    }
+
+    private function notifyAdminsPaymentProofSubmitted(StudentPayment $manualPayment, StudentPayment $rrPayment): void
+    {
+        $manualPayment->loadMissing(['lead.campus', 'lead.studyProgram']);
+        $lead = $manualPayment->lead;
+
+        if (! $lead) {
+            return;
+        }
+
+        $recipients = User::query()
+            ->where('status', UserStatus::Active)
+            ->where(function ($query) use ($lead): void {
+                $query
+                    ->whereIn('role', [UserRole::SuperAdmin, UserRole::Direktur])
+                    ->orWhere(function ($roleQuery) use ($lead): void {
+                        $roleQuery
+                            ->whereIn('role', [UserRole::KoordinatorPmb, UserRole::StaffPmb])
+                            ->whereHas('campuses', fn ($campusQuery) => $campusQuery->whereKey($lead->campus_id));
+                    });
+            })
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $verificationUrl = $this->adminUrl(
+            ManualStudentPaymentResource::getUrl('edit', ['record' => $manualPayment])
+        );
+
+        Notification::make()
+            ->title('Bukti pembayaran mahasiswa masuk')
+            ->body($lead->full_name.' mengirim bukti pembayaran '.($rrPayment->payment_label ?: 'tagihan').' sebesar Rp '.number_format((int) $rrPayment->amount, 0, ',', '.').'. Mohon verifikasi di Pembayaran Manual.')
+            ->icon('heroicon-o-banknotes')
+            ->warning()
+            ->actions([
+                NotificationAction::make('open')
+                    ->label('Buka Verifikasi')
+                    ->button()
+                    ->url($verificationUrl),
+            ])
+            ->sendToDatabase($recipients);
+    }
+
+    private function adminUrl(string $path): string
+    {
+        $adminUrl = rtrim(config('spmm.admin_url', 'https://spmm.maheramedia.com/admin'), '/');
+        $path = parse_url($path, PHP_URL_PATH) ?: $path;
+
+        if (str_starts_with($path, '/admin/')) {
+            $path = substr($path, 6);
+        } elseif ($path === '/admin') {
+            $path = '';
+        }
+
+        return $adminUrl.'/'.ltrim($path, '/');
+    }
+
+    private function resolvePasswordResetAccount(string $token): StudentAccount
+    {
+        $account = StudentAccount::query()
+            ->where('password_reset_token', $token)
+            ->whereNotNull('password_reset_sent_at')
+            ->firstOrFail();
+
+        if ($account->password_reset_sent_at->lt(now()->subMinutes(60))) {
+            abort(403, 'Link reset password sudah kedaluwarsa. Silakan minta link baru.');
+        }
+
+        return $account;
+    }
+
+    private function sendStudentPasswordResetEmail(StudentAccount $account): void
+    {
+        $resetUrl = route('student-portal.password.reset', $account->password_reset_token);
+        $studentName = $account->lead?->full_name ?: 'Mahasiswa';
+
+        $body = "Halo {$studentName},\n\n".
+            "Kami menerima permintaan reset password akun mahasiswa Kampus Media.\n\n".
+            "Klik link berikut untuk membuat password baru:\n{$resetUrl}\n\n".
+            "Link ini berlaku selama 60 menit. Abaikan email ini jika kamu tidak meminta reset password.\n\n".
+            "Salam,\nKampus Media";
+
+        try {
+            Mail::raw($body, function ($message) use ($account, $studentName): void {
+                $message
+                    ->to($account->email, $studentName)
+                    ->subject('Reset Password Akun Mahasiswa Kampus Media');
+            });
+        } catch (Throwable $exception) {
+            Log::warning('Student password reset email failed.', [
+                'student_account_id' => $account->id,
+                'email' => $account->email,
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        if (app()->environment('local')) {
+            Storage::disk('local')->put("local-emails/student-password-reset-{$account->id}.txt", $body);
+        }
+    }
+
     private function feeSchemeFor(StudentAccount $account, ?int $studyProgramId = null, ?int $classTrackId = null): ?FeeScheme
     {
         $lead = $account->lead;
@@ -574,4 +875,33 @@ class StudentPortalController extends Controller
             ->orderByRaw('class_track_id is null')
             ->first();
     }
+
+    private function billableStudentPayments($payments)
+    {
+        $payments = $payments
+            ->filter(fn ($payment): bool => $payment->payment_type !== 'manual')
+            ->values();
+
+        $registrationPayment = $payments->firstWhere('month', 0);
+        $registrationPaid = $registrationPayment && in_array($registrationPayment->status, ['paid', 'waived'], true);
+
+        if ($registrationPaid) {
+            return $payments;
+        }
+
+        return $payments->filter(fn ($payment): bool => (int) $payment->month === 0)->values();
+    }
+
+    private function activeStudentPayments($payments)
+    {
+        $today = now()->endOfDay();
+
+        return $payments
+            ->filter(fn ($payment): bool => $payment->due_date && $payment->due_date->lte($today))
+            ->filter(fn ($payment): bool => ! in_array($payment->status, ['paid', 'waived'], true))
+            ->sortBy('due_date')
+            ->values();
+    }
 }
+
+

@@ -22,12 +22,19 @@ class RegisterLeadRequest extends FormRequest
             'class_track_id' => ['required', 'exists:class_tracks,id'],
             'full_name' => ['required', 'string', 'max:255'],
             'whatsapp_number' => ['required', 'string', 'max:32'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:student_accounts,email'],
             'origin_school' => ['nullable', 'string', 'max:255'],
             'graduation_year' => ['nullable', 'integer', 'min:1970', 'max:'.((int) now()->format('Y') + 1)],
             'source_channel' => ['nullable', 'string', 'max:64'],
             'source_detail' => ['nullable', 'string', 'max:255'],
             'referral_code' => ['nullable', 'string', 'max:64'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'Email mahasiswa ini sudah terdaftar. Silakan gunakan email lain atau login ke dashboard mahasiswa.',
         ];
     }
 

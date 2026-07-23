@@ -58,6 +58,8 @@ class ListEducationNews extends ListRecords
                             ->body($exception->getMessage())
                             ->danger()
                             ->send();
+
+                        $this->redirect(EducationNewsResource::getUrl('index'));
                     }
                 }),
             Actions\Action::make('generateSeoArticle')
@@ -179,6 +181,8 @@ class ListEducationNews extends ListRecords
                             ->danger()
                             ->persistent()
                             ->send();
+
+                        $this->redirect(EducationNewsResource::getUrl('index'));
                     }
                 }),
             Actions\CreateAction::make(),

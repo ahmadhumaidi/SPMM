@@ -2,6 +2,7 @@
 
 return [
     'public_url' => env('SPMM_PUBLIC_URL', 'https://kampusmedia.cloud'),
+    'admin_url' => env('SPMM_ADMIN_URL', 'https://spmm.maheramedia.com/admin'),
 
     'payment' => [
         'provider' => env('PAYMENT_PROVIDER', 'mock'),

@@ -26,6 +26,7 @@ class ListExternalLeadEvents extends ListRecords
                     TextInput::make('form_id')
                         ->label('Form ID Meta')
                         ->helperText('Contoh: 1421182943367763')
+                        ->default(fn (): ?string => config('spmm.meta_leads.form_id'))
                         ->required()
                         ->numeric(),
                     TextInput::make('limit')

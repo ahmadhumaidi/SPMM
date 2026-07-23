@@ -391,7 +391,48 @@ div[aria-modal="true"] {
 .fi-main:has(.fi-dropdown-panel),
 .fi-page:has(.fi-dropdown-panel) {
     overflow: visible !important;
-    z-index: 9999 !important;
+    z-index: 100 !important;
+}
+
+.fi-sidebar,
+.fi-sidebar-close-overlay {
+    z-index: 120000 !important;
+}
+
+.fi-topbar,
+.fi-topbar nav {
+    position: relative !important;
+    z-index: 110000 !important;
+}
+
+.fi-topbar .fi-dropdown-panel,
+.fi-topbar [x-floating-ui-portal],
+.fi-topbar [data-floating-ui-portal],
+.fi-notifications,
+.fi-no-notifications,
+.fi-notification,
+.fi-database-notifications,
+[aria-label="Notifications"],
+[aria-label="Notifikasi"] {
+    z-index: 130000 !important;
+}
+
+@media (max-width: 1024px) {
+    .fi-main .fi-ta,
+    .fi-main .fi-ta-ctn,
+    .fi-main .fi-ta-content,
+    .fi-main .fi-ta-header,
+    .fi-main .fi-ta-toolbar,
+    .fi-main .fi-ta-pagination {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
+    .fi-main .fi-ta:has(.fi-dropdown-panel),
+    .fi-main .fi-ta-ctn:has(.fi-dropdown-panel),
+    .fi-main .fi-page:has(.fi-dropdown-panel) {
+        z-index: 10 !important;
+    }
 }
 
 .fi-form-actions,
@@ -535,6 +576,29 @@ form [class*="sticky"][class*="bottom"] {
 @media (max-width: 1024px) {
     .fi-sidebar {
         box-shadow: none !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overscroll-behavior: contain !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .fi-sidebar-header {
+        flex: 0 0 auto !important;
+    }
+
+    .fi-sidebar-nav,
+    .fi-sidebar nav,
+    .fi-sidebar [class*="overflow-y-auto"] {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: calc(100dvh - 76px) !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(7rem + env(safe-area-inset-bottom)) !important;
     }
 
     .fi-main {

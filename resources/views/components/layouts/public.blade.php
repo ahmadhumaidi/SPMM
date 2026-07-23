@@ -45,7 +45,6 @@
             <a href="{{ route('registration.create') }}">Daftar</a>
             <a href="{{ route('student-portal.login') }}">Login</a>
             <a class="nav-signup" href="{{ route('registration.create') }}">Sign Up</a>
-            <a href="{{ url('/admin') }}">Admin</a>
         </nav>
     </header>
 

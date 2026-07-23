@@ -10,7 +10,7 @@ class StudentProfilePolicy
 {
     public function view(User $user, StudentProfile $studentProfile): bool
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->isSuperAdmin() || $user->role === UserRole::Direktur) {
             return true;
         }
 
@@ -25,6 +25,10 @@ class StudentProfilePolicy
     {
         if ($user->isSuperAdmin()) {
             return true;
+        }
+
+        if ($user->role === UserRole::Direktur) {
+            return false;
         }
 
         return $user->role === UserRole::KoordinatorPmb

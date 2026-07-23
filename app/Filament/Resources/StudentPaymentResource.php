@@ -31,9 +31,9 @@ class StudentPaymentResource extends Resource
 
     protected static ?string $navigationGroup = 'Payment';
 
-    protected static ?string $navigationLabel = 'Pembayaran Mahasiswa';
+    protected static ?string $navigationLabel = 'Mahasiswa Sudah Bayar';
 
-    protected static ?string $modelLabel = 'Pembayaran Mahasiswa';
+    protected static ?string $modelLabel = 'Mahasiswa Sudah Bayar';
 
     protected static ?int $navigationSort = 1;
 
@@ -145,13 +145,20 @@ class StudentPaymentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->whereHas(
+                'studentPayments',
+                fn (Builder $paymentQuery): Builder => $paymentQuery
+                    ->where('status', 'paid')
+                    ->where(fn (Builder $typeQuery): Builder => $typeQuery
+                        ->whereNull('payment_type')
+                        ->orWhere('payment_type', '!=', 'manual')),
+            ))
             ->defaultSort('created_at', 'desc')
             ->groups([
                 Group::make('campus.name')->label('Kampus')->collapsible(),
             ])
             ->columns([
                 \App\Support\FilamentTable::rowNumberColumn(),
-                TextColumn::make('id')->label('NO')->sortable(),
                 TextColumn::make('studentBiodata.selection_number')
                     ->label('NO. SELEKSI')
                     ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? static::selectionNumberFor($record))
@@ -198,6 +205,12 @@ class StudentPaymentResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('print_receipt')
+                    ->label('Kwitansi')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (Lead $record): string => route('admin.student-payments.receipt', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\ViewAction::make()->label('Lihat'),
                 Tables\Actions\EditAction::make(),
             ])

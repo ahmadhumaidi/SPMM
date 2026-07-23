@@ -50,7 +50,7 @@
     <header class="sticky top-0 z-40 border-b border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <a href="{{ route('student-portal.dashboard') }}" class="flex items-center gap-3">
-                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-navy to-cyanx font-black text-white">KN</span>
+                @include('student-portal.partials.campus-logo', ['campus' => $lead->campus])
                 <span>
                     <span class="block font-black text-navy dark:text-white">Profil Mahasiswa</span>
                     <span class="block text-xs font-bold text-slate-500 dark:text-slate-400">Terkoneksi sistem pusat</span>

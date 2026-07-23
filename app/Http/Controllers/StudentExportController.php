@@ -12,7 +12,7 @@ class StudentExportController extends Controller
     public function activeCsv(): StreamedResponse
     {
         abort_unless(
-            auth()->check() && in_array(auth()->user()->role, [UserRole::SuperAdmin, UserRole::KoordinatorPmb], true),
+            auth()->check() && in_array(auth()->user()->role, [UserRole::SuperAdmin, UserRole::Direktur, UserRole::KoordinatorPmb], true),
             403
         );
 

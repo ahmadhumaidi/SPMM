@@ -12,7 +12,7 @@
             <div>
                 <span class="spmm-report-kicker">Mahasiswa Baru</span>
                 <h2>Rekapitulasi Pendaftaran Mahasiswa Baru</h2>
-                <p>Data dikelompokkan berdasarkan program studi dan program perkuliahan yang tersimpan di database.</p>
+                <p>Lead adalah calon mahasiswa yang masuk. Registrasi adalah pembayaran formulir pendaftaran. Herregistrasi adalah pembayaran awal kuliah setelah registrasi.</p>
             </div>
         </header>
 
@@ -46,12 +46,15 @@
                         <th>Kode<br>Jurusan</th>
                         <th>Nama Jurusan</th>
                         @foreach ($tracks as $track)
-                            <th>Reg<br>{{ $track['label'] }}</th>
-                            <th>Her<br>{{ $track['label'] }}</th>
+                            <th>Lead<br>{{ $track['label'] }}</th>
+                            <th>Registrasi<br>{{ $track['label'] }}</th>
+                            <th>Herregistrasi<br>{{ $track['label'] }}</th>
                         @endforeach
+                        <th>Total<br>Lead</th>
                         <th>Total<br>Registrasi</th>
-                        <th>Total Her<br>Registrasi</th>
-                        <th>(%) Her<br>Registrasi</th>
+                        <th>Total<br>Herregistrasi</th>
+                        <th>(%)<br>Registrasi</th>
+                        <th>(%)<br>Herregistrasi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,28 +64,34 @@
                             <td>{{ $row['code'] }}</td>
                             <td class="spmm-registration-recap-name">{{ $row['name'] }}</td>
                             @foreach ($tracks as $track)
-                                <td>{{ $row['tracks'][$track['key']]['reg'] ?? 0 }}</td>
-                                <td>{{ $row['tracks'][$track['key']]['her'] ?? 0 }}</td>
+                                <td>{{ $row['tracks'][$track['key']]['lead'] ?? 0 }}</td>
+                                <td>{{ $row['tracks'][$track['key']]['registration'] ?? 0 }}</td>
+                                <td>{{ $row['tracks'][$track['key']]['herregistration'] ?? 0 }}</td>
                             @endforeach
-                            <td>{{ $row['total_reg'] }}</td>
-                            <td>{{ $row['total_her'] }}</td>
-                            <td class="spmm-registration-recap-percent">{{ $formatPercentage($row['percentage']) }}</td>
+                            <td>{{ $row['total_lead'] }}</td>
+                            <td>{{ $row['total_registration'] }}</td>
+                            <td>{{ $row['total_herregistration'] }}</td>
+                            <td class="spmm-registration-recap-percent">{{ $formatPercentage($row['registration_percentage']) }}</td>
+                            <td class="spmm-registration-recap-percent">{{ $formatPercentage($row['herregistration_percentage']) }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ 6 + (count($tracks) * 2) }}" class="spmm-registration-recap-empty">Belum ada data pendaftaran untuk filter ini.</td>
+                            <td colspan="{{ 8 + (count($tracks) * 3) }}" class="spmm-registration-recap-empty">Belum ada data pendaftaran untuk filter ini.</td>
                         </tr>
                     @endforelse
 
                     <tr class="spmm-registration-recap-total">
                         <td colspan="3">{{ $totals['name'] }}</td>
                         @foreach ($tracks as $track)
-                            <td>{{ $totals['tracks'][$track['key']]['reg'] ?? 0 }}</td>
-                            <td>{{ $totals['tracks'][$track['key']]['her'] ?? 0 }}</td>
+                            <td>{{ $totals['tracks'][$track['key']]['lead'] ?? 0 }}</td>
+                            <td>{{ $totals['tracks'][$track['key']]['registration'] ?? 0 }}</td>
+                            <td>{{ $totals['tracks'][$track['key']]['herregistration'] ?? 0 }}</td>
                         @endforeach
-                        <td>{{ $totals['total_reg'] }}</td>
-                        <td>{{ $totals['total_her'] }}</td>
-                        <td>{{ $formatPercentage($totals['percentage']) }}</td>
+                        <td>{{ $totals['total_lead'] }}</td>
+                        <td>{{ $totals['total_registration'] }}</td>
+                        <td>{{ $totals['total_herregistration'] }}</td>
+                        <td>{{ $formatPercentage($totals['registration_percentage']) }}</td>
+                        <td>{{ $formatPercentage($totals['herregistration_percentage']) }}</td>
                     </tr>
                 </tbody>
             </table>

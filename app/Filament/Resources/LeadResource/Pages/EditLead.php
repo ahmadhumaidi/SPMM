@@ -13,6 +13,8 @@ class EditLead extends EditRecord
 {
     protected static string $resource = LeadResource::class;
 
+    protected ?string $oldProspectStatus = null;
+
     protected function getHeaderActions(): array
     {
         return [
@@ -45,9 +47,31 @@ class EditLead extends EditRecord
         ];
     }
 
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $this->oldProspectStatus = $this->record->prospect_status?->value ?? $this->record->prospect_status;
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
         $lead = $this->record->fresh(['studentBiodata', 'studentNumber']);
+        $newProspectStatus = $lead->prospect_status?->value ?? $lead->prospect_status;
+
+        if (filled($newProspectStatus) && $this->oldProspectStatus !== $newProspectStatus) {
+            $event = app(LeadProspectStatusService::class)->update($lead, $newProspectStatus, auth()->user(), $this->oldProspectStatus);
+
+            Notification::make()
+                ->title('Status prospek dikirim ke Meta')
+                ->body('Meta event: '.$event->meta_status)
+                ->success()
+                ->send();
+
+            $lead = $lead->fresh(['studentBiodata', 'studentNumber']);
+        }
+
         $biodata = $lead->studentBiodata;
 
         if (! $biodata) {

@@ -19,7 +19,7 @@ class AiEducationNewsDraftService
         $trendContext = $this->trendContext($topic);
         $editorialKnowledge = config('spmm.ai_news.editorial_knowledge', []);
         $article = $this->generateArticle($source, $topic, $trendContext, $editorialKnowledge);
-        $imagePath = $this->generateCoverImagePath($article, $source, $topic, $editorialKnowledge);
+        $imagePath = $this->generateFastCoverImagePath($article, $source, $topic, $editorialKnowledge);
 
         $news = EducationNews::query()->create([
             'title' => $article['title'],

@@ -61,7 +61,7 @@ class CampusResource extends Resource
                         ->unique(ignoreRecord: true),
                     TextInput::make('subdomain')
                         ->label('Subdomain')
-                        ->helperText('Opsional. Contoh: mahera')
+                        ->helperText('Opsional. Contoh: mahera. Otomatis menjadi https://mahera.kampus.media')
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
                     TextInput::make('custom_domain')

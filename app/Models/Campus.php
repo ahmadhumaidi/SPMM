@@ -67,7 +67,7 @@ class Campus extends Model
         }
 
         if (filled($this->subdomain) && ! app()->environment('local')) {
-            return 'https://'.$this->subdomain.'.kampusmedia.cloud';
+            return 'https://'.$this->subdomain.'.kampus.media';
         }
 
         return route('campuses.show', ['campus' => $this->name]);

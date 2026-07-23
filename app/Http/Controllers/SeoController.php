@@ -11,7 +11,7 @@ class SeoController extends Controller
 {
     public function sitemap(): Response
     {
-        $publicUrl = rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/');
+        $publicUrl = rtrim(config('spmm.public_url', 'https://kampus.media'), '/');
 
         $urls = collect([
             [
@@ -74,7 +74,7 @@ class SeoController extends Controller
 
     public function robots(): Response
     {
-        $publicUrl = rtrim(config('spmm.public_url', 'https://kampusmedia.cloud'), '/');
+        $publicUrl = rtrim(config('spmm.public_url', 'https://kampus.media'), '/');
 
         return response(implode("\n", [
             'User-agent: *',

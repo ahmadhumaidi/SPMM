@@ -40,7 +40,7 @@
     <header class="sticky top-0 z-40 border-b border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <a href="{{ route('student-portal.dashboard') }}" class="flex items-center gap-3">
-                <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-navy to-cyanx font-black text-white">KN</span>
+                @include('student-portal.partials.campus-logo', ['campus' => $lead->campus])
                 <span>
                     <span class="block font-black text-navy dark:text-white">Dashboard Affiliator</span>
                     <span class="block text-xs font-bold text-slate-500 dark:text-slate-400">Sebarkan informasi, dapatkan komisi</span>
@@ -139,7 +139,15 @@
                                     <td class="px-5 py-4 font-black text-navy dark:text-white">{{ $conversion->lead?->full_name ?? '-' }}</td>
                                     <td class="px-5 py-4 font-semibold text-slate-600 dark:text-slate-300">{{ $conversion->lead?->campus?->name ?? '-' }}</td>
                                     <td class="px-5 py-4 font-semibold text-slate-600 dark:text-slate-300">{{ $conversion->lead?->studyProgram?->name ?? '-' }}</td>
-                                    <td class="px-5 py-4 font-black text-navy dark:text-white">Rp {{ number_format($conversion->commission_amount, 0, ',', '.') }}</td>
+                                    <td class="px-5 py-4 font-black text-navy dark:text-white">
+                                        Rp {{ number_format($conversion->commission_amount, 0, ',', '.') }}
+                                        @if ($conversion->herregistration_payout_proof_path)
+                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($conversion->herregistration_payout_proof_path) }}" target="_blank" class="mt-2 block text-xs font-black text-cyan-700 dark:text-cyan-200">Bukti transfer herregistrasi</a>
+                                        @endif
+                                        @if ($conversion->semester1_payout_proof_path)
+                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($conversion->semester1_payout_proof_path) }}" target="_blank" class="mt-1 block text-xs font-black text-cyan-700 dark:text-cyan-200">Bukti transfer semester 1</a>
+                                        @endif
+                                    </td>
                                     <td class="px-5 py-4">
                                         <span class="rounded-full px-3 py-1 text-xs font-black {{ $conversion->commission_status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-200' : ($conversion->commission_status === 'approved' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-200' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-200') }}">
                                             {{ $statusLabel[$conversion->commission_status] ?? str($conversion->commission_status)->title() }}

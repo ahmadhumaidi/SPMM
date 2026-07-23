@@ -16,7 +16,7 @@ class LeadProspectStatusService
     ) {
     }
 
-    public function update(Lead $lead, string $status, ?User $user = null): LeadProspectEvent
+    public function update(Lead $lead, string $status, ?User $user = null, ?string $fromOverride = null): LeadProspectEvent
     {
         $prospectStatus = ProspectStatus::tryFrom($status);
 
@@ -24,7 +24,7 @@ class LeadProspectStatusService
             throw new InvalidArgumentException('Status prospek tidak valid.');
         }
 
-        $from = $lead->prospect_status?->value ?? $lead->prospect_status;
+        $from = $fromOverride ?? ($lead->prospect_status?->value ?? $lead->prospect_status);
         $to = $prospectStatus->value;
 
         $lead->update(['prospect_status' => $to]);

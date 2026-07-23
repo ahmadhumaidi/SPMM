@@ -83,7 +83,7 @@
             <div class="flex h-full flex-col">
                 <div class="flex items-center justify-between">
                     <a href="{{ route('student-portal.dashboard') }}" class="flex items-center gap-3">
-                        <span class="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-navy to-cyanx text-sm font-black text-white shadow-glow">KN</span>
+                        @include('student-portal.partials.campus-logo', ['campus' => $lead->campus, 'class' => 'h-12 w-12'])
                         <span>
                             <span class="block font-black text-navy dark:text-white">Kampus Media</span>
                             <span class="block text-xs font-bold text-slate-500 dark:text-slate-400">Student OS</span>
@@ -282,7 +282,7 @@
                                 </div>
                             @endforelse
                         </div>
-                        <button class="mt-5 w-full rounded-2xl bg-cyanx px-5 py-4 font-black text-white shadow-glow transition hover:-translate-y-1">Upload Bukti Pembayaran</button>
+                        <a href="{{ route('student-portal.payments') }}#bayar-sekarang" class="mt-5 block w-full rounded-2xl bg-cyanx px-5 py-4 text-center font-black text-white shadow-glow transition hover:-translate-y-1">Bayar Sekarang</a>
                     </article>
                 </section>
 

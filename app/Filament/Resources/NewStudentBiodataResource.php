@@ -22,6 +22,12 @@ class NewStudentBiodataResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function canAccess(): bool
     {
         return FilamentResourceScope::canAccessStudentRecords();
@@ -48,7 +54,6 @@ class NewStudentBiodataResource extends Resource
     {
         return [
             'index' => Pages\ListNewStudentBiodatas::route('/'),
-            'create' => Pages\CreateNewStudentBiodata::route('/create'),
             'edit' => Pages\EditNewStudentBiodata::route('/{record}/edit'),
         ];
     }
