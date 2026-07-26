@@ -1,4 +1,4 @@
-<x-layouts.public title="Pemberkasan Mahasiswa">
+<x-layouts.public title="Pemberkasan Mahasiswa" :campus="$lead->campus" :noindex="true">
     <section class="form-shell">
         <div class="form-copy">
             <p class="eyebrow">Pemberkasan tahap 2</p>

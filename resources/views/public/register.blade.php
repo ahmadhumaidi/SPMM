@@ -4,7 +4,7 @@
     $trackCount = $campuses->sum(fn ($campus) => $campus->classTracks->count());
 @endphp
 
-<x-layouts.public title="Daftar Mahasiswa Baru">
+<x-layouts.public title="Daftar Mahasiswa Baru" :campus="$selectedCampus">
     <section class="relative overflow-hidden bg-slate-950 px-5 py-12 text-white sm:px-8 lg:px-16 lg:py-16">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(6,182,212,.32),transparent_34%),radial-gradient(circle_at_90%_0%,rgba(245,158,11,.24),transparent_28%)]"></div>
         <div class="relative mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_29rem] lg:items-center">

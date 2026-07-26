@@ -1,0 +1,10 @@
+{
+  "name": "spmm-assets",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i resources/css/tailwind-source.css -o public/css/tailwind-build.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

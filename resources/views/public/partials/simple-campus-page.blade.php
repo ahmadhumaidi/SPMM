@@ -6,7 +6,7 @@
             <p>{{ $campus->address ?: 'Alamat kampus belum diisi.' }}</p>
         </div>
         @if ($campus->logo_path)
-            <img src="{{ asset('storage/'.$campus->logo_path) }}" alt="Logo {{ $campus->name }}">
+            <img src="{{ asset('storage/'.$campus->logo_path) }}" alt="Logo {{ $campus->name }}" width="110" height="110" decoding="async">
         @endif
     </div>
     <a class="button primary" href="{{ route('registration.create', ['kampus' => $campus->slug]) }}">Daftar ke kampus ini</a>

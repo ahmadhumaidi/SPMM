@@ -151,16 +151,16 @@ body {
 }
 
 .fi-section-header {
-    padding: 24px 26px 0 !important;
+    padding: 18px 22px 0 !important;
 }
 
 .fi-section-content,
 .fi-fo-component-ctn {
-    padding: 26px !important;
+    padding: 20px !important;
 }
 
 .fi-section-content > .grid {
-    gap: 24px !important;
+    gap: 16px 20px !important;
 }
 
 .fi-section-header-heading,
@@ -187,10 +187,10 @@ body {
 
 .fi-ta-table thead th {
     color: #334155 !important;
-    font-size: 0.72rem !important;
-    font-weight: 950 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.055em;
+    font-size: 0.8rem !important;
+    font-weight: 750 !important;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
 .fi-ta-row {
@@ -199,6 +199,28 @@ body {
 
 .fi-ta-row:hover {
     background: rgba(224, 242, 254, 0.56) !important;
+}
+
+.fi-ta-actions-cell,
+.fi-ta-actions-header-cell {
+    position: sticky !important;
+    right: 0;
+    z-index: 10;
+    background: var(--spmm-panel) !important;
+    box-shadow: -12px 0 16px -10px rgba(15, 23, 42, 0.18);
+}
+
+.fi-ta-actions-header-cell {
+    background: rgba(241, 245, 249, 0.96) !important;
+}
+
+:root.dark .fi-ta-actions-cell {
+    background: rgba(15, 23, 42, 0.96) !important;
+    box-shadow: -12px 0 16px -10px rgba(0, 0, 0, 0.5);
+}
+
+:root.dark .fi-ta-actions-header-cell {
+    background: rgba(30, 41, 59, 0.98) !important;
 }
 
 .fi-badge {
@@ -408,8 +430,8 @@ div[aria-modal="true"] {
 .fi-topbar .fi-dropdown-panel,
 .fi-topbar [x-floating-ui-portal],
 .fi-topbar [data-floating-ui-portal],
+.fi-no,
 .fi-notifications,
-.fi-no-notifications,
 .fi-notification,
 .fi-database-notifications,
 [aria-label="Notifications"],

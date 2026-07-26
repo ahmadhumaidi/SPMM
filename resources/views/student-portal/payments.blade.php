@@ -228,7 +228,7 @@
                             <label class="grid gap-2">
                                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">Upload struk transfer</span>
                                 <input type="file" name="proof_path" accept=".jpg,.jpeg,.png,.pdf" required class="rounded-2xl border border-slate-200 bg-white p-3 text-sm font-bold file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 8 MB.</span>
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 5 MB.</span>
                             </label>
                             <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyanx px-6 py-4 font-black text-white shadow-glow transition hover:-translate-y-1">
                                 <i data-lucide="upload-cloud" class="h-5 w-5"></i>

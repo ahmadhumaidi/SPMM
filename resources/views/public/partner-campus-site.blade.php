@@ -151,24 +151,38 @@
     <meta name="twitter:title" content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: '#071a3d',
-                        ink: '#102033',
-                        gold: '#f59e0b',
-                    },
-                    boxShadow: {
-                        soft: '0 24px 70px rgba(15, 23, 42, .12)',
-                    },
-                },
-            },
-        }
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'EducationalOrganization',
+                    'name' => $campus->name,
+                    'url' => $canonicalUrl,
+                    'logo' => $logoUrl,
+                    'address' => array_filter([
+                        '@type' => 'PostalAddress',
+                        'addressLocality' => $campus->city,
+                        'addressRegion' => $campus->province,
+                        'streetAddress' => $campus->address,
+                    ]),
+                ],
+                [
+                    '@type' => 'FAQPage',
+                    'mainEntity' => collect($faqs)->map(fn (array $faq): array => [
+                        '@type' => 'Question',
+                        'name' => $faq['question'] ?? '',
+                        'acceptedAnswer' => [
+                            '@type' => 'Answer',
+                            'text' => $faq['answer'] ?? '',
+                        ],
+                    ])->all(),
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
+    <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .pattern {
@@ -201,7 +215,7 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="#home" class="flex items-center gap-3">
                 @if ($logoUrl)
-                    <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" class="h-11 w-11 rounded-xl bg-white object-contain p-1">
+                    <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="44" height="44" decoding="async" class="h-11 w-11 rounded-xl bg-white object-contain p-1">
                 @else
                     <span class="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg font-black text-navy">{{ $campusInitial }}</span>
                 @endif
@@ -370,7 +384,7 @@
         <section class="overflow-hidden bg-white px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div class="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[.9fr_1.1fr]">
                 <div class="reveal relative">
-                    <img src="{{ $heroImage }}" alt="Mahasiswa kampus Indonesia" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
+                    <img src="{{ $heroImage }}" alt="Mahasiswa kampus Indonesia" width="1100" height="825" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
                     <div class="absolute -bottom-5 left-5 right-5 rounded-3xl bg-white p-5 shadow-soft sm:left-auto sm:w-72">
                         <p class="text-sm font-black text-sky-700">PMB aktif</p>
                         <strong class="mt-1 block text-2xl font-black text-navy">Konsultasi gratis setiap hari</strong>
@@ -690,7 +704,7 @@
                         @endphp
                         <article class="reveal group overflow-hidden rounded-[1.75rem] bg-slate-100 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
                             <div class="relative">
-                                <img src="{{ $galleryImage }}" alt="{{ $item['title'] ?? 'Galeri kampus' }}" class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105">
+                                <img src="{{ $galleryImage }}" alt="{{ $item['title'] ?? 'Galeri kampus' }}" width="600" height="450" loading="lazy" decoding="async" class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent"></div>
                                 <div class="absolute bottom-0 left-0 right-0 p-5 text-white">
                                     <h3 class="text-xl font-black">{{ $item['title'] ?? 'Galeri Kampus' }}</h3>
@@ -731,7 +745,7 @@
                                     <p class="mt-5 leading-8 text-slate-700">{{ $testimonial['quote'] ?? '' }}</p>
                                     <div class="mt-6 flex items-center gap-3">
                                         @if ($testimonialPhoto)
-                                            <img src="{{ $testimonialPhoto }}" alt="Foto {{ $testimonial['name'] ?? 'Mahasiswa' }}" class="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm">
+                                            <img src="{{ $testimonialPhoto }}" alt="Foto {{ $testimonial['name'] ?? 'Mahasiswa' }}" width="56" height="56" loading="lazy" decoding="async" class="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm">
                                         @else
                                             <span class="grid h-14 w-14 place-items-center rounded-full bg-navy font-black text-white">{{ mb_substr($testimonial['name'] ?? 'M', 0, 1) }}</span>
                                         @endif
@@ -776,7 +790,7 @@
                             @endphp
                             <article class="min-w-full px-2 md:min-w-[50%] xl:min-w-[33.333%]">
                                 <div class="reveal h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                                    <img src="{{ $newsImage }}" alt="{{ $news->title }}" class="aspect-[16/10] w-full object-cover">
+                                    <img src="{{ $newsImage }}" alt="{{ $news->title }}" width="640" height="400" loading="lazy" decoding="async" class="aspect-[16/10] w-full object-cover">
                                     <div class="p-6">
                                         <div class="flex flex-wrap gap-2">
                                             <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">{{ $news->category }}</span>
@@ -825,7 +839,7 @@
             <div>
                 <div class="flex items-center gap-3">
                     @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" class="h-12 w-12 rounded-xl bg-white object-contain p-1">
+                        <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="48" height="48" loading="lazy" decoding="async" class="h-12 w-12 rounded-xl bg-white object-contain p-1">
                     @else
                         <span class="grid h-12 w-12 place-items-center rounded-xl bg-white font-black text-navy">{{ $campusInitial }}</span>
                     @endif
