@@ -32,6 +32,13 @@ Route::domain('affiliate.kampus.media')->group(function (): void {
 });
 
 Route::redirect('/login', '/admin/login')->name('login');
+
+if ($adminHost = parse_url(config('spmm.admin_url', ''), PHP_URL_HOST)) {
+    // Kampus Media's public portal has migrated to its own domain; this app's
+    // own admin domain should no longer serve it and must go straight to login.
+    Route::domain($adminHost)->get('/', fn () => redirect('/admin/login'))->name('home.admin-domain');
+}
+
 Route::get('/', [PublicRegistrationController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
@@ -48,6 +55,7 @@ Route::get('/affiliate/verifikasi/{token}', [PublicRegistrationController::class
 Route::get('/daftar', [PublicRegistrationController::class, 'create'])->name('registration.create');
 Route::post('/daftar', [PublicRegistrationController::class, 'store'])->name('registration.store');
 Route::get('/thank-you/{lead}', [PublicRegistrationController::class, 'thankYou'])->name('registration.thank-you');
+Route::post('/thank-you/{lead}/bukti-pembayaran', [StudentPortalController::class, 'uploadPublicPaymentProof'])->name('registration.payment-proof.upload');
 Route::get('/local-email/{lead}', [PublicRegistrationController::class, 'localVerificationEmail'])->name('registration.local-email');
 Route::get('/pemberkasan/{token}', [PublicRegistrationController::class, 'showPemberkasan'])->name('student-profile.show');
 Route::post('/pemberkasan/{token}', [PublicRegistrationController::class, 'storePemberkasan'])->name('student-profile.store');
@@ -73,6 +81,20 @@ Route::get('/admin/student-payments/{lead}/receipt', function (\App\Models\Lead 
     ], 'kwitansi-'.$lead->id.'.pdf');
 })->middleware('auth')->name('admin.student-payments.receipt');
 
+Route::get('/admin/student-payments/transaction/{payment}/receipt', function (\App\Models\StudentPayment $payment, \Illuminate\Http\Request $request, \App\Services\StudentPaymentReceiptArchiver $archiver) {
+    abort_unless(auth()->check(), 403);
+    abort_unless(in_array($payment->status, ['paid', 'waived'], true), 404);
+
+    $filename = 'kwitansi-'.$payment->lead_id.'-'.$payment->id.'.pdf';
+    $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+    return response($archiver->contentsFor($payment), 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+    ]);
+})->middleware('auth')->name('admin.student-payments.transaction-receipt');
+
 Route::get('/mahasiswa/login', [StudentPortalController::class, 'login'])->name('student-portal.login');
 Route::post('/mahasiswa/login', [StudentPortalController::class, 'authenticate'])->name('student-portal.authenticate');
 Route::get('/mahasiswa/lupa-password', [StudentPortalController::class, 'forgotPassword'])->name('student-portal.password.request');
@@ -96,10 +118,6 @@ Route::get('/mahasiswa/tugas', [StudentPortalController::class, 'assignments'])-
 Route::post('/mahasiswa/tugas/{assignment}', [StudentPortalController::class, 'submitAssignment'])->name('student-portal.assignments.submit');
 Route::get('/mahasiswa/pengaturan-akun', [StudentPortalController::class, 'accountSettings'])->name('student-portal.account-settings');
 Route::post('/mahasiswa/logout', [StudentPortalController::class, 'logout'])->name('student-portal.logout');
-
-Route::get('/siakad/login', [SeparateSystemPortalController::class, 'login'])->defaults('system', 'siakad')->name('siakad.login');
-Route::post('/siakad/login', [SeparateSystemPortalController::class, 'authenticate'])->defaults('system', 'siakad')->name('siakad.authenticate');
-Route::get('/siakad/dashboard', [SeparateSystemPortalController::class, 'dashboard'])->defaults('system', 'siakad')->middleware('auth')->name('siakad.dashboard');
 
 Route::get('/lms/login', [SeparateSystemPortalController::class, 'login'])->defaults('system', 'lms')->name('lms.login');
 Route::post('/lms/login', [SeparateSystemPortalController::class, 'authenticate'])->defaults('system', 'lms')->name('lms.authenticate');

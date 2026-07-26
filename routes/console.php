@@ -7,3 +7,5 @@ Schedule::command('spmm:invoices:expire-pending')->everyFifteenMinutes();
 Schedule::command('spmm:news:generate-ai-draft')->dailyAt('07:00')->withoutOverlapping();
 Schedule::command('spmm:meta-leads:import')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('spmm:meta-prospect-events:retry')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('spmm:siakad-sync:retry')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('spmm:receipts:notify-unarchived')->weekly();
