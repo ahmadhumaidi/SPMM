@@ -57,6 +57,18 @@ class ReferralPartnerResource extends Resource
         });
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getEloquentQuery()->where('created_at', '>=', now()->subDay())->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'success';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -169,9 +181,10 @@ class ReferralPartnerResource extends Resource
                 ->label('Token dashboard')
                 ->default(fn (): string => Str::random(64))
                 ->maxLength(80)
+                ->disabled()
+                ->dehydrated(false)
                 ->visible(fn ($get): bool => $get('type') === 'umum')
-                ->dehydrated(fn ($get): bool => $get('type') === 'umum')
-                ->helperText('Link dashboard affiliator dibuat otomatis dari token ini.'),
+                ->helperText('Link dashboard affiliator dibuat otomatis dari token ini. Gunakan aksi "Regenerasi token" di tabel untuk mengganti.'),
             TextInput::make('commission_amount')
                 ->label('Komisi')
                 ->prefix('Rp')
@@ -207,15 +220,10 @@ class ReferralPartnerResource extends Resource
                     ->label('Link')
                     ->state(fn (ReferralPartner $record): string => rtrim(config('spmm.public_url', 'https://kampus.media'), '/').'/daftar?ref='.$record->referral_code)
                     ->copyable()
-                    ->limit(44),
-                TextColumn::make('dashboard_link')
-                    ->label('Dashboard')
-                    ->state(fn (ReferralPartner $record): string => $record->dashboard_token ? 'https://affiliate.kampus.media/dashboard/'.$record->dashboard_token : '-')
-                    ->copyable()
                     ->limit(44)
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('conversions_count')->counts('conversions')->label('Pendaftar'),
-                TextColumn::make('commission_amount')->label('Komisi')->money('IDR')->sortable(),
+                TextColumn::make('commission_amount')->label('Komisi')->money('IDR')->sortable()->alignEnd(),
                 TextColumn::make('status')->label('Status')->badge(),
                 TextColumn::make('email_verified_at')
                     ->label('Verifikasi Email')
@@ -225,6 +233,20 @@ class ReferralPartnerResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('open_dashboard')
+                    ->label('Dashboard')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (ReferralPartner $record): ?string => $record->dashboard_token ? 'https://affiliate.kampus.media/dashboard/'.$record->dashboard_token : null)
+                    ->openUrlInNewTab()
+                    ->visible(fn (ReferralPartner $record): bool => $record->type === 'umum' && filled($record->dashboard_token)),
+                Tables\Actions\Action::make('regenerate_dashboard_token')
+                    ->label('Regenerasi token')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription('Link dashboard yang lama akan berhenti berfungsi. Bagikan link baru ke affiliator.')
+                    ->visible(fn (ReferralPartner $record): bool => $record->type === 'umum')
+                    ->action(fn (ReferralPartner $record) => $record->update(['dashboard_token' => Str::random(64)])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

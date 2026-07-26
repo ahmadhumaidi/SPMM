@@ -36,6 +36,8 @@ class ReferralService
                 'registered_at' => $lead->created_at ?? now(),
                 'commission_amount' => 0,
                 'commission_status' => 'pending',
+                'registration_commission_amount' => 0,
+                'registration_commission_status' => 'pending',
                 'herregistration_commission_amount' => 500000,
                 'herregistration_commission_status' => 'pending',
                 'semester1_commission_amount' => 500000,
@@ -57,12 +59,18 @@ class ReferralService
             return;
         }
 
-        $payments = $lead->studentPayments()
+        $allPayments = $lead->studentPayments()
             ->where(fn ($query) => $query->whereNull('payment_type')->orWhere('payment_type', '!=', 'manual'))
-            ->where('month', '>', 0)
             ->get();
 
         $paidStatuses = ['paid', 'waived'];
+
+        $registrationPayment = $allPayments
+            ->where('month', 0)
+            ->first(fn ($payment): bool => in_array($payment->status, $paidStatuses, true));
+
+        $payments = $allPayments->where('month', '>', 0);
+
         $herregistrationPayment = $payments
             ->where('month', 1)
             ->first(fn ($payment): bool => in_array($payment->status, $paidStatuses, true));
@@ -78,6 +86,16 @@ class ReferralService
             'herregistration_commission_amount' => $conversion->herregistration_commission_amount ?: 500000,
             'semester1_commission_amount' => $conversion->semester1_commission_amount ?: 500000,
         ];
+
+        if ($registrationPayment) {
+            $payload['registration_commission_amount'] = $conversion->registration_commission_amount
+                ?: (int) round($registrationPayment->amount * 0.5);
+            $payload['registration_paid_at'] = $conversion->registration_paid_at ?? $registrationPayment->paid_at ?? now();
+            $payload['registration_commission_status'] = $conversion->registration_commission_status === 'paid' ? 'paid' : 'approved';
+        } elseif ($conversion->registration_commission_status !== 'paid') {
+            $payload['registration_paid_at'] = null;
+            $payload['registration_commission_status'] = 'pending';
+        }
 
         if ($herregistrationPayment) {
             $payload['paid_at'] = $conversion->paid_at ?? $herregistrationPayment->paid_at ?? now();
@@ -98,17 +116,21 @@ class ReferralService
             $payload['semester1_commission_status'] = 'pending';
         }
 
+        $registrationStatus = $payload['registration_commission_status'] ?? $conversion->registration_commission_status;
         $herStatus = $payload['herregistration_commission_status'] ?? $conversion->herregistration_commission_status;
         $semesterStatus = $payload['semester1_commission_status'] ?? $conversion->semester1_commission_status;
 
         $payload['commission_amount'] = collect([
+            in_array($registrationStatus, ['approved', 'paid'], true) ? ($payload['registration_commission_amount'] ?? $conversion->registration_commission_amount ?? 0) : 0,
             in_array($herStatus, ['approved', 'paid'], true) ? ($payload['herregistration_commission_amount'] ?? 500000) : 0,
             in_array($semesterStatus, ['approved', 'paid'], true) ? ($payload['semester1_commission_amount'] ?? 500000) : 0,
         ])->sum();
 
+        $registrationApplicable = ($payload['registration_commission_amount'] ?? $conversion->registration_commission_amount ?? 0) > 0;
+
         $payload['commission_status'] = match (true) {
-            $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
-            in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
+            (! $registrationApplicable || $registrationStatus === 'paid') && $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
+            ($registrationApplicable && in_array($registrationStatus, ['approved', 'paid'], true)) || in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
             default => 'pending',
         };
 

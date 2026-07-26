@@ -41,6 +41,24 @@ class ReferralConversionResource extends Resource
         return FilamentResourceScope::canAccessAffiliates();
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getEloquentQuery()
+            ->where(function (Builder $query): void {
+                $query->where('registration_commission_status', 'approved')
+                    ->orWhere('herregistration_commission_status', 'approved')
+                    ->orWhere('semester1_commission_status', 'approved');
+            })
+            ->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -79,13 +97,35 @@ class ReferralConversionResource extends Resource
                         ->content(fn (?ReferralConversion $record): string => $record?->referralPartner?->bank_account_name ?? '-'),
                 ])
                 ->columns(3),
+            Section::make('Komisi Pendaftaran (50% Nominal Pendaftaran)')
+                ->schema([
+                    TextInput::make('registration_commission_amount')->label('Nominal')->prefix('Rp')->numeric(),
+                    Select::make('registration_commission_status')
+                        ->label('Status')
+                        ->options(static::commissionStatusOptions())
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
+                    DateTimePicker::make('registration_paid_at')->label('Tanggal pendaftaran lunas'),
+                    FileUpload::make('registration_payout_proof_path')
+                        ->label('Bukti transfer')
+                        ->disk('public')
+                        ->directory('affiliate-payout-proofs')
+                        ->fetchFileInformation(false)
+                        ->openable()
+                        ->downloadable(),
+                    Textarea::make('registration_payout_notes')->label('Catatan payout')->columnSpanFull(),
+                ])
+                ->columns(2),
             Section::make('Komisi Herregistrasi')
                 ->schema([
                     TextInput::make('herregistration_commission_amount')->label('Nominal')->prefix('Rp')->numeric(),
                     Select::make('herregistration_commission_status')
                         ->label('Status')
                         ->options(static::commissionStatusOptions())
-                        ->required(),
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
                     DateTimePicker::make('herregistration_paid_at')->label('Tanggal herregistrasi lunas'),
                     FileUpload::make('herregistration_payout_proof_path')
                         ->label('Bukti transfer')
@@ -103,7 +143,9 @@ class ReferralConversionResource extends Resource
                     Select::make('semester1_commission_status')
                         ->label('Status')
                         ->options(static::commissionStatusOptions())
-                        ->required(),
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
                     DateTimePicker::make('semester1_paid_at')->label('Tanggal semester 1 lunas'),
                     FileUpload::make('semester1_payout_proof_path')
                         ->label('Bukti transfer')
@@ -121,7 +163,9 @@ class ReferralConversionResource extends Resource
                     Select::make('commission_status')
                         ->label('Status total')
                         ->options(static::commissionStatusOptions())
-                        ->required(),
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
                     Placeholder::make('payable_preview')
                         ->label('Nominal siap dibayar')
                         ->content(fn (?ReferralConversion $record): string => $record ? 'Rp '.number_format(static::payableCommission($record), 0, ',', '.') : '-'),
@@ -150,6 +194,11 @@ class ReferralConversionResource extends Resource
                 TextColumn::make('referralPartner.name')->label('Partner')->searchable(),
                 TextColumn::make('lead.full_name')->label('Pendaftar')->searchable(),
                 TextColumn::make('lead.campus.name')->label('Kampus'),
+                TextColumn::make('registration_commission_status')
+                    ->label('Komisi Daftar')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => static::commissionStatusLabel($state))
+                    ->color(fn (?string $state): string => static::commissionStatusColor($state)),
                 TextColumn::make('herregistration_commission_status')
                     ->label('Komisi Herreg')
                     ->badge()
@@ -165,9 +214,13 @@ class ReferralConversionResource extends Resource
                     ->label('Siap Dibayar')
                     ->state(fn (ReferralConversion $record): int => static::payableCommission($record))
                     ->money('IDR')
-                    ->sortable(false),
+                    ->sortable(false)
+                    ->alignEnd(),
             ])
             ->filters([
+                SelectFilter::make('registration_commission_status')
+                    ->label('Status Komisi Pendaftaran')
+                    ->options(static::commissionStatusOptions()),
                 SelectFilter::make('herregistration_commission_status')
                     ->label('Status Komisi Herregistrasi')
                     ->options(static::commissionStatusOptions()),
@@ -179,6 +232,36 @@ class ReferralConversionResource extends Resource
                     ->options(static::commissionStatusOptions()),
             ])
             ->actions([
+                Action::make('payRegistration')
+                    ->label('Bayar Layak')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->form([
+                        FileUpload::make('registration_payout_proof_path')
+                            ->label('Bukti transfer')
+                            ->disk('public')
+                            ->directory('affiliate-payout-proofs')
+                            ->openable()
+                            ->downloadable()
+                            ->required()
+                            ->maxSize(4096),
+                        Textarea::make('registration_payout_notes')
+                            ->label('Catatan untuk affiliator')
+                            ->placeholder('Contoh: Transfer komisi pendaftaran sudah diproses.'),
+                    ])
+                    ->modalHeading('Tandai komisi pendaftaran sudah dibayar?')
+                    ->modalDescription(fn (ReferralConversion $record): string => 'Nominal: Rp '.number_format((int) $record->registration_commission_amount, 0, ',', '.'))
+                    ->visible(fn (ReferralConversion $record): bool => $record->registration_commission_status === 'approved')
+                    ->action(function (ReferralConversion $record, array $data): void {
+                        $record->update([
+                            'registration_commission_status' => 'paid',
+                            'registration_payout_proof_path' => $data['registration_payout_proof_path'] ?? null,
+                            'registration_payout_notes' => $data['registration_payout_notes'] ?? null,
+                        ]);
+
+                        static::refreshOverallCommissionStatus($record->refresh());
+                    }),
                 Action::make('payHerregistration')
                     ->label('Bayar Layak')
                     ->icon('heroicon-o-banknotes')
@@ -279,20 +362,22 @@ class ReferralConversionResource extends Resource
 
     public static function payableCommission(ReferralConversion $record): int
     {
-        return (int) ($record->herregistration_commission_status === 'approved' ? $record->herregistration_commission_amount : 0)
+        return (int) ($record->registration_commission_status === 'approved' ? $record->registration_commission_amount : 0)
+            + (int) ($record->herregistration_commission_status === 'approved' ? $record->herregistration_commission_amount : 0)
             + (int) ($record->semester1_commission_status === 'approved' ? $record->semester1_commission_amount : 0);
     }
 
     public static function refreshOverallCommissionStatus(ReferralConversion $record): void
     {
+        $registrationStatus = $record->registration_commission_status;
         $herStatus = $record->herregistration_commission_status;
         $semesterStatus = $record->semester1_commission_status;
 
         $record->update([
             'commission_status' => match (true) {
-                $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
-                in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
-                $herStatus === 'cancelled' && $semesterStatus === 'cancelled' => 'cancelled',
+                $registrationStatus === 'paid' && $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
+                in_array($registrationStatus, ['approved', 'paid'], true) || in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
+                $registrationStatus === 'cancelled' && $herStatus === 'cancelled' && $semesterStatus === 'cancelled' => 'cancelled',
                 default => 'pending',
             },
         ]);
