@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\StudentPaymentResource;
 use App\Models\Campus;
 use App\Models\Lead;
+use App\Services\StudentBiodataProvisioner;
 use App\Support\FilamentResourceScope;
 use Filament\Pages\Page;
 use Filament\Tables;
@@ -84,7 +85,7 @@ class NewStudentFeeDetail extends Page implements HasTable
             TextColumn::make('id')->label('NO')->sortable(),
             TextColumn::make('studentBiodata.selection_number')
                 ->label('NO. SELEKSI')
-                ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? StudentPaymentResource::selectionNumberFor($record))
+                ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? app(StudentBiodataProvisioner::class)->selectionNumberFor($record))
                 ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas('studentBiodata', fn (Builder $biodataQuery) => $biodataQuery->where('selection_number', 'like', "%{$search}%"))),
             TextColumn::make('latestInvoice.va_number')
                 ->label('VIRTUAL ACCOUNT')

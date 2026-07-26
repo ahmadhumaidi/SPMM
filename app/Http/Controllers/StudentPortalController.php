@@ -8,6 +8,7 @@ use App\Filament\Resources\ManualStudentPaymentResource;
 use App\Models\StudentAccount;
 use App\Models\ClassTrack;
 use App\Models\FeeScheme;
+use App\Models\Lead;
 use App\Models\LmsAssignment;
 use App\Models\LmsModule;
 use App\Models\LmsSubmission;
@@ -397,12 +398,12 @@ class StudentPortalController extends Controller
 
         $data = $request->validate([
             'student_payment_id' => ['required', 'integer'],
-            'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:8192'],
+            'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ], [
             'student_payment_id.required' => 'Pilih tagihan yang akan dibayar.',
             'proof_path.required' => 'Bukti pembayaran wajib diupload.',
             'proof_path.mimes' => 'Bukti pembayaran harus berupa JPG, PNG, atau PDF.',
-            'proof_path.max' => 'Ukuran bukti pembayaran maksimal 8 MB.',
+            'proof_path.max' => 'Ukuran bukti pembayaran maksimal 5 MB.',
         ]);
 
         $payment = $account->lead->studentPayments()
@@ -471,6 +472,100 @@ class StudentPortalController extends Controller
         $this->notifyAdminsPaymentProofSubmitted($manualPayment->refresh(), $payment->refresh());
 
         return back()->with('status', 'Bukti pembayaran berhasil dikirim. Tim keuangan akan memvalidasi pembayaran kamu.');
+    }
+
+    /**
+     * Same flow as uploadPaymentProof(), but for the public thank-you page: no student
+     * portal login required, scoped directly to the lead's registration-fee payment
+     * (month 0) via the route-bound Lead instead of the session-based student account.
+     */
+    public function uploadPublicPaymentProof(Request $request, Lead $lead): RedirectResponse
+    {
+        $data = $request->validate([
+            'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+        ], [
+            'proof_path.required' => 'Bukti pembayaran wajib diupload.',
+            'proof_path.mimes' => 'Bukti pembayaran harus berupa JPG, PNG, atau PDF.',
+            'proof_path.max' => 'Ukuran bukti pembayaran maksimal 5 MB.',
+        ]);
+
+        $payment = $lead->studentPayments()
+            ->where('month', 0)
+            ->where('payment_type', '!=', 'manual')
+            ->first();
+
+        if (! $payment) {
+            return back()->withErrors(['proof_path' => 'Tagihan pendaftaran tidak ditemukan untuk pendaftaran ini.']);
+        }
+
+        if (in_array($payment->status, ['paid', 'waived'], true)) {
+            return back()->with('status', 'Tagihan pendaftaran ini sudah lunas.');
+        }
+
+        $path = $data['proof_path']->store('student-payment-proofs/'.$lead->id, 'public');
+        $manualPayment = $this->pendingManualPaymentFor($lead->id, $payment);
+
+        if ($manualPayment?->proof_path) {
+            Storage::disk('public')->delete($manualPayment->proof_path);
+        }
+
+        $manualPayload = [
+            'lead_id' => $lead->id,
+            'fee_scheme_id' => $payment->fee_scheme_id,
+            'invoice_id' => $payment->invoice_id,
+            'month' => $manualPayment?->month ?? ManualStudentPaymentResource::nextManualMonthFor($lead->id),
+            'payment_label' => $payment->payment_label ?: 'Formulir Pendaftaran',
+            'registration_fee' => (int) $payment->registration_fee,
+            'development_fee' => (int) $payment->development_fee,
+            'tuition_fee' => (int) $payment->tuition_fee,
+            'ukt' => (int) $payment->ukt,
+            'amount' => (int) $payment->amount,
+            'due_date' => $payment->due_date,
+            'status' => 'pending',
+            'payment_method' => 'transfer_rekening_cv',
+            'proof_path' => $path,
+            'submitted_at' => now(),
+            'payment_type' => 'manual',
+            'verification_status' => 'pending',
+            'verification_notes' => null,
+            'source_row_json' => array_merge($payment->source_row_json ?: [], [
+                'type' => 'student_payment_proof_upload',
+                'rr_student_payment_id' => $payment->id,
+                'rr_month' => $payment->month,
+                'rr_payment_label' => $payment->payment_label ?: 'Formulir Pendaftaran',
+            ]),
+        ];
+
+        if ($manualPayment) {
+            $manualPayment->update($manualPayload);
+        } else {
+            $manualPayment = StudentPayment::query()->create($manualPayload);
+        }
+
+        $payment->update([
+            'status' => 'pending',
+            'payment_method' => 'transfer_rekening_cv',
+            'proof_path' => $path,
+            'submitted_at' => now(),
+            'verification_status' => 'pending',
+            'verification_notes' => null,
+        ]);
+
+        $this->notifyAdminsPaymentProofSubmitted($manualPayment->refresh(), $payment->refresh());
+
+        return redirect()->away($this->adminWhatsappConfirmationUrl($lead));
+    }
+
+    /**
+     * wa.me link to the PMB admin number (same number used across the public site's
+     * consultation CTAs) with a default message telling the admin the student has paid.
+     */
+    private function adminWhatsappConfirmationUrl(Lead $lead): string
+    {
+        $adminNumber = '6282199976600';
+        $message = "Halo Admin, saya {$lead->full_name} sudah melakukan pembayaran pendaftaran dan upload bukti transfer di sistem. Mohon dicek dan diproses ya. Terima kasih.";
+
+        return 'https://wa.me/'.$adminNumber.'?text='.rawurlencode($message);
     }
 
     public function affiliateDashboard(Request $request): View|RedirectResponse

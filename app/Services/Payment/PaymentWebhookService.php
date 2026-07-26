@@ -11,6 +11,7 @@ use App\Services\Whatsapp\WhatsappManager;
 use App\Services\AuditLogger;
 use App\Services\ReferralService;
 use App\Services\StudentBiodataProvisioner;
+use App\Services\StudentPaymentReceiptMailer;
 use App\Services\StudentPaymentScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,7 @@ class PaymentWebhookService
         private readonly ReferralService $referrals,
         private readonly StudentBiodataProvisioner $studentBiodata,
         private readonly StudentPaymentScheduleService $studentPayments,
+        private readonly StudentPaymentReceiptMailer $receiptMailer,
     ) {
     }
 
@@ -75,7 +77,24 @@ class PaymentWebhookService
                 $this->referrals->syncMilestones($lead);
                 $this->whatsapp->driver()->sendPaymentSuccess($lead, $invoice);
                 $this->whatsapp->driver()->sendPemberkasanLink($lead);
+
+                $registrationPayment = $lead->studentPayments()->where('month', 0)->where('invoice_id', $invoice->id)->first();
+
+                if ($registrationPayment) {
+                    $this->receiptMailer->send($registrationPayment);
+                }
+
                 $this->audit->record('invoice_paid', $invoice, ['lead_id' => $lead->id]);
+            } elseif (in_array($result->eventType, ['expire', 'cancel', 'deny'], true) && $invoice->status === InvoiceStatus::Pending) {
+                $newStatus = $result->eventType === 'expire' ? InvoiceStatus::Expired : InvoiceStatus::Cancelled;
+
+                $invoice->update(['status' => $newStatus]);
+
+                if ($invoice->lead->payment_status !== PaymentStatus::Paid) {
+                    $invoice->lead->update(['payment_status' => PaymentStatus::Expired]);
+                }
+
+                $this->audit->record('invoice_'.$newStatus->value, $invoice, ['lead_id' => $invoice->lead_id]);
             }
 
             $event->update(['processed_at' => now()]);

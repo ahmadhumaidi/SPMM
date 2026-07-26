@@ -42,19 +42,16 @@ class StudentAccountProvisioner
         $verificationUrl = route('student-portal.verify', $account->verification_token);
         $loginUrl = route('student-portal.login');
 
-        $body = "Halo {$lead->full_name},\n\n".
-            "Terima kasih sudah mendaftar di Kampus Media.\n\n".
-            "Silakan verifikasi email kamu melalui link berikut:\n{$verificationUrl}\n\n".
-            "Akses login mahasiswa:\n".
-            "URL: {$loginUrl}\n".
-            "Email: {$lead->email}\n".
-            "Password sementara: {$temporaryPassword}\n\n".
-            "Setelah login, mahasiswa dapat melengkapi biodata, upload berkas, melihat pembayaran, dan mencetak kwitansi pembayaran.\n\n".
-            "Salam,\nKampus Media";
+        $html = view('admin.student-welcome-email', [
+            'lead' => $lead,
+            'verificationUrl' => $verificationUrl,
+            'loginUrl' => $loginUrl,
+            'temporaryPassword' => $temporaryPassword,
+        ])->render();
 
         try {
-            Mail::raw(
-                $body,
+            Mail::html(
+                $html,
                 function ($message) use ($lead): void {
                     $message
                         ->to($lead->email, $lead->full_name)
@@ -70,7 +67,7 @@ class StudentAccountProvisioner
         }
 
         if (app()->environment('local')) {
-            Storage::disk('local')->put("local-emails/lead-{$lead->id}.txt", $body);
+            Storage::disk('local')->put("local-emails/lead-{$lead->id}.html", $html);
         }
     }
 }

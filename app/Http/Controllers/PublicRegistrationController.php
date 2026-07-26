@@ -29,8 +29,6 @@ class PublicRegistrationController extends Controller
 {
     private const REFERRAL_COOKIE = 'spmm_referral_code';
 
-    private const REFERRAL_COOKIE_MINUTES = 60 * 24 * 90;
-
     private const AFFILIATE_TERMS_DOCUMENT = 'documents/sk-ketentuan-fee-dan-insentif-affiliator-mahera-media-2026.docx';
 
     public function index(Request $request, TenantResolver $tenants): JsonResponse|View
@@ -85,12 +83,10 @@ class PublicRegistrationController extends Controller
     {
         $tenant = $tenants->resolve($request);
         $referralCode = $request->query('ref')
-            ?: $request->session()->get('referral_code')
-            ?: $request->cookie(self::REFERRAL_COOKIE);
+            ?: $request->session()->get('referral_code');
 
         if ($request->query('ref')) {
             $request->session()->put('referral_code', $request->query('ref'));
-            cookie()->queue(cookie(self::REFERRAL_COOKIE, $request->query('ref'), self::REFERRAL_COOKIE_MINUTES));
         }
 
         $campuses = Campus::query()
@@ -487,9 +483,8 @@ class PublicRegistrationController extends Controller
     public function store(RegisterLeadRequest $request, LeadRegistrationService $registration): JsonResponse|RedirectResponse
     {
         $data = $request->validated();
-        $data['referral_code'] = $data['referral_code']
-            ?: $request->session()->get('referral_code')
-            ?: $request->cookie(self::REFERRAL_COOKIE);
+        $data['referral_code'] = ($data['referral_code'] ?? null)
+            ?: $request->session()->get('referral_code');
 
         $result = $registration->register($data);
         $request->session()->forget('referral_code');
@@ -511,7 +506,7 @@ class PublicRegistrationController extends Controller
 
     public function thankYou(Request $request, Lead $lead): JsonResponse|View
     {
-        $lead->load('latestInvoice');
+        $lead->load(['latestInvoice', 'campus']);
 
         if (! $request->wantsJson()) {
             return view('public.thank-you', [
@@ -530,12 +525,12 @@ class PublicRegistrationController extends Controller
     {
         abort_unless(app()->environment('local'), 404);
 
-        $path = "local-emails/lead-{$lead->id}.txt";
+        $path = "local-emails/lead-{$lead->id}.html";
 
         abort_unless(Storage::disk('local')->exists($path), 404);
 
         return response(Storage::disk('local')->get($path), 200, [
-            'Content-Type' => 'text/plain; charset=UTF-8',
+            'Content-Type' => 'text/html; charset=UTF-8',
         ]);
     }
 
@@ -588,6 +583,7 @@ class PublicRegistrationController extends Controller
     private function resolvePaidLeadByToken(string $token): Lead
     {
         return Lead::query()
+            ->with('campus')
             ->where('pemberkasan_token', $token)
             ->where('payment_status', PaymentStatus::Paid)
             ->firstOrFail();

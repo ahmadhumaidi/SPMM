@@ -10,8 +10,6 @@ class ViewStudentPayment extends ViewRecord
 {
     protected static string $resource = StudentPaymentResource::class;
 
-    protected static string $view = 'filament.resources.student-payment-resource.pages.view-student-payment';
-
     protected function getHeaderActions(): array
     {
         return [

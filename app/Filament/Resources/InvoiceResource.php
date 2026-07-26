@@ -5,10 +5,14 @@ namespace App\Filament\Resources;
 use App\Enums\InvoiceStatus;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
+use App\Services\InvoicePaymentReminderMailer;
+use App\Services\InvoiceRegenerationService;
 use App\Support\FilamentResourceScope;
+use DomainException;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -71,12 +75,14 @@ class InvoiceResource extends Resource
                 TextColumn::make('amount')
                     ->label('Tagihan Aktif')
                     ->state(fn (Invoice $record): int => static::activeBillingAmount($record))
-                    ->money('IDR'),
+                    ->money('IDR')
+                    ->alignEnd(),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('payment_gateway'),
                 TextColumn::make('expires_at')->dateTime()->sortable(),
                 TextColumn::make('paid_at')->dateTime()->sortable(),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->options([
                     InvoiceStatus::Pending->value => 'Pending',
@@ -85,7 +91,41 @@ class InvoiceResource extends Resource
                     InvoiceStatus::Cancelled->value => 'Cancelled',
                 ]),
             ])
-            ->actions([Tables\Actions\ViewAction::make()]);
+            ->actions([
+                Tables\Actions\Action::make('send_payment_reminder')
+                    ->label('Kirim Invoice')
+                    ->icon('heroicon-o-envelope')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (Invoice $record): string => 'Kirim email tagihan pendaftaran ini ke '.($record->lead?->email ?: 'email calon mahasiswa').'?')
+                    ->visible(fn (Invoice $record): bool => $record->isPayable() && filled($record->lead?->email))
+                    ->action(function (Invoice $record): void {
+                        app(InvoicePaymentReminderMailer::class)->send($record);
+
+                        Notification::make()
+                            ->title('Invoice dikirim ke '.$record->lead?->email)
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('regenerate_invoice')
+                    ->label('Buat Ulang Tagihan')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->visible(fn (Invoice $record): bool => in_array($record->status, [InvoiceStatus::Expired, InvoiceStatus::Cancelled], true)
+                        && $record->lead !== null
+                        && $record->id === $record->lead->latestInvoice?->id)
+                    ->action(function (Invoice $record, InvoiceRegenerationService $regeneration): void {
+                        try {
+                            $regeneration->regenerate($record->lead);
+
+                            Notification::make()->title('Invoice baru dibuat')->success()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
+                    }),
+                Tables\Actions\ViewAction::make(),
+            ]);
     }
 
     public static function getPages(): array

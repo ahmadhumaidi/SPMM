@@ -34,6 +34,8 @@ class StudentPayment extends Model
         'paid_at',
         'notes',
         'source_row_json',
+        'receipt_pdf_path',
+        'receipt_archived_at',
     ];
 
     protected function casts(): array
@@ -50,6 +52,7 @@ class StudentPayment extends Model
             'verified_at' => 'datetime',
             'paid_at' => 'datetime',
             'source_row_json' => 'array',
+            'receipt_archived_at' => 'datetime',
         ];
     }
 
