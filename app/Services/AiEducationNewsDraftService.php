@@ -26,9 +26,10 @@ class AiEducationNewsDraftService
             'slug' => $this->uniqueSlug($article['title']),
             'category' => $article['category'],
             'excerpt' => $article['excerpt'],
+            'meta_description' => $article['meta_description'],
             'content' => $article['content'],
             'image_path' => $imagePath,
-            'author_name' => 'Kampus Media AI',
+            'author_name' => 'Kampus Media',
             'source_name' => $source['source_name'],
             'source_url' => $source['url'],
             'source_hash' => $source['hash'],
@@ -83,7 +84,7 @@ class AiEducationNewsDraftService
             'meta_description' => $article['meta_description'],
             'content' => $article['content'],
             'image_path' => $imagePath,
-            'author_name' => 'Kampus Media AI',
+            'author_name' => 'Kampus Media',
             'source_name' => 'Artikel SEO AI',
             'source_url' => null,
             'source_hash' => null,
@@ -255,18 +256,21 @@ class AiEducationNewsDraftService
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Anda adalah editor SEO pendidikan Indonesia untuk Kampus Media. Tulis artikel orisinal, aman, tidak copy-paste, informatif, dan berorientasi calon mahasiswa. Artikel harus membantu pembaca memilih kampus, jurusan, kelas fleksibel, RPL, biaya, dan prospek karier tanpa membuat klaim yang tidak punya dasar.',
+                            'content' => 'Anda adalah jurnalis pendidikan Indonesia untuk Kampus Media. Tulis rangkuman berita yang orisinal, aman, tidak copy-paste, informatif, dan mengalir natural seperti artikel berita sungguhan, bukan draf pemasaran. Tidak setiap artikel perlu ajakan konsultasi/CTA ke Kampus Media — sertakan hanya jika benar-benar relevan dengan isi berita. Jangan membuat klaim yang tidak punya dasar dari sumber. Balas hanya dalam format JSON valid tanpa markdown.',
                         ],
                         [
                             'role' => 'user',
                             'content' => json_encode([
-                                'instruction' => 'Buat draft artikel SEO pendidikan untuk Kampus Media. Jangan mengklaim hal yang tidak ada di sumber. Sertakan konteks manfaat untuk calon mahasiswa, karyawan, lulusan D3, calon peserta RPL, dan orang tua. Gunakan konteks Google Trends Indonesia dan keyword tren pendidikan sebagai inspirasi angle, bukan sebagai data statistik pasti. Artikel harus punya struktur SEO: pembuka kuat, beberapa subjudul H2, poin praktis, dan CTA halus ke Kampus Media.',
+                                'instruction' => 'Rangkum dan sajikan berita ini secara natural dan jujur untuk pembaca Indonesia yang tertarik dunia pendidikan tinggi, seperti seorang jurnalis pendidikan menulis, bukan draf SEO yang kaku. Jangan mengklaim hal yang tidak ada di sumber. Utamakan informasi yang valid dan relevan dari sumber berita, bukan template pemasaran. Sebutkan Kampus Media atau ajakan konsultasi/pendaftaran hanya jika benar-benar relevan dengan isi berita, jangan dipaksakan di setiap artikel — kebanyakan artikel cukup berhenti di informasi dan konteksnya saja tanpa CTA.',
+                                'response_rule' => 'Balas hanya JSON valid dengan key: title, category, excerpt, meta_description, content_html. Jangan bungkus dengan markdown.',
                                 'format' => [
                                     'title' => 'maksimal 90 karakter',
                                     'category' => 'Pendidikan/Karier/RPL/Kampus',
                                     'excerpt' => 'maksimal 280 karakter',
-                                    'content_html' => 'HTML sederhana berisi 5-8 blok: paragraf, h2, ul/li bila perlu, dan CTA penutup. Jangan gunakan h1.',
+                                    'meta_description' => 'ringkasan SEO maksimal 160 karakter, natural, tidak sama persis dengan excerpt',
+                                    'content_html' => 'HTML sederhana berisi 4-7 blok: paragraf dan h2 sesuai kebutuhan isi, ul/li bila perlu. Jangan gunakan h1. CTA ke Kampus Media opsional, sertakan hanya jika relevan dan jangan setiap artikel harus ada.',
                                 ],
+                                'editorial_note' => 'Konteks editorial di bawah ini adalah panduan brand secara umum. Abaikan bagian yang mewajibkan CTA/ajakan konsultasi di setiap artikel — untuk artikel berita, naturalness dan akurasi ringkasan lebih penting daripada mengikuti seluruh seo_rules secara harfiah.',
                                 'topic' => $topic,
                                 'source_title' => $source['title'],
                                 'source_excerpt' => $source['excerpt'],
@@ -289,11 +293,18 @@ class AiEducationNewsDraftService
                 return $fallback;
             }
 
+            $content = $payload['content_html'] ?? $fallback['content'];
+
+            if (filled($source['url'] ?? null)) {
+                $content .= '<p><strong>Sumber referensi:</strong> <a href="'.e($source['url']).'" target="_blank" rel="noopener">'.e($source['url']).'</a></p>';
+            }
+
             return [
                 'title' => Str::of($payload['title'] ?? $fallback['title'])->squish()->limit(100)->toString(),
                 'category' => Str::of($payload['category'] ?? $fallback['category'])->squish()->limit(120)->toString(),
                 'excerpt' => Str::of($payload['excerpt'] ?? $fallback['excerpt'])->squish()->limit(500)->toString(),
-                'content' => $payload['content_html'] ?? $fallback['content'],
+                'meta_description' => Str::of($payload['meta_description'] ?? $fallback['meta_description'])->squish()->limit(160)->toString(),
+                'content' => $content,
                 'fallback_used' => false,
             ];
         } catch (Throwable) {
@@ -454,6 +465,7 @@ class AiEducationNewsDraftService
             'title' => Str::of($angle['title'])->squish()->limit(90)->toString(),
             'category' => $angle['category'],
             'excerpt' => Str::of($sourceExcerpt)->limit(280)->toString(),
+            'meta_description' => Str::of($angle['h2'].'. '.$sourceExcerpt)->squish()->limit(160)->toString(),
             'content' => collect([
                 '<p>Kampus Media merangkum isu <strong>'.e($sourceTitle).'</strong> sebagai berita pendidikan yang relevan untuk calon mahasiswa yang sedang mencari informasi seputar '.e($topicText).'.</p>',
                 '<p>'.e($angle['intro']).'</p>',
@@ -469,7 +481,7 @@ class AiEducationNewsDraftService
                 '<h2>Peran Kampus Media</h2>',
                 '<p>'.e($cta).'</p>',
                 '<p>Draft ini dibuat otomatis sebagai bahan awal. Admin disarankan memeriksa isi, menyesuaikan sudut pandang, dan melengkapi informasi sebelum dipublikasikan.</p>',
-                '<p><strong>Sumber referensi:</strong> <a href="'.e($source['url']).'" target="_blank" rel="noopener">'.e($source['source_name']).'</a></p>',
+                '<p><strong>Sumber referensi:</strong> <a href="'.e($source['url']).'" target="_blank" rel="noopener">'.e($source['url']).'</a></p>',
             ])->implode(''),
             'fallback_used' => true,
         ];
