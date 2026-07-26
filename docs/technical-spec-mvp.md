@@ -178,6 +178,16 @@ Recommended activity types:
 6. Staff edit access is locked.
 7. System sends payment success and pemberkasan WhatsApp messages.
 
+### Manual Payment Verification
+
+Selain callback gateway realtime, pembayaran juga bisa masuk lewat pencatatan manual (transfer bank/CV, tunai) yang divalidasi keuangan (`Pembayaran Manual`, Staff/Super Admin dengan izin verifikasi):
+
+1. Staff mencatat pembayaran manual beserta bukti transfer untuk item tagihan (RR) mahasiswa.
+2. Petugas keuangan memvalidasi (`Validasi`) pembayaran manual tersebut.
+3. On success: status pembayaran manual dan item RR terkait menjadi paid; untuk pembayaran pendaftaran (bulan 0), lead payment_status juga menjadi paid dan enrollment_status berubah ke menunggu_pemberkasan bila masih calon_mahasiswa.
+4. Petugas keuangan juga bisa menolak (`Tolak`) pembayaran manual dengan mencatat alasan.
+5. Untuk pembayaran pendaftaran yang tertaut ke invoice (`rr_student_payment_id` merujuk item RR yang punya `invoice_id`), invoice tersebut ikut ditandai `paid` dan tercatat sebagai audit event `invoice_paid`, sama seperti jalur webhook.
+
 ### Manual Pool & Assignment
 
 1. Koordinator sees unassigned leads by campus.
@@ -304,7 +314,7 @@ Audited events:
 - Lead created.
 - Lead assigned.
 - Invoice created.
-- Invoice paid.
+- Invoice paid (dari webhook gateway realtime maupun dari verifikasi pembayaran manual — lihat "Manual Payment Verification").
 - Invoice expired.
 - Invoice regenerated.
 - Student profile completed.

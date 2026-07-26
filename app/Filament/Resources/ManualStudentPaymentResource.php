@@ -2,11 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\InvoiceStatus;
 use App\Filament\Resources\ManualStudentPaymentResource\Pages;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\StudentPayment;
+use App\Services\AuditLogger;
 use App\Services\ReferralService;
+use App\Services\StudentPaymentReceiptMailer;
 use App\Support\FilamentResourceScope;
+use Illuminate\Support\Str;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
@@ -196,6 +202,18 @@ class ManualStudentPaymentResource extends Resource
             ->whereHas('lead', fn (Builder $leadQuery) => FilamentResourceScope::applyManagedLeadCampusScope($leadQuery));
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getEloquentQuery()->where('verification_status', 'pending')->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -206,7 +224,7 @@ class ManualStudentPaymentResource extends Resource
                 TextColumn::make('lead.full_name')->label('Nama')->searchable()->sortable()->wrap(),
                 TextColumn::make('lead.campus.name')->label('Kampus')->searchable(),
                 TextColumn::make('payment_label')->label('Item')->searchable()->wrap(),
-                TextColumn::make('amount')->label('Nominal')->money('IDR')->sortable(),
+                TextColumn::make('amount')->label('Nominal')->money('IDR')->sortable()->alignEnd(),
                 TextColumn::make('payment_method')->label('Metode')->formatStateUsing(fn (?string $state): string => match ($state) {
                     'transfer_cv' => 'Transfer CV',
                     'bank_transfer' => 'Transfer bank',
@@ -226,8 +244,8 @@ class ManualStudentPaymentResource extends Resource
                     'rejected' => 'Ditolak',
                     default => 'Belum divalidasi',
                 }),
-                TextColumn::make('verifiedBy.name')->label('Divalidasi oleh')->placeholder('-'),
-                TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable(),
+                TextColumn::make('verifiedBy.name')->label('Divalidasi oleh')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions([
                 Action::make('openProof')
@@ -272,9 +290,35 @@ class ManualStudentPaymentResource extends Resource
                         $lead = $record->lead()->with(['classTrack', 'studentBiodata', 'studentNumber'])->first();
 
                         if ($lead && (! $rrPayment || (int) $rrPayment->month === 0)) {
-                            $lead->update(['payment_status' => 'paid']);
+                            $lead->update([
+                                'payment_status' => 'paid',
+                                'enrollment_status' => $lead->enrollment_status === EnrollmentStatus::CalonMahasiswa
+                                    ? EnrollmentStatus::MenungguPemberkasan
+                                    : $lead->enrollment_status,
+                                'pemberkasan_token' => $lead->pemberkasan_token ?? Str::random(64),
+                                'locked_at' => $lead->locked_at ?? now(),
+                            ]);
                             app(\App\Services\StudentBiodataProvisioner::class)->createForPaidRegistration($lead->refresh());
+
+                            $invoice = $rrPayment?->invoice_id
+                                ? Invoice::query()->find($rrPayment->invoice_id)
+                                : null;
+
+                            if ($invoice && $invoice->status !== InvoiceStatus::Paid) {
+                                $invoice->update([
+                                    'status' => InvoiceStatus::Paid,
+                                    'paid_at' => $invoice->paid_at ?? ($record->paid_at ?? now()),
+                                ]);
+
+                                app(AuditLogger::class)->record('invoice_paid', $invoice, [
+                                    'lead_id' => $lead->id,
+                                    'source' => 'manual_payment',
+                                    'manual_student_payment_id' => $record->id,
+                                ]);
+                            }
                         }
+
+                        app(StudentPaymentReceiptMailer::class)->send(($rrPayment ?: $record)->fresh());
 
                         if ($lead) {
                             app(ReferralService::class)->syncMilestones($lead->refresh(['referralConversion', 'studentPayments']));
@@ -293,8 +337,10 @@ class ManualStudentPaymentResource extends Resource
                         'verified_at' => now(),
                         'verification_notes' => $data['verification_notes'],
                     ])),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (StudentPayment $record): bool => $record->verification_status !== 'verified' || FilamentResourceScope::isSuperAdmin()),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn (StudentPayment $record): bool => $record->verification_status !== 'verified' || FilamentResourceScope::isSuperAdmin()),
             ])
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
