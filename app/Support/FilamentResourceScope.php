@@ -74,6 +74,29 @@ class FilamentResourceScope
         return $query;
     }
 
+    public static function canAccessCampus(?int $campusId): bool
+    {
+        $user = auth()->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin() || static::isDirector()) {
+            return true;
+        }
+
+        if ($campusId === null) {
+            return false;
+        }
+
+        if (in_array($user->role, [UserRole::KoordinatorPmb, UserRole::StaffPmb], true)) {
+            return $user->campuses()->where('campuses.id', $campusId)->exists();
+        }
+
+        return false;
+    }
+
     public static function isSuperAdmin(): bool
     {
         return auth()->user()?->role === UserRole::SuperAdmin;

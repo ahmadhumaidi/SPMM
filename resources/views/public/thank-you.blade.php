@@ -82,6 +82,7 @@
 
             <form method="POST" action="{{ route('registration.payment-proof.upload', $lead) }}" enctype="multipart/form-data" class="payment-proof-form">
                 @csrf
+                <input type="hidden" name="token" value="{{ $lead->payment_proof_token }}">
                 <label>
                     <span>Upload bukti transfer</span>
                     <input type="file" name="proof_path" accept=".jpg,.jpeg,.png,.pdf" required>

@@ -37,8 +37,16 @@ class Lead extends Model
         'payment_status',
         'enrollment_status',
         'pemberkasan_token',
+        'payment_proof_token',
         'locked_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Lead $lead): void {
+            $lead->payment_proof_token ??= Str::random(64);
+        });
+    }
 
     protected function casts(): array
     {

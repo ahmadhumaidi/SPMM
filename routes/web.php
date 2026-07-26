@@ -64,7 +64,7 @@ Route::get('/exports/mahasiswa-aktif.csv', [StudentExportController::class, 'act
 Route::get('/admin/student-payments/{lead}/receipt', function (\App\Models\Lead $lead) {
     $lead->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'studentNumber', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('paid_at')->orderBy('month')]);
 
-    abort_unless(auth()->check(), 403);
+    abort_unless(auth()->check() && \App\Support\FilamentResourceScope::canAccessCampus($lead->campus_id), 403);
 
     $paidPayments = $lead->studentPayments
         ->filter(fn ($payment) => $payment->payment_type !== 'manual')
@@ -82,7 +82,7 @@ Route::get('/admin/student-payments/{lead}/receipt', function (\App\Models\Lead 
 })->middleware('auth')->name('admin.student-payments.receipt');
 
 Route::get('/admin/student-payments/transaction/{payment}/receipt', function (\App\Models\StudentPayment $payment, \Illuminate\Http\Request $request, \App\Services\StudentPaymentReceiptArchiver $archiver) {
-    abort_unless(auth()->check(), 403);
+    abort_unless(auth()->check() && \App\Support\FilamentResourceScope::canAccessCampus($payment->lead?->campus_id), 403);
     abort_unless(in_array($payment->status, ['paid', 'waived'], true), 404);
 
     $filename = 'kwitansi-'.$payment->lead_id.'-'.$payment->id.'.pdf';

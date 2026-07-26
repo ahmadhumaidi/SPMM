@@ -481,6 +481,11 @@ class StudentPortalController extends Controller
      */
     public function uploadPublicPaymentProof(Request $request, Lead $lead): RedirectResponse
     {
+        abort_unless(
+            $lead->payment_proof_token && hash_equals($lead->payment_proof_token, (string) $request->input('token')),
+            403
+        );
+
         $data = $request->validate([
             'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ], [
