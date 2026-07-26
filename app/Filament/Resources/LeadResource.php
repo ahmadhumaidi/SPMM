@@ -137,7 +137,7 @@ class LeadResource extends Resource
                         ->columnSpanFull(),
                 ]),
             Section::make('1. Data Pendaftaran Mahasiswa')
-                ->relationship('studentBiodata')
+                ->relationship('studentBiodata', condition: fn (?Lead $record): bool => $record?->studentBiodata !== null)
                 ->columns(2)
                 ->schema([
                     Hidden::make('student_type')->default('new'),
@@ -177,7 +177,7 @@ class LeadResource extends Resource
                         ->columnSpanFull(),
                 ]),
             Section::make('2. Biodata Mahasiswa')
-                ->relationship('studentBiodata')
+                ->relationship('studentBiodata', condition: fn (?Lead $record): bool => $record?->studentBiodata !== null)
                 ->columns(2)
                 ->schema([
                     TextInput::make('birth_place')->label('Tempat Lahir')->maxLength(255),
@@ -212,7 +212,7 @@ class LeadResource extends Resource
                     TextInput::make('identity_number')->label('NIK KTP Mahasiswa')->maxLength(32),
                 ]),
             Section::make('3. Data Keluarga')
-                ->relationship('studentBiodata')
+                ->relationship('studentBiodata', condition: fn (?Lead $record): bool => $record?->studentBiodata !== null)
                 ->columns(2)
                 ->schema([
                     TextInput::make('mother_name')->label('Nama Ibu Kandung')->maxLength(255),
@@ -221,7 +221,7 @@ class LeadResource extends Resource
                     TextInput::make('family_relationship')->label('Hubungan')->maxLength(255),
                 ]),
             Section::make('4. Data Pekerjaan')
-                ->relationship('studentBiodata')
+                ->relationship('studentBiodata', condition: fn (?Lead $record): bool => $record?->studentBiodata !== null)
                 ->columns(2)
                 ->schema([
                     TextInput::make('company_name')->label('Perusahaan/Instansi')->maxLength(255),
@@ -239,6 +239,18 @@ class LeadResource extends Resource
         return FilamentResourceScope::applyLeadScope(parent::getEloquentQuery());
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getEloquentQuery()->where('lead_status', LeadStatus::InPool)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -246,9 +258,9 @@ class LeadResource extends Resource
             ->columns([
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('full_name')->searchable()->sortable(),
-                TextColumn::make('email')->searchable()->toggleable(),
+                TextColumn::make('email')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('campus.name')->sortable(),
-                TextColumn::make('studyProgram.name')->toggleable(),
+                TextColumn::make('studyProgram.name')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('assignedTo.name')->placeholder('Pool'),
                 TextColumn::make('lead_status')
                     ->label('Status lead')
@@ -264,7 +276,7 @@ class LeadResource extends Resource
                     ->label('Sumber lead')
                     ->formatStateUsing(fn (?string $state): string => static::sourceLabel($state))
                     ->badge()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('payment_status')->badge(),
                 TextColumn::make('enrollment_status')->badge(),
                 TextColumn::make('created_at')->dateTime()->sortable(),
@@ -284,6 +296,7 @@ class LeadResource extends Resource
                 Tables\Actions\Action::make('assign')
                     ->label('Bagikan')
                     ->icon('heroicon-o-user-plus')
+                    ->iconButton()
                     ->modalHeading('Bagikan lead ke Staff PMB')
                     ->modalSubmitActionLabel('Bagikan')
                     ->modalCancelActionLabel('Batal')
@@ -305,6 +318,7 @@ class LeadResource extends Resource
                 Tables\Actions\Action::make('regenerate_invoice')
                     ->label('Buat Ulang Tagihan')
                     ->icon('heroicon-o-arrow-path')
+                    ->iconButton()
                     ->requiresConfirmation()
                     ->action(function (Lead $record, InvoiceRegenerationService $regeneration): void {
                         try {
@@ -317,6 +331,7 @@ class LeadResource extends Resource
                 Tables\Actions\Action::make('follow_up_whatsapp')
                     ->label('Follow Up WA')
                     ->icon('heroicon-o-phone')
+                    ->iconButton()
                     ->url(fn (Lead $record): ?string => static::whatsappFollowUpUrl($record))
                     ->openUrlInNewTab()
                     ->visible(fn (Lead $record): bool => filled(static::normalizeWhatsappForUrl($record->whatsapp_number))),
@@ -338,11 +353,14 @@ class LeadResource extends Resource
                         ->all()
                 )
                     ->label('Update Prospek')
-                    ->icon('heroicon-o-signal'),
+                    ->icon('heroicon-o-signal')
+                    ->iconButton(),
                 Tables\Actions\EditAction::make()
-                    ->label('Ubah'),
+                    ->label('Ubah')
+                    ->iconButton(),
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
+                    ->iconButton()
                     ->modalHeading('Hapus lead')
                     ->modalDescription('Data lead dan data terkait seperti invoice, biodata, dokumen, pembayaran, dan aktivitas akan ikut dihapus.')
                     ->modalSubmitActionLabel('Ya, hapus')

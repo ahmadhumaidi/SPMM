@@ -583,17 +583,18 @@ class FeeSchemeResource extends Resource
             ->columns([
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('campus.name')->searchable()->sortable(),
-                TextColumn::make('studyProgram.name')->placeholder('Semua prodi'),
+                TextColumn::make('studyProgram.degree_level')->label('Jenjang')->placeholder('Semua jenjang')->sortable(),
+                TextColumn::make('studyProgram.name')->label('Program studi')->placeholder('Semua prodi'),
                 TextColumn::make('classTrack.name')->label('Program perkuliahan')->placeholder('Semua program'),
                 TextColumn::make('financing_model')
                     ->label('Model')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'ukt' ? 'UKT' : 'SPB + SPP'),
-                TextColumn::make('registration_fee')->money('IDR')->sortable(),
-                TextColumn::make('building_fee')->label('Development')->money('IDR')->sortable(),
-                TextColumn::make('monthly_tuition_fee')->label('Tuition')->money('IDR')->sortable(),
-                TextColumn::make('ukt_total')->label('UKT')->money('IDR')->sortable(),
-                TextColumn::make('total_initial_payment')->money('IDR')->sortable(),
+                TextColumn::make('registration_fee')->money('IDR')->sortable()->alignEnd(),
+                TextColumn::make('building_fee')->label('Development')->money('IDR')->sortable()->alignEnd(),
+                TextColumn::make('monthly_tuition_fee')->label('Tuition')->money('IDR')->sortable()->alignEnd(),
+                TextColumn::make('ukt_total')->label('UKT')->money('IDR')->sortable()->alignEnd(),
+                TextColumn::make('total_initial_payment')->money('IDR')->sortable()->alignEnd(),
                 IconColumn::make('is_active')->boolean(),
             ])
             ->filters([

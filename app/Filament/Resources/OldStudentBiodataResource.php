@@ -50,6 +50,18 @@ class OldStudentBiodataResource extends Resource
         );
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $count = StudentBiodataResourceSchema::applyIncompleteScope(static::getEloquentQuery())->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
+    }
+
     public static function getPages(): array
     {
         return [

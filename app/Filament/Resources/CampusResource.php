@@ -52,12 +52,19 @@ class CampusResource extends Resource
                     TextInput::make('name')
                         ->label('Nama kampus')
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(function (string $operation, $state, callable $set): void {
+                            if ($operation === 'create') {
+                                $set('slug', \Illuminate\Support\Str::slug($state));
+                            }
+                        }),
                     TextInput::make('slug')
                         ->label('Slug')
-                        ->helperText('Contoh: kampus-mahera. Dipakai untuk URL publik.')
+                        ->helperText('Contoh: kampus-mahera. Dipakai untuk URL publik (bukan tagline).')
                         ->required()
                         ->maxLength(255)
+                        ->alphaDash()
                         ->unique(ignoreRecord: true),
                     TextInput::make('subdomain')
                         ->label('Subdomain')

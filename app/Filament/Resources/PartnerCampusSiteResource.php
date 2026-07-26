@@ -83,7 +83,7 @@ class PartnerCampusSiteResource extends Resource
                     Placeholder::make('local_preview')
                         ->label('Preview lokal')
                         ->content(fn (Campus $record): HtmlString => new HtmlString(
-                            '<a href="'.route('campuses.show', ['campus' => $record->name]).'" target="_blank">'.route('campuses.show', ['campus' => $record->name]).'</a>'
+                            '<a href="'.$record->publicUrl().'" target="_blank">'.$record->publicUrl().'</a>'
                         )),
                     Placeholder::make('subdomain_preview')
                         ->label('URL subdomain produksi')
@@ -272,7 +272,7 @@ class PartnerCampusSiteResource extends Resource
                     ->copyable(),
                 TextColumn::make('slug')
                     ->label('Preview lokal')
-                    ->formatStateUsing(fn (string $state, Campus $record): string => route('campuses.show', ['campus' => $record->name]))
+                    ->formatStateUsing(fn (string $state, Campus $record): string => $record->publicUrl())
                     ->copyable(),
                 TextColumn::make('status')
                     ->label('Status')
@@ -289,7 +289,7 @@ class PartnerCampusSiteResource extends Resource
                 Tables\Actions\Action::make('open_public')
                     ->label('Buka')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (Campus $record): string => route('campuses.show', ['campus' => $record->name]))
+                    ->url(fn (Campus $record): string => $record->publicUrl())
                     ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
             ]);
