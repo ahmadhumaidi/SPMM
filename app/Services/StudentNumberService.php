@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class StudentNumberService
 {
-    public function __construct(private readonly AuditLogger $audit)
-    {
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly SiakadStudentSyncService $siakadSync,
+    ) {
     }
 
     public function issue(Lead $lead, string $nim, User $issuedBy): StudentNumber
@@ -21,7 +23,7 @@ class StudentNumberService
             throw new DomainException('NIM can only be issued during proses_pemutakhiran.');
         }
 
-        return DB::transaction(function () use ($lead, $nim, $issuedBy): StudentNumber {
+        $studentNumber = DB::transaction(function () use ($lead, $nim, $issuedBy): StudentNumber {
             $studentNumber = StudentNumber::create([
                 'lead_id' => $lead->id,
                 'nim' => $nim,
@@ -39,5 +41,9 @@ class StudentNumberService
 
             return $studentNumber;
         });
+
+        $this->siakadSync->syncActivation($studentNumber->fresh());
+
+        return $studentNumber;
     }
 }

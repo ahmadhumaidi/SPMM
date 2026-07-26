@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CourseResource\Pages;
 use App\Models\Course;
 use App\Models\StudyProgram;
+use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -13,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class CourseResource extends Resource
 {
@@ -24,11 +26,14 @@ class CourseResource extends Resource
 
     protected static ?string $navigationLabel = 'Mata Kuliah';
 
-    protected static bool $shouldRegisterNavigation = false;
-
     public static function canAccess(): bool
     {
-        return false;
+        return FilamentResourceScope::canAccessAcademic();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return FilamentResourceScope::applyCampusScope(parent::getEloquentQuery());
     }
 
     public static function form(Form $form): Form

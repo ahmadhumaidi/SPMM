@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicTermResource\Pages;
 use App\Models\AcademicTerm;
+use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -12,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class AcademicTermResource extends Resource
 {
@@ -23,11 +25,14 @@ class AcademicTermResource extends Resource
 
     protected static ?string $navigationLabel = 'Tahun Akademik';
 
-    protected static bool $shouldRegisterNavigation = false;
-
     public static function canAccess(): bool
     {
-        return false;
+        return FilamentResourceScope::canAccessAcademic();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return FilamentResourceScope::applyCampusScope(parent::getEloquentQuery());
     }
 
     public static function form(Form $form): Form

@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\EnrollmentStatus;
 use App\Filament\Resources\StudyPlanResource\Pages;
 use App\Models\CourseClass;
 use App\Models\Lead;
 use App\Models\StudyPlan;
+use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -16,6 +18,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class StudyPlanResource extends Resource
 {
@@ -27,11 +30,14 @@ class StudyPlanResource extends Resource
 
     protected static ?string $navigationLabel = 'KRS & Nilai';
 
-    protected static bool $shouldRegisterNavigation = false;
-
     public static function canAccess(): bool
     {
-        return false;
+        return FilamentResourceScope::canAccessAcademic();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return FilamentResourceScope::applyRelatedCampusScope(parent::getEloquentQuery(), 'lead');
     }
 
     public static function form(Form $form): Form
@@ -39,7 +45,9 @@ class StudyPlanResource extends Resource
         return $form->schema([
             Select::make('lead_id')
                 ->label('Mahasiswa')
-                ->options(fn (): array => Lead::query()->orderBy('full_name')->pluck('full_name', 'id')->all())
+                ->options(fn (): array => FilamentResourceScope::applyLeadScope(
+                    Lead::query()->where('enrollment_status', EnrollmentStatus::MahasiswaAktif)
+                )->orderBy('full_name')->pluck('full_name', 'id')->all())
                 ->searchable()
                 ->required(),
             Select::make('academic_term_id')->label('Tahun Akademik')->relationship('academicTerm', 'name')->searchable()->preload()->required(),
