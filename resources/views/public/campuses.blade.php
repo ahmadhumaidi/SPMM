@@ -45,7 +45,7 @@
 @endphp
 
 <!doctype html>
-<html lang="id" class="scroll-smooth">
+<html lang="id" class="scroll-smooth bg-navy">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -153,10 +153,10 @@
         </div>
     </nav>
 
-    <header class="hero-bg relative overflow-hidden text-white">
+    <header class="hero-bg relative -mt-[68px] overflow-hidden text-white">
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
-        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">
+        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 pb-10 pt-[calc(68px+2.5rem)] sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-16 lg:pt-[calc(68px+4rem)]">
             <section class="reveal">
                 <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
                     <i data-lucide="sparkles" class="h-4 w-4"></i>
