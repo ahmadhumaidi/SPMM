@@ -11,6 +11,7 @@ use App\Filament\Resources\StudyPlanResource;
 use App\Filament\Widgets\SiakadOverviewWidget;
 use App\Filament\Widgets\SiakadPendingKrsWidget;
 use App\Filament\Widgets\SiakadScheduleWidget;
+use App\Support\FilamentBackButton;
 use App\Support\SiakadCampusResolver;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -19,6 +20,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -54,6 +56,10 @@ class SiakadPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::head.end',
                 fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-siakad.css?v=1">'),
+            )
+            ->renderHook(
+                PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE,
+                FilamentBackButton::renderHook(),
             )
             ->resources([
                 SiakadStudentResource::class,

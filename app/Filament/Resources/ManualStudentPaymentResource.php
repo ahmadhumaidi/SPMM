@@ -66,7 +66,7 @@ class ManualStudentPaymentResource extends Resource
                 ->required(),
             Select::make('rr_student_payment_id')
                 ->label('Item pembayaran')
-                ->options(fn (Get $get): array => static::rrPaymentOptions((int) $get('lead_id')))
+                ->options(fn (Get $get, ?StudentPayment $record): array => static::rrPaymentOptions((int) $get('lead_id'), $record?->id))
                 ->native(false)
                 ->searchable()
                 ->live()
@@ -109,17 +109,33 @@ class ManualStudentPaymentResource extends Resource
         ])->columns(2);
     }
 
-    public static function rrPaymentOptions(int $leadId): array
+    public static function rrPaymentOptions(int $leadId, ?int $excludeManualPaymentId = null): array
     {
         if ($leadId < 1) {
             return [];
         }
 
-        return static::billableRrPayments($leadId)
+        return static::billableRrPayments($leadId, $excludeManualPaymentId)
             ->mapWithKeys(fn (StudentPayment $payment): array => [
                 $payment->id => static::rrPaymentOptionLabel($payment),
             ])
             ->all();
+    }
+
+    /**
+     * An RR item already covered by a manual payment that's pending review or verified
+     * shouldn't be selectable again, to avoid duplicate "Pembayaran Manual" entries for
+     * the same underlying bill (e.g. a student's own proof upload plus a staff-created
+     * entry for the same item). Rejected manual payments don't block re-submission.
+     */
+    public static function hasPendingManualPayment(int $rrPaymentId, ?int $excludeManualPaymentId = null): bool
+    {
+        return StudentPayment::query()
+            ->where('payment_type', 'manual')
+            ->where('source_row_json->rr_student_payment_id', $rrPaymentId)
+            ->whereNotIn('verification_status', ['rejected'])
+            ->when($excludeManualPaymentId, fn (Builder $query, int $id): Builder => $query->where('id', '!=', $id))
+            ->exists();
     }
 
     public static function fillFromRrPayment(mixed $paymentId, Set $set): void
@@ -176,7 +192,7 @@ class ManualStudentPaymentResource extends Resource
         ])->filter(fn ($amount): bool => (int) $amount > 0)->keys()->join(', ') ?: 'Tagihan';
     }
 
-    public static function billableRrPayments(int $leadId)
+    public static function billableRrPayments(int $leadId, ?int $excludeManualPaymentId = null)
     {
         $query = StudentPayment::query()
             ->where('lead_id', $leadId)
@@ -185,13 +201,15 @@ class ManualStudentPaymentResource extends Resource
             ->orderBy('month')
             ->orderBy('due_date');
 
+        $notAlreadyCovered = fn (StudentPayment $payment): bool => ! static::hasPendingManualPayment($payment->id, $excludeManualPaymentId);
+
         $registrationPayment = (clone $query)->where('month', 0)->first();
 
         if ($registrationPayment && ! in_array($registrationPayment->status, ['paid', 'waived'], true)) {
-            return collect([$registrationPayment]);
+            return collect([$registrationPayment])->filter($notAlreadyCovered)->values();
         }
 
-        return $query->where('month', '>', 0)->get();
+        return $query->where('month', '>', 0)->get()->filter($notAlreadyCovered)->values();
     }
 
     public static function getEloquentQuery(): Builder
@@ -244,6 +262,15 @@ class ManualStudentPaymentResource extends Resource
                     'rejected' => 'Ditolak',
                     default => 'Belum divalidasi',
                 }),
+                TextColumn::make('source_row_json.type')
+                    ->label('Sumber')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state === 'student_payment_proof_upload' ? 'info' : 'gray')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'student_payment_proof_upload' => 'Upload Mahasiswa',
+                        'manual_payment_from_rr' => 'Input Staff',
+                        default => '-',
+                    }),
                 TextColumn::make('verifiedBy.name')->label('Divalidasi oleh')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])

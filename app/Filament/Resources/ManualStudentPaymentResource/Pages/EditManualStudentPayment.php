@@ -20,6 +20,12 @@ class EditManualStudentPayment extends EditRecord
                 ]);
             }
 
+            if (ManualStudentPaymentResource::hasPendingManualPayment($rrPayment->id, $this->record->id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'rr_student_payment_id' => 'Item pembayaran ini sudah memiliki Pembayaran Manual lain yang menunggu/tervalidasi.',
+                ]);
+            }
+
             $data['payment_label'] = ManualStudentPaymentResource::rrPaymentLabel($rrPayment);
             $data['amount'] = (int) $rrPayment->amount;
             $data['due_date'] = $rrPayment->due_date?->toDateString() ?? ($data['due_date'] ?? now()->toDateString());
