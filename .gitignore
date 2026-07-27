@@ -23,3 +23,7 @@
 !/storage/framework/sessions/.gitkeep
 !/storage/framework/views/.gitkeep
 !/storage/logs/.gitkeep
+/scripts/
+/backups/
+spmm_production.dump
+*.dump
