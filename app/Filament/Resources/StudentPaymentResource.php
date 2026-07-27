@@ -6,6 +6,7 @@ use App\Filament\Resources\StudentPaymentResource\Pages;
 use App\Models\Campus;
 use App\Models\Lead;
 use App\Models\StudentPayment;
+use App\Services\StudentPaymentReceiptArchiver;
 use App\Services\StudentPaymentReceiptMailer;
 use App\Services\StudentPaymentScheduleService;
 use App\Support\FilamentResourceScope;
@@ -104,6 +105,16 @@ class StudentPaymentResource extends Resource
                 TextColumn::make('status')->label('STATUS')->badge(),
                 TextColumn::make('paid_at')->label('TGL LUNAS')->dateTime('d M Y H:i')->sortable(),
                 TextColumn::make('lead.email')->label('EMAIL')->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('receipt_archived_at')
+                    ->label('ARSIP')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-archive-box')
+                    ->falseIcon('heroicon-o-exclamation-circle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (StudentPayment $record): string => $record->receipt_archived_at
+                        ? 'Diarsipkan '.$record->receipt_archived_at->format('d M Y H:i')
+                        : 'Kwitansi belum diarsipkan'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('campus')
@@ -112,8 +123,32 @@ class StudentPaymentResource extends Resource
                     ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
                         ? $query->whereHas('lead', fn (Builder $leadQuery) => $leadQuery->where('campus_id', $data['value']))
                         : $query),
+                Tables\Filters\Filter::make('unarchived_receipt')
+                    ->label('Kwitansi belum diarsipkan')
+                    ->query(fn (Builder $query): Builder => $query->whereNull('receipt_pdf_path')),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('archive_receipts')
+                    ->label('Arsipkan kwitansi tertunda')
+                    ->icon('heroicon-o-archive-box-arrow-down')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (): string => 'Membuat dan menyimpan file PDF untuk semua kwitansi lunas yang belum diarsipkan.')
+                    ->action(function (StudentPaymentReceiptArchiver $archiver): void {
+                        $pending = StudentPayment::query()
+                            ->whereIn('status', ['paid', 'waived'])
+                            ->whereNull('receipt_pdf_path')
+                            ->get();
+
+                        foreach ($pending as $payment) {
+                            $archiver->contentsFor($payment);
+                        }
+
+                        Notification::make()
+                            ->title($pending->count().' kwitansi berhasil diarsipkan')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('generate_schedules')
                     ->label('Generate semua jadwal')
                     ->icon('heroicon-o-arrow-path')
