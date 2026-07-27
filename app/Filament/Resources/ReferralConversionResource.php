@@ -156,7 +156,13 @@ class ReferralConversionResource extends Resource
                 ->columns(2),
             Section::make('Status Keseluruhan')
                 ->schema([
-                    TextInput::make('commission_amount')->label('Total komisi layak')->prefix('Rp')->numeric(),
+                    TextInput::make('commission_amount')
+                        ->label('Total komisi layak')
+                        ->prefix('Rp')
+                        ->numeric()
+                        ->disabled()
+                        ->dehydrated(false)
+                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status komisi per tahap.'),
                     Select::make('commission_status')
                         ->label('Status total')
                         ->options(static::commissionStatusOptions())
@@ -371,6 +377,9 @@ class ReferralConversionResource extends Resource
         $semesterStatus = $record->semester1_commission_status;
 
         $record->update([
+            'commission_amount' => (int) (in_array($registrationStatus, ['approved', 'paid'], true) ? $record->registration_commission_amount : 0)
+                + (int) (in_array($herStatus, ['approved', 'paid'], true) ? $record->herregistration_commission_amount : 0)
+                + (int) (in_array($semesterStatus, ['approved', 'paid'], true) ? $record->semester1_commission_amount : 0),
             'commission_status' => match (true) {
                 in_array($registrationStatus, ['approved'], true) || in_array($herStatus, ['approved'], true) || in_array($semesterStatus, ['approved'], true) => 'approved',
                 $registrationStatus === 'paid' || $herStatus === 'paid' || $semesterStatus === 'paid' => 'paid',
