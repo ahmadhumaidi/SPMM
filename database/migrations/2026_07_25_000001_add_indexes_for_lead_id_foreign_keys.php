@@ -24,9 +24,11 @@ return new class extends Migration
             $table->index('lead_id');
         });
 
-        Schema::table('lms_submissions', function (Blueprint $table): void {
-            $table->index('lead_id');
-        });
+        if (Schema::hasTable('lms_submissions')) {
+            Schema::table('lms_submissions', function (Blueprint $table): void {
+                $table->index('lead_id');
+            });
+        }
     }
 
     public function down(): void
@@ -47,8 +49,10 @@ return new class extends Migration
             $table->dropIndex(['lead_id']);
         });
 
-        Schema::table('lms_submissions', function (Blueprint $table): void {
-            $table->dropIndex(['lead_id']);
-        });
+        if (Schema::hasTable('lms_submissions')) {
+            Schema::table('lms_submissions', function (Blueprint $table): void {
+                $table->dropIndex(['lead_id']);
+            });
+        }
     }
 };
