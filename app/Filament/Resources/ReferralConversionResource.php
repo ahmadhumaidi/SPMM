@@ -103,9 +103,8 @@ class ReferralConversionResource extends Resource
                     Select::make('registration_commission_status')
                         ->label('Status')
                         ->options(static::commissionStatusOptions())
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
+                        ->native(false)
+                        ->helperText('Otomatis diperbarui oleh sistem berdasarkan status pembayaran, namun dapat diubah manual jika diperlukan.'),
                     DateTimePicker::make('registration_paid_at')->label('Tanggal pendaftaran lunas'),
                     FileUpload::make('registration_payout_proof_path')
                         ->label('Bukti transfer')
@@ -123,9 +122,8 @@ class ReferralConversionResource extends Resource
                     Select::make('herregistration_commission_status')
                         ->label('Status')
                         ->options(static::commissionStatusOptions())
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
+                        ->native(false)
+                        ->helperText('Otomatis diperbarui oleh sistem berdasarkan status pembayaran, namun dapat diubah manual jika diperlukan.'),
                     DateTimePicker::make('herregistration_paid_at')->label('Tanggal herregistrasi lunas'),
                     FileUpload::make('herregistration_payout_proof_path')
                         ->label('Bukti transfer')
@@ -143,9 +141,8 @@ class ReferralConversionResource extends Resource
                     Select::make('semester1_commission_status')
                         ->label('Status')
                         ->options(static::commissionStatusOptions())
-                        ->disabled()
-                        ->dehydrated(false)
-                        ->helperText('Ditentukan otomatis oleh sistem berdasarkan status pembayaran.'),
+                        ->native(false)
+                        ->helperText('Otomatis diperbarui oleh sistem berdasarkan status pembayaran, namun dapat diubah manual jika diperlukan.'),
                     DateTimePicker::make('semester1_paid_at')->label('Tanggal semester 1 lunas'),
                     FileUpload::make('semester1_payout_proof_path')
                         ->label('Bukti transfer')
