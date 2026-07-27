@@ -372,8 +372,8 @@ class ReferralConversionResource extends Resource
 
         $record->update([
             'commission_status' => match (true) {
-                $registrationStatus === 'paid' && $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
-                in_array($registrationStatus, ['approved', 'paid'], true) || in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
+                in_array($registrationStatus, ['approved'], true) || in_array($herStatus, ['approved'], true) || in_array($semesterStatus, ['approved'], true) => 'approved',
+                $registrationStatus === 'paid' || $herStatus === 'paid' || $semesterStatus === 'paid' => 'paid',
                 $registrationStatus === 'cancelled' && $herStatus === 'cancelled' && $semesterStatus === 'cancelled' => 'cancelled',
                 default => 'pending',
             },

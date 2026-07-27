@@ -128,9 +128,12 @@ class ReferralService
 
         $registrationApplicable = ($payload['registration_commission_amount'] ?? $conversion->registration_commission_amount ?? 0) > 0;
 
+        $anyApproved = ($registrationApplicable && $registrationStatus === 'approved') || $herStatus === 'approved' || $semesterStatus === 'approved';
+        $anyPaid = ($registrationApplicable && $registrationStatus === 'paid') || $herStatus === 'paid' || $semesterStatus === 'paid';
+
         $payload['commission_status'] = match (true) {
-            (! $registrationApplicable || $registrationStatus === 'paid') && $herStatus === 'paid' && $semesterStatus === 'paid' => 'paid',
-            ($registrationApplicable && in_array($registrationStatus, ['approved', 'paid'], true)) || in_array($herStatus, ['approved', 'paid'], true) || in_array($semesterStatus, ['approved', 'paid'], true) => 'approved',
+            $anyApproved => 'approved',
+            $anyPaid => 'paid',
             default => 'pending',
         };
 
