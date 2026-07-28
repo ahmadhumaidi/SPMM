@@ -2,11 +2,11 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\StudentPaymentResource;
 use App\Models\Campus;
 use App\Models\Lead;
 use App\Services\StudentBiodataProvisioner;
 use App\Support\FilamentResourceScope;
+use App\Support\FilamentTable;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -49,7 +49,7 @@ class OldStudentFeeDetail extends Page implements HasTable
             )
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('id')->label('NO')->sortable(),
+                FilamentTable::rowNumberColumn(),
                 TextColumn::make('studentBiodata.selection_number')
                     ->label('NO. SELEKSI')
                     ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? app(StudentBiodataProvisioner::class)->selectionNumberFor($record))
@@ -74,11 +74,11 @@ class OldStudentFeeDetail extends Page implements HasTable
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Lead $record): string => StudentPaymentResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (Lead $record): string => EditStudentFeePlan::getUrl(['lead' => $record->id])),
                 Tables\Actions\Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil-square')
-                    ->url(fn (Lead $record): string => StudentPaymentResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn (Lead $record): string => EditStudentFeePlan::getUrl(['lead' => $record->id])),
             ])
             ->bulkActions([]);
     }
