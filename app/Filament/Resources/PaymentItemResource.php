@@ -26,10 +26,11 @@ class PaymentItemResource extends Resource
     protected static ?string $navigationLabel = 'Item Pembayaran';
     protected static ?string $modelLabel = 'Item Pembayaran';
     protected static ?string $pluralModelLabel = 'Item Pembayaran';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::canAccessPayments();
+        return false;
     }
 
     public static function form(Form $form): Form

@@ -183,11 +183,20 @@ class FeeSchemeResource extends Resource
                         ->live(onBlur: true)
                         ->visible(fn (Get $get): bool => $get('financing_model') === 'ukt')
                         ->required(fn (Get $get): bool => $get('financing_model') === 'ukt'),
+                    TextInput::make('ukt_first_installment_amount')
+                        ->label('Nominal UKT bulan 1')
+                        ->helperText('Opsional. Jika diisi, sisa UKT otomatis dibagi ke bulan 2 dan seterusnya agar total angsuran tetap sama dengan Nominal total UKT.')
+                        ->numeric()
+                        ->prefix('Rp')
+                        ->default(0)
+                        ->live(onBlur: true)
+                        ->visible(fn (Get $get): bool => $get('financing_model') === 'ukt'),
                     CheckboxList::make('ukt_installment_terms')
                         ->label('Pilihan angsuran UKT')
                         ->options([
                             1 => '1x',
                             12 => '12x',
+                            18 => '18x',
                             24 => '24x',
                             36 => '36x',
                             48 => '48x',
@@ -254,7 +263,12 @@ class FeeSchemeResource extends Resource
                     Placeholder::make('ukt_installments_preview')
                         ->label('UKT')
                         ->content(fn (Get $get): HtmlString => static::installmentTable(
-                            static::buildInstallments((int) $get('ukt_total'), static::cleanTerms($get('ukt_installment_terms') ?? []))
+                            static::buildUktInstallmentsPreview(
+                                (int) $get('ukt_total'),
+                                static::cleanTerms($get('ukt_installment_terms') ?? []),
+                                (int) $get('ukt_first_installment_amount'),
+                            ),
+                            'Nominal bulan ke-2'
                         ))
                         ->visible(fn (Get $get): bool => $get('financing_model') === 'ukt'),
                     Placeholder::make('monthly_schedule_preview')
@@ -335,6 +349,8 @@ class FeeSchemeResource extends Resource
         $data['monthly_tuition_fee'] = (int) ($data['monthly_tuition_fee'] ?? 0);
         $data['tuition_semesters'] = max(1, min(8, (int) ($data['tuition_semesters'] ?? 1)));
         $data['ukt_total'] = (int) ($data['ukt_total'] ?? 0);
+        $data['ukt_first_installment_amount'] = (int) ($data['ukt_first_installment_amount'] ?? 0);
+        $data['custom_payment_items_json'] = [];
         $data['uses_custom_installments'] = (bool) ($data['uses_custom_installments'] ?? false);
         $customSchedule = static::normalizeCustomSchedule($data['custom_installment_schedule_json'] ?? []);
 
@@ -359,6 +375,7 @@ class FeeSchemeResource extends Resource
                 tuitionSemesters: 1,
                 uktTotal: $data['ukt_total'],
                 uktTerm: $scheduleTerm,
+                uktFirstInstallmentAmount: $data['ukt_first_installment_amount'],
             );
             $data['custom_installment_schedule_json'] = $customSchedule;
 
@@ -391,6 +408,7 @@ class FeeSchemeResource extends Resource
             tuitionSemesters: $data['tuition_semesters'],
             uktTotal: 0,
             uktTerm: 0,
+            uktFirstInstallmentAmount: 0,
         );
         $data['custom_installment_schedule_json'] = $customSchedule;
 
@@ -430,6 +448,22 @@ class FeeSchemeResource extends Resource
             ->all();
     }
 
+    public static function buildUktInstallmentsPreview(int $total, array $terms, int $firstInstallmentAmount = 0): array
+    {
+        return collect($terms)
+            ->filter(fn (int $term): bool => $term > 0)
+            ->map(function (int $term) use ($total, $firstInstallmentAmount): array {
+                $amounts = static::buildExactInstallmentAmounts($total, $term, $firstInstallmentAmount);
+
+                return [
+                    'term' => $term,
+                    'amount_per_installment' => (int) ($amounts[1] ?? $amounts[0] ?? 0),
+                    'total' => array_sum($amounts),
+                ];
+            })
+            ->all();
+    }
+
     public static function cleanTerms(array $terms): array
     {
         return collect($terms)
@@ -441,13 +475,13 @@ class FeeSchemeResource extends Resource
             ->all();
     }
 
-    public static function installmentTable(array $rows): HtmlString
+    public static function installmentTable(array $rows, string $amountHeader = 'Nominal per angsuran'): HtmlString
     {
         if ($rows === []) {
             return new HtmlString('<p class="text-sm text-slate-500">Centang pilihan angsuran untuk melihat simulasi.</p>');
         }
 
-        $html = '<div class="overflow-hidden rounded-lg border border-slate-200"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2 text-left font-bold">Angsuran</th><th class="px-3 py-2 text-left font-bold">Nominal per angsuran</th><th class="px-3 py-2 text-left font-bold">Total</th></tr></thead><tbody>';
+        $html = '<div class="overflow-hidden rounded-lg border border-slate-200"><table class="w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2 text-left font-bold">Angsuran</th><th class="px-3 py-2 text-left font-bold">'.e($amountHeader).'</th><th class="px-3 py-2 text-left font-bold">Total</th></tr></thead><tbody>';
 
         foreach ($rows as $row) {
             $html .= '<tr class="border-t border-slate-200">';
@@ -476,6 +510,7 @@ class FeeSchemeResource extends Resource
                 tuitionSemesters: 1,
                 uktTotal: (int) $get('ukt_total'),
                 uktTerm: max($terms ?: [0]),
+                uktFirstInstallmentAmount: (int) $get('ukt_first_installment_amount'),
             );
         }
 
@@ -491,6 +526,7 @@ class FeeSchemeResource extends Resource
             tuitionSemesters: max(1, min(8, (int) ($get('tuition_semesters') ?? 1))),
             uktTotal: 0,
             uktTerm: 0,
+            uktFirstInstallmentAmount: 0,
         );
     }
 
@@ -503,21 +539,22 @@ class FeeSchemeResource extends Resource
         int $tuitionSemesters,
         int $uktTotal,
         int $uktTerm,
+        int $uktFirstInstallmentAmount = 0,
     ): array {
         $tuitionMonths = $tuitionTerm > 0 ? (($tuitionSemesters - 1) * 6) + $tuitionTerm : 0;
         $maxMonth = max([$developmentTerm, $tuitionMonths, $uktTerm, 1]);
         $developmentMonthly = $developmentTerm > 0 ? (int) ceil($developmentFee / $developmentTerm) : 0;
         $tuitionMonthly = $tuitionTerm > 0 ? (int) ceil($tuitionFee / $tuitionTerm) : 0;
-        $uktMonthly = $uktTerm > 0 ? (int) ceil($uktTotal / $uktTerm) : 0;
+        $uktInstallments = static::buildExactInstallmentAmounts($uktTotal, $uktTerm, $uktFirstInstallmentAmount);
 
         return collect(range(1, $maxMonth))
-            ->map(function (int $month) use ($registrationFee, $developmentTerm, $developmentMonthly, $tuitionTerm, $tuitionMonthly, $tuitionSemesters, $uktTerm, $uktMonthly): array {
+            ->map(function (int $month) use ($registrationFee, $developmentTerm, $developmentMonthly, $tuitionTerm, $tuitionMonthly, $tuitionSemesters, $uktTerm, $uktInstallments): array {
                 $registration = $month === 1 ? $registrationFee : 0;
                 $development = $month <= $developmentTerm ? $developmentMonthly : 0;
                 $semesterIndex = intdiv($month - 1, 6);
                 $monthInSemester = (($month - 1) % 6) + 1;
                 $tuition = $semesterIndex < $tuitionSemesters && $monthInSemester <= $tuitionTerm ? $tuitionMonthly : 0;
-                $ukt = $month <= $uktTerm ? $uktMonthly : 0;
+                $ukt = $month <= $uktTerm ? (int) ($uktInstallments[$month - 1] ?? 0) : 0;
 
                 return [
                     'month' => $month,
@@ -531,6 +568,44 @@ class FeeSchemeResource extends Resource
             ->all();
     }
 
+    public static function buildExactInstallmentAmounts(int $total, int $term, int $firstInstallmentAmount = 0): array
+    {
+        if ($total < 1 || $term < 1) {
+            return [];
+        }
+
+        if ($term === 1) {
+            return [$total];
+        }
+
+        $firstInstallmentAmount = max(0, min($firstInstallmentAmount, $total));
+
+        if ($firstInstallmentAmount < 1) {
+            $base = intdiv($total, $term);
+            $remainder = $total % $term;
+
+            return collect(range(1, $term))
+                ->map(fn (int $index): int => $base + ($index <= $remainder ? 1 : 0))
+                ->all();
+        }
+
+        $remainingTotal = $total - $firstInstallmentAmount;
+        $remainingTerm = $term - 1;
+        $base = intdiv($remainingTotal, $remainingTerm);
+        $remainder = $remainingTotal % $remainingTerm;
+
+        return collect(range(1, $term))
+            ->map(function (int $index) use ($firstInstallmentAmount, $base, $remainder): int {
+                if ($index === 1) {
+                    return $firstInstallmentAmount;
+                }
+
+                $remainingIndex = $index - 1;
+
+                return $base + ($remainingIndex <= $remainder ? 1 : 0);
+            })
+            ->all();
+    }
     public static function monthlyScheduleTable(array $rows): HtmlString
     {
         if ($rows === []) {
@@ -549,6 +624,29 @@ class FeeSchemeResource extends Resource
             $html .= '<td class="px-3 py-2 font-bold">Rp '.number_format($row['total'], 0, ',', '.').'</td>';
             $html .= '</tr>';
         }
+
+        $totals = collect($rows)->reduce(fn (array $carry, array $row): array => [
+            'registration_fee' => $carry['registration_fee'] + (int) ($row['registration_fee'] ?? 0),
+            'development_fee' => $carry['development_fee'] + (int) ($row['development_fee'] ?? 0),
+            'tuition_fee' => $carry['tuition_fee'] + (int) ($row['tuition_fee'] ?? 0),
+            'ukt' => $carry['ukt'] + (int) ($row['ukt'] ?? 0),
+            'total' => $carry['total'] + (int) ($row['total'] ?? 0),
+        ], [
+            'registration_fee' => 0,
+            'development_fee' => 0,
+            'tuition_fee' => 0,
+            'ukt' => 0,
+            'total' => 0,
+        ]);
+
+        $html .= '<tr class="border-t border-slate-300 bg-slate-100 font-black">';
+        $html .= '<td class="px-3 py-2">Total keseluruhan</td>';
+        $html .= '<td class="px-3 py-2">Rp '.number_format($totals['registration_fee'], 0, ',', '.').'</td>';
+        $html .= '<td class="px-3 py-2">Rp '.number_format($totals['development_fee'], 0, ',', '.').'</td>';
+        $html .= '<td class="px-3 py-2">Rp '.number_format($totals['tuition_fee'], 0, ',', '.').'</td>';
+        $html .= '<td class="px-3 py-2">Rp '.number_format($totals['ukt'], 0, ',', '.').'</td>';
+        $html .= '<td class="px-3 py-2">Rp '.number_format($totals['total'], 0, ',', '.').'</td>';
+        $html .= '</tr>';
 
         $html .= '</tbody></table></div><p class="mt-2 text-xs text-slate-500">Simulasi bulanan memakai pilihan angsuran terpanjang yang dicentang.</p>';
 

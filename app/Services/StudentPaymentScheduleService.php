@@ -74,7 +74,9 @@ class StudentPaymentScheduleService
             $developmentFee = (int) ($row['development_fee'] ?? 0);
             $tuitionFee = (int) ($row['tuition_fee'] ?? 0);
             $ukt = (int) ($row['ukt'] ?? 0);
-            $herRegistrationAmount = $developmentFee + $tuitionFee + $ukt;
+            $customItems = collect($row['custom_items'] ?? [])->filter(fn ($item): bool => is_array($item))->values()->all();
+            $customItemsTotal = (int) ($row['custom_items_total'] ?? collect($customItems)->sum(fn (array $item): int => (int) ($item['amount'] ?? 0)));
+            $herRegistrationAmount = $developmentFee + $tuitionFee + $ukt + $customItemsTotal;
 
             if ($month < 1 || $herRegistrationAmount < 1) {
                 continue;
@@ -92,6 +94,8 @@ class StudentPaymentScheduleService
                 'due_date' => $lead->created_at?->copy()->startOfDay()->addMonths($month - 1)->toDateString() ?? now()->addMonths($month - 1)->toDateString(),
                 'source_row_json' => array_merge($row, [
                     'registration_fee' => $registrationFee,
+                    'custom_items' => $customItems,
+                    'custom_items_total' => $customItemsTotal,
                     'herregistration_amount' => $herRegistrationAmount,
                 ]),
             ];

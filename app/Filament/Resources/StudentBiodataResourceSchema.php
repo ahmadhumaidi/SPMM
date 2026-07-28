@@ -229,6 +229,7 @@ class StudentBiodataResourceSchema
                 TextColumn::make('student_number')->label('No. Pokok')->searchable(),
                 TextColumn::make('selection_number')->label('No. Seleksi')->searchable()->toggleable(),
                 TextColumn::make('campus.name')->label('Kampus')->sortable(),
+                TextColumn::make('studyProgram.degree_level')->label('Jenjang')->sortable(),
                 TextColumn::make('studyProgram.name')->label('Program Studi')->searchable(),
                 TextColumn::make('cohort_year')->label('Angkatan')->sortable(),
                 TextColumn::make('financial_status')->label('Status Keuangan')->badge(),

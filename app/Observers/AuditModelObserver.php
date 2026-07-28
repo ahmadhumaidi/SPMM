@@ -60,7 +60,21 @@ class AuditModelObserver
 
     public function deleted(Model $model): void
     {
-        $this->write('model_deleted', $model);
+        $this->write('model_deleted', $model, [
+            'snapshot' => $this->summarize($model->getAttributes()),
+            'restore_payload' => $this->restorePayload($model),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function restorePayload(Model $model): array
+    {
+        return collect($model->getAttributes())
+            ->reject(fn (mixed $value, string $field): bool => in_array($field, ['password', 'remember_token'], true))
+            ->map(fn (mixed $value): mixed => $this->normalize($value))
+            ->all();
     }
 
     private function write(string $event, Model $model, array $metadata = []): void
@@ -157,3 +171,5 @@ class AuditModelObserver
         return class_basename($model).' #'.$model->getKey();
     }
 }
+
+

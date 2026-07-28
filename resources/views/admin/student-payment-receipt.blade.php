@@ -298,15 +298,15 @@
                     </tr>
                     <tr>
                         <td><span class="label">Kampus</span><span class="value">{{ $lead->campus?->name ?? '-' }}</span></td>
-                        <td><span class="label">Program Studi</span><span class="value">{{ $lead->studyProgram?->name ?? '-' }}</span></td>
+                        <td><span class="label">Jenjang</span><span class="value">{{ $lead->studyProgram?->degree_level ?? '-' }}</span></td>
                     </tr>
                     <tr>
-                        <td><span class="label">Program Perkuliahan</span><span class="value">{{ $lead->classTrack?->name ?? '-' }}</span></td>
+                        <td><span class="label">Program Studi</span><span class="value">{{ $lead->studyProgram?->name ?? '-' }}</span></td>
                         <td><span class="label">NIM</span><span class="value">{{ $nim }}</span></td>
                     </tr>
                     <tr>
+                        <td><span class="label">Program Perkuliahan</span><span class="value">{{ $lead->classTrack?->name ?? '-' }}</span></td>
                         <td><span class="label">Virtual Account</span><span class="value">{{ $virtualAccount }}</span></td>
-                        <td></td>
                     </tr>
                 </table>
 

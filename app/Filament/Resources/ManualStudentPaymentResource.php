@@ -184,12 +184,18 @@ class ManualStudentPaymentResource extends Resource
 
     public static function componentLabel(StudentPayment $payment): string
     {
-        return collect([
+        $components = collect([
             'Formulir' => $payment->registration_fee,
             'Development' => $payment->development_fee,
             'Tuition' => $payment->tuition_fee,
             'UKT' => $payment->ukt,
-        ])->filter(fn ($amount): bool => (int) $amount > 0)->keys()->join(', ') ?: 'Tagihan';
+        ])->filter(fn ($amount): bool => (int) $amount > 0)->keys();
+
+        $customItems = collect($payment->source_row_json['custom_items'] ?? [])
+            ->filter(fn ($item): bool => is_array($item) && filled($item['name'] ?? null) && (int) ($item['amount'] ?? 0) > 0)
+            ->map(fn (array $item): string => (string) $item['name']);
+
+        return $components->merge($customItems->map(fn (string $name): string => 'Item: '.$name))->join(', ') ?: 'Tagihan';
     }
 
     public static function billableRrPayments(int $leadId, ?int $excludeManualPaymentId = null)

@@ -38,7 +38,7 @@ class PartnerCampusSiteResource extends Resource
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::isSuperAdmin();
+        return FilamentResourceScope::canAccessPortalPublic();
     }
 
     public static function getEloquentQuery(): Builder
@@ -175,6 +175,58 @@ class PartnerCampusSiteResource extends Resource
                         ->columns(3)
                         ->defaultItems(0)
                         ->addActionLabel('Tambah keunggulan')
+                        ->columnSpanFull(),
+                ]),
+            Section::make('Jadwal Kuliah')
+                ->description('Jadwal ini tampil di halaman publik kampus mitra. Isi jadwal umum seperti kelas malam, weekend, online, atau hybrid.')
+                ->schema([
+                    Repeater::make('website_settings.class_schedules')
+                        ->label('Jadwal kuliah')
+                        ->schema([
+                            Select::make('day')
+                                ->label('Hari')
+                                ->options([
+                                    'Senin' => 'Senin',
+                                    'Selasa' => 'Selasa',
+                                    'Rabu' => 'Rabu',
+                                    'Kamis' => 'Kamis',
+                                    'Jumat' => 'Jumat',
+                                    'Sabtu' => 'Sabtu',
+                                    'Minggu' => 'Minggu',
+                                    'Fleksibel' => 'Fleksibel',
+                                ])
+                                ->required(),
+                            TextInput::make('time')
+                                ->label('Jam')
+                                ->placeholder('18.30 - 21.00')
+                                ->maxLength(80)
+                                ->required(),
+                            TextInput::make('title')
+                                ->label('Nama kelas / program')
+                                ->placeholder('Kelas Karyawan Malam')
+                                ->maxLength(140)
+                                ->required(),
+                            Select::make('mode')
+                                ->label('Mode')
+                                ->options([
+                                    'Tatap muka' => 'Tatap muka',
+                                    'Online' => 'Online',
+                                    'Hybrid' => 'Hybrid',
+                                    'RPL' => 'RPL',
+                                ])
+                                ->default('Hybrid'),
+                            TextInput::make('location')
+                                ->label('Lokasi')
+                                ->placeholder('Kampus / Zoom / LMS')
+                                ->maxLength(140),
+                            Textarea::make('note')
+                                ->label('Keterangan')
+                                ->rows(2)
+                                ->maxLength(220),
+                        ])
+                        ->columns(3)
+                        ->defaultItems(0)
+                        ->addActionLabel('Tambah jadwal kuliah')
                         ->columnSpanFull(),
                 ]),
             Section::make('Testimoni')
