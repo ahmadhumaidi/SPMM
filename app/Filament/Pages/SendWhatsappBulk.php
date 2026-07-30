@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Jobs\SendBulkWhatsappJob;
 use App\Models\Lead;
 use App\Support\FilamentResourceScope;
+use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -43,6 +44,24 @@ class SendWhatsappBulk extends Page implements HasForms
         $this->form->fill();
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('download_template_csv')
+                ->label('Contoh CSV')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(asset('templates/contoh-kirim-wa-bulk.csv'))
+                ->openUrlInNewTab(),
+            Action::make('download_template_xlsx')
+                ->label('Contoh XLSX')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->url(asset('templates/contoh-kirim-wa-bulk.xlsx'))
+                ->openUrlInNewTab(),
+        ];
+    }
+
     public function form(Form $form): Form
     {
         return $form
@@ -70,7 +89,7 @@ class SendWhatsappBulk extends Page implements HasForms
                     ->rows(4),
                 FileUpload::make('recipients_file')
                     ->label('Atau upload file CSV/XLS/XLSX')
-                    ->helperText('Kolom pertama = nama, kolom kedua = nomor WA. Baris pertama boleh header (nama, nomor) atau langsung data.')
+                    ->helperText('Kolom: nama, nomor, variabel 1, variabel 2, variabel 3. Baris pertama boleh header atau langsung data.')
                     ->disk('local')
                     ->directory('wa-bulk-imports')
                     ->visibility('private')
@@ -86,7 +105,7 @@ class SendWhatsappBulk extends Page implements HasForms
                     ->label('Pesan')
                     ->required()
                     ->rows(6)
-                    ->helperText('Pakai {{nama}} untuk sisipkan nama penerima (hanya berlaku untuk penerima yang dipilih dari Lead).'),
+                    ->helperText('Pakai {{nama}} untuk nama penerima (dari Lead atau kolom nama di file). Pakai {{1}}, {{2}}, {{3}} untuk isi kolom variabel 1/2/3 di file upload.'),
             ])
             ->statePath('data');
     }
@@ -104,6 +123,7 @@ class SendWhatsappBulk extends Page implements HasForms
                         'number' => $lead->whatsapp_number,
                         'name' => $lead->full_name,
                         'lead_id' => $lead->id,
+                        'vars' => [],
                     ];
                 }
             }
@@ -117,6 +137,7 @@ class SendWhatsappBulk extends Page implements HasForms
                         'number' => $number,
                         'name' => null,
                         'lead_id' => null,
+                        'vars' => [],
                     ];
                 }
             }
@@ -150,7 +171,7 @@ class SendWhatsappBulk extends Page implements HasForms
     }
 
     /**
-     * @return array<int, array{number: string, name: ?string, lead_id: null}>
+     * @return array<int, array{number: string, name: ?string, lead_id: null, vars: array<string, string>}>
      */
     private function parseRecipientsFile(string $relativePath): array
     {
@@ -169,6 +190,9 @@ class SendWhatsappBulk extends Page implements HasForms
         foreach ($sheet->toArray(null, true, true, false) as $index => $row) {
             $name = isset($row[0]) ? trim((string) $row[0]) : '';
             $number = isset($row[1]) ? trim((string) $row[1]) : '';
+            $var1 = isset($row[2]) ? trim((string) $row[2]) : '';
+            $var2 = isset($row[3]) ? trim((string) $row[3]) : '';
+            $var3 = isset($row[4]) ? trim((string) $row[4]) : '';
 
             // Only one column filled in: treat it as a bare number, not a name.
             if ($number === '' && $name !== '') {
@@ -189,6 +213,11 @@ class SendWhatsappBulk extends Page implements HasForms
                 'number' => $number,
                 'name' => $name !== '' ? $name : null,
                 'lead_id' => null,
+                'vars' => [
+                    '1' => $var1,
+                    '2' => $var2,
+                    '3' => $var3,
+                ],
             ];
         }
 

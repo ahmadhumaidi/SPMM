@@ -17,7 +17,7 @@ class SendBulkWhatsappJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * @param  array<int, array{number: string, name: ?string, lead_id: ?int}>  $recipients
+     * @param  array<int, array{number: string, name: ?string, lead_id: ?int, vars?: array<string, string>}>  $recipients
      */
     public function __construct(
         private readonly array $recipients,
@@ -29,7 +29,13 @@ class SendBulkWhatsappJob implements ShouldQueue
         $token = config('spmm.whatsapp.fonnte_token');
 
         foreach ($this->recipients as $recipient) {
-            $message = str_replace('{{nama}}', $recipient['name'] ?? '', $this->messageTemplate);
+            $vars = $recipient['vars'] ?? [];
+
+            $message = str_replace(
+                ['{{nama}}', '{{1}}', '{{2}}', '{{3}}'],
+                [$recipient['name'] ?? '', $vars['1'] ?? '', $vars['2'] ?? '', $vars['3'] ?? ''],
+                $this->messageTemplate,
+            );
 
             $status = 'failed';
             $reference = null;
