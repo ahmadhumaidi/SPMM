@@ -453,7 +453,11 @@
         requestAnimationFrame(() => requestAnimationFrame(hideSkeleton));
         window.setTimeout(hideSkeleton, 3000);
 
-        lucide.createIcons();
+        try {
+            lucide.createIcons();
+        } catch (error) {
+            console.error('Lucide icon library failed to load.', error);
+        }
 
         const observer = new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
