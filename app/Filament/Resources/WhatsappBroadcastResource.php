@@ -46,18 +46,26 @@ class WhatsappBroadcastResource extends Resource
     {
         return $form->schema([
             TextInput::make('name')->label('Nama broadcast')->required()->maxLength(255),
+            \Filament\Forms\Components\Toggle::make('include_leads')
+                ->label('Sertakan penerima dari data Lead')
+                ->helperText('Matikan kalau mau broadcast murni ke nomor upload/manual saja, tanpa ikut data Lead sama sekali.')
+                ->default(true)
+                ->live()
+                ->columnSpanFull(),
             Select::make('campus_id')
                 ->label('Kampus')
                 ->options(fn (): array => FilamentResourceScope::applyCampusScope(Campus::query()->orderBy('name'), 'id')->pluck('name', 'id')->all())
                 ->searchable()
-                ->placeholder('Semua kampus'),
+                ->placeholder('Semua kampus')
+                ->visible(fn (Get $get): bool => (bool) $get('include_leads')),
             Select::make('lead_status')
                 ->label('Status lead')
                 ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $status) => [$status->value => str($status->value)->replace('_', ' ')->title()->toString()])->all())
-                ->placeholder('Semua status'),
+                ->placeholder('Semua status')
+                ->visible(fn (Get $get): bool => (bool) $get('include_leads')),
             FileUpload::make('recipients_file_path')
                 ->label('Atau upload nomor dari file CSV/XLS/XLSX')
-                ->helperText('Kolom: nama, nomor. Baris pertama boleh header atau langsung data. Ditambahkan sebagai penerima tambahan di luar filter kampus/status di atas.')
+                ->helperText('Kolom: nama, nomor. Baris pertama boleh header atau langsung data. Kalau "Sertakan dari data Lead" dimatikan, ini jadi satu-satunya sumber penerima.')
                 ->disk('local')
                 ->directory('wa-broadcast-imports')
                 ->visibility('private')

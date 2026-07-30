@@ -40,6 +40,10 @@ class WhatsappBroadcastService
 
     private function queueFromLeadFilter(WhatsappBroadcast $broadcast): int
     {
+        if (! $broadcast->include_leads) {
+            return 0;
+        }
+
         $query = Lead::query()->whereNotNull('whatsapp_number');
 
         if ($broadcast->campus_id) {
