@@ -110,7 +110,7 @@ class WhatsappBroadcastResource extends Resource
                 ->color(fn (WhatsappBroadcast $record): string => $record->sent_count > 0 ? 'success' : 'danger'),
             TextColumn::make('recipient_count')->label('Penerima'),
             TextColumn::make('sent_count')->label('Terkirim'),
-            TextColumn::make('failed_count')->label('Nomor invalid'),
+            TextColumn::make('failed_count')->label('Gagal/Invalid'),
             TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable(),
         ])->actions([
             Tables\Actions\Action::make('send')
@@ -135,6 +135,22 @@ class WhatsappBroadcastResource extends Resource
                 ->url(fn (WhatsappBroadcast $record): string => route('admin.whatsapp-broadcasts.manual-runner', $record))
                 ->openUrlInNewTab()
                 ->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'queued' && filled($record->nextWhatsappWebUrl())),
+            Tables\Actions\Action::make('send_via_fonnte')
+                ->label('Kirim via Fonnte')
+                ->icon('heroicon-o-bolt')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalDescription('Pesan akan dikirim otomatis lewat Fonnte (tanpa perlu buka WhatsApp Web manual). Butuh device Fonnte dalam keadaan terhubung.')
+                ->visible(fn (WhatsappBroadcast $record): bool => in_array($record->status, ['queued', 'sending'], true) && $record->recipients()->where('status', 'queued')->exists())
+                ->action(function (WhatsappBroadcast $record): void {
+                    $ids = $record->recipients()->where('status', 'queued')->pluck('id');
+
+                    foreach ($ids as $index => $id) {
+                        \App\Jobs\SendWhatsappBroadcastRecipientViaFonnte::dispatch($id)->delay(now()->addSeconds($index * 3));
+                    }
+
+                    Notification::make()->title(count($ids).' pesan diantrekan lewat Fonnte')->success()->send();
+                }),
             Tables\Actions\Action::make('report')
                 ->label('Report')
                 ->icon('heroicon-o-chart-bar-square')

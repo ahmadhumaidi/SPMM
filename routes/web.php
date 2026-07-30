@@ -181,6 +181,7 @@ Route::get('/admin/whatsapp-broadcasts/{broadcast}/report', function (\App\Model
         'queuedCount' => $recipients->where('status', 'queued')->count(),
         'sentCount' => $recipients->where('status', 'sent')->count(),
         'invalidCount' => $recipients->where('status', 'invalid')->count(),
+        'failedCount' => $recipients->where('status', 'failed')->count(),
     ]);
 })->middleware('auth')->name('admin.whatsapp-broadcasts.report');
 

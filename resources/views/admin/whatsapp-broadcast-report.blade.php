@@ -20,7 +20,7 @@
                 </a>
             </div>
 
-            <div class="mt-6 grid gap-4 sm:grid-cols-4">
+            <div class="mt-6 grid gap-4 sm:grid-cols-5">
                 <div class="rounded-2xl bg-slate-50 p-5">
                     <p class="text-sm font-bold text-slate-500">Total penerima</p>
                     <p class="mt-2 text-3xl font-black">{{ $recipients->count() }}</p>
@@ -36,6 +36,10 @@
                 <div class="rounded-2xl bg-amber-50 p-5">
                     <p class="text-sm font-bold text-amber-700">Nomor invalid</p>
                     <p class="mt-2 text-3xl font-black text-amber-800">{{ $invalidCount }}</p>
+                </div>
+                <div class="rounded-2xl bg-orange-50 p-5">
+                    <p class="text-sm font-bold text-orange-700">Gagal (Fonnte)</p>
+                    <p class="mt-2 text-3xl font-black text-orange-800">{{ $failedCount }}</p>
                 </div>
             </div>
         </section>
@@ -60,11 +64,13 @@
                                 $statusLabel = match ($recipient->status) {
                                     'sent' => 'Terkirim',
                                     'invalid' => 'Nomor invalid',
+                                    'failed' => 'Gagal (Fonnte)',
                                     default => 'Tidak terkirim',
                                 };
                                 $statusClass = match ($recipient->status) {
                                     'sent' => 'bg-emerald-50 text-emerald-700',
                                     'invalid' => 'bg-amber-50 text-amber-700',
+                                    'failed' => 'bg-orange-50 text-orange-700',
                                     default => 'bg-red-50 text-red-700',
                                 };
                             @endphp
