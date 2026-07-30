@@ -1054,6 +1054,27 @@ small {
     animation: spGlow 7s ease-in-out infinite;
 }
 
+.sp-hero-glow-fixed {
+    position: absolute;
+    width: 620px;
+    height: 620px;
+    right: -160px;
+    top: 12%;
+    border-radius: 46% 48% 42% 45%;
+    background: linear-gradient(145deg, rgba(14, 165, 233, .28), rgba(245, 158, 11, .16));
+    filter: blur(8px);
+    animation: spGlow 7s ease-in-out infinite;
+    pointer-events: none;
+}
+@media (max-width: 768px) {
+    .sp-hero-glow-fixed {
+        width: 360px;
+        height: 360px;
+        right: -120px;
+        top: 4%;
+    }
+}
+
 .sp-hero-card {
     animation: spCardFloat 5s 1.1s ease-in-out infinite;
 }

@@ -26,7 +26,7 @@
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
     <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <link rel="stylesheet" href="/css/public.css?v=2">
+    <link rel="stylesheet" href="/css/public.css?v=3">
 </head>
 <body>
     <div class="utility-bar">
