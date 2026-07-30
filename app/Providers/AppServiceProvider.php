@@ -17,6 +17,9 @@ use App\Models\StudentProfile;
 use App\Models\StudyProgram;
 use App\Models\User;
 use App\Observers\AuditModelObserver;
+use App\Services\AuditLogger;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -33,6 +36,22 @@ class AppServiceProvider extends ServiceProvider
         foreach ($this->auditedModels() as $model) {
             $model::observe(AuditModelObserver::class);
         }
+
+        Event::listen(Login::class, function (Login $event): void {
+            $user = $event->user;
+
+            if (! $user instanceof User) {
+                return;
+            }
+
+            app(AuditLogger::class)->record('admin_login', $user, [
+                'label' => $user->name ?: $user->email,
+                'email' => $user->email,
+                'role' => $user->role?->value,
+                'ip' => request()->ip(),
+                'user_agent' => str(request()->userAgent())->limit(300)->toString(),
+            ], $user);
+        });
 
         RateLimiter::for('payment-webhooks', function (Request $request) {
             return Limit::perMinute(120)->by($request->ip());
@@ -66,3 +85,4 @@ class AppServiceProvider extends ServiceProvider
         ];
     }
 }
+

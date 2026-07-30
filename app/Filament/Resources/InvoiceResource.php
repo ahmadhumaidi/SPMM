@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Services\InvoicePaymentReminderMailer;
 use App\Services\InvoiceRegenerationService;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use DomainException;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
@@ -46,7 +47,10 @@ class InvoiceResource extends Resource
                 ->disabled(),
             TextInput::make('payment_method')->disabled(),
             TextInput::make('payment_url')->disabled()->columnSpanFull(),
-            TextInput::make('status')->disabled(),
+            TextInput::make('status')
+                ->label('Status Keuangan')
+                ->formatStateUsing(fn ($state, ?Invoice $record): string => static::financialStatusLabel($record))
+                ->disabled(),
             DateTimePicker::make('expires_at')->disabled(),
             DateTimePicker::make('paid_at')->disabled(),
         ]);
@@ -77,14 +81,20 @@ class InvoiceResource extends Resource
                     ->state(fn (Invoice $record): int => static::activeBillingAmount($record))
                     ->money('IDR')
                     ->alignEnd(),
-                TextColumn::make('status')->badge(),
+                TextColumn::make('status')
+                    ->label('Status Keuangan')
+                    ->state(fn (Invoice $record): string => static::financialStatusLabel($record))
+                    ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                    ->html(),
                 TextColumn::make('payment_gateway'),
                 TextColumn::make('expires_at')->dateTime()->sortable(),
                 TextColumn::make('paid_at')->dateTime()->sortable(),
             ])
             ->defaultSort('id', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->options([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status invoice teknis')
+                    ->options([
                     InvoiceStatus::Pending->value => 'Pending',
                     InvoiceStatus::Paid->value => 'Paid',
                     InvoiceStatus::Expired->value => 'Expired',
@@ -136,6 +146,25 @@ class InvoiceResource extends Resource
         ];
     }
 
+    private static function financialStatusLabel(?Invoice $invoice): string
+    {
+        if (! $invoice?->lead) {
+            return '-';
+        }
+
+        return FinancialStatusLabels::leadStatus($invoice->lead->loadMissing('studentPayments'));
+    }
+
+    private static function financialStatusColor(string $state): string
+    {
+        return match (true) {
+            str_contains($state, 'Herregistrasi') && (str_contains($state, 'Lunas') || str_contains($state, 'Dibebaskan')) => 'success',
+            str_contains($state, 'Registrasi') && (str_contains($state, 'Lunas') || str_contains($state, 'Dibebaskan')) => 'info',
+            str_contains($state, 'Menunggu') => 'warning',
+            str_contains($state, 'Kedaluwarsa') || str_contains($state, 'Ditolak') || str_contains($state, 'Batal') => 'danger',
+            default => 'gray',
+        };
+    }
     private static function activeBillingAmount(?Invoice $invoice): int
     {
         if (! $invoice?->lead) {
@@ -166,3 +195,5 @@ class InvoiceResource extends Resource
             ->sum('amount');
     }
 }
+
+

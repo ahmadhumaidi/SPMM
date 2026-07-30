@@ -7,7 +7,7 @@
     $photoUrl = $data?->photo_path ? Storage::url($data->photo_path) : null;
     $selectionNumber = $data?->selection_number ?? 'Otomatis setelah disimpan';
     $nim = $lead->studentNumber?->nim ?? 'Belum diterbitkan admin';
-    $financialStatus = str($lead->payment_status->value)->replace('_', ' ')->title()->toString();
+    $financialStatus = \App\Support\FinancialStatusLabels::leadStatus($lead->loadMissing('studentPayments'));
     $developmentFee = $feeScheme?->building_fee ?? 0;
     $semesterFee = $feeScheme?->monthly_tuition_fee ?: ($feeScheme?->ukt_total ?? 0);
     $formFee = $feeScheme?->registration_fee ?? 0;
@@ -228,3 +228,5 @@
     </script>
 </body>
 </html>
+
+

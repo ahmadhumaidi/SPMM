@@ -324,7 +324,7 @@
                             <tr>
                                 <td>{{ $payment->payment_label ?: ((int) $payment->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$payment->month) }}</td>
                                 <td>{{ $payment->paid_at?->timezone('Asia/Jakarta')->format('d/m/Y H:i') ?? '-' }}</td>
-                                <td>{{ $payment->status === 'waived' ? 'Dibebaskan' : 'Lunas' }}</td>
+                                <td>{{ \App\Support\FinancialStatusLabels::paymentStatus($payment) }}</td>
                                 <td class="amount">Rp {{ number_format((int) $payment->amount, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
@@ -369,4 +369,7 @@
     </main>
 </body>
 </html>
+
+
+
 

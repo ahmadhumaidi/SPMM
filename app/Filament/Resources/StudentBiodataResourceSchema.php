@@ -3,7 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Models\StudyProgram;
+use App\Models\StudentBiodata;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
@@ -96,7 +98,8 @@ class StudentBiodataResourceSchema
                         ->options([
                             'Belum bayar' => 'Belum bayar',
                             'RR' => 'RR',
-                            'Lunas' => 'Lunas',
+                            'Registrasi' => 'Registrasi',
+                            'Herregistrasi' => 'Herregistrasi',
                             'Tunggakan' => 'Tunggakan',
                         ])
                         ->searchable(),
@@ -232,7 +235,11 @@ class StudentBiodataResourceSchema
                 TextColumn::make('studyProgram.degree_level')->label('Jenjang')->sortable(),
                 TextColumn::make('studyProgram.name')->label('Program Studi')->searchable(),
                 TextColumn::make('cohort_year')->label('Angkatan')->sortable(),
-                TextColumn::make('financial_status')->label('Status Keuangan')->badge(),
+                TextColumn::make('financial_status')
+                    ->label('Status Keuangan')
+                    ->state(fn (StudentBiodata $record): string => FinancialStatusLabels::leadStatus($record->lead))
+                    ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                    ->html(),
                 TextColumn::make('information_source')->label('Sumber Informasi')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('affiliator_code')->label('Kode Affiliator')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('entry_type')->label('Baru/Pindahan')->toggleable(isToggledHiddenByDefault: true),
@@ -244,9 +251,11 @@ class StudentBiodataResourceSchema
                     ->label('Kampus')
                     ->relationship('campus', 'name', fn (Builder $query): Builder => FilamentResourceScope::applyCampusScope($query->orderBy('name'), 'campuses.id')),
                 Tables\Filters\SelectFilter::make('financial_status')->label('Status Keuangan')->options([
-                    'Belum bayar' => 'Belum bayar',
-                    'RR' => 'RR',
-                    'Lunas' => 'Lunas',
+                    'Belum Registrasi' => 'Belum Registrasi',
+                    'Registrasi' => 'Registrasi',
+                    'Herregistrasi' => 'Herregistrasi',
+                    'Menunggu Registrasi' => 'Menunggu Registrasi',
+                    'Tagihan Kadaluarsa' => 'Tagihan Kadaluarsa',
                     'Tunggakan' => 'Tunggakan',
                 ]),
                 Tables\Filters\SelectFilter::make('cohort_year')->label('Angkatan')->options(
@@ -282,3 +291,4 @@ class StudentBiodataResourceSchema
         ];
     }
 }
+

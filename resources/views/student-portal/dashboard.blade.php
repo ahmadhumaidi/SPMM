@@ -3,11 +3,11 @@
     $invoice = $lead->latestInvoice;
     $studentName = $lead->full_name;
     $nim = $lead->studentNumber?->nim ?? 'NIM sementara';
-    $paymentStatus = str($lead->payment_status->value)->replace('_', ' ')->title();
+    $paymentStatus = \App\Support\FinancialStatusLabels::leadStatus($lead->loadMissing('studentPayments'));
     $activeBillAmount = $activeBillTotal ?? 0;
     $activeBillStatus = ($currentMonthPayments ?? collect())->isNotEmpty() ? 'Belum Lunas' : 'Tidak Ada Tagihan';
     $invoiceNumber = $invoice?->invoice_number ?? 'INV-PMB-DEMO';
-    $virtualAccount = $invoice?->va_number ?: ($invoice?->gateway_reference ?: '-');
+    $virtualAccount = \App\Support\VirtualAccountNumber::forLead($lead);
     $avatarInitial = mb_substr($studentName, 0, 1);
     $componentLabel = function ($payment): string {
         return collect([
@@ -413,3 +413,6 @@
     </script>
 </body>
 </html>
+
+
+

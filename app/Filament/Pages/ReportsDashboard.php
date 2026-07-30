@@ -2,8 +2,8 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\InvoiceStatus;
-use App\Models\Invoice;
+use App\Models\ReferralConversion;
+use App\Models\StudentPayment;
 use App\Models\Lead;
 use App\Support\FilamentResourceScope;
 use Filament\Pages\Page;
@@ -59,11 +59,15 @@ class ReportsDashboard extends Page
 
     public function getPaymentSummary(): array
     {
+        $transaction = $this->studentPaymentQuery()->count();
+        $income = (int) $this->studentPaymentQuery()->sum('amount');
+        $expand = $this->paidReferralCommissionAmount();
+
         return [
-            'pending' => $this->invoiceQuery()->where('status', InvoiceStatus::Pending)->count(),
-            'paid' => $this->invoiceQuery()->where('status', InvoiceStatus::Paid)->count(),
-            'expired' => $this->invoiceQuery()->where('status', InvoiceStatus::Expired)->count(),
-            'paid_amount' => $this->invoiceQuery()->where('status', InvoiceStatus::Paid)->sum('amount'),
+            'transaction' => $transaction,
+            'income' => $income,
+            'expand' => $expand,
+            'total_funding' => $income - $expand,
         ];
     }
 
@@ -72,9 +76,36 @@ class ReportsDashboard extends Page
         return FilamentResourceScope::applyManagedLeadCampusScope(Lead::query());
     }
 
-    protected function invoiceQuery(): Builder
+    protected function studentPaymentQuery(): Builder
     {
-        return Invoice::query()
+        return StudentPayment::query()
+            ->where('status', 'paid')
+            ->where(fn (Builder $query): Builder => $query->whereNull('payment_type')->orWhere('payment_type', '!=', 'manual'))
             ->whereHas('lead', fn (Builder $leadQuery): Builder => FilamentResourceScope::applyManagedLeadCampusScope($leadQuery));
+    }
+
+    protected function referralConversionQuery(): Builder
+    {
+        return ReferralConversion::query()
+            ->whereHas('lead', fn (Builder $leadQuery): Builder => FilamentResourceScope::applyManagedLeadCampusScope($leadQuery));
+    }
+
+    protected function paidReferralCommissionAmount(): int
+    {
+        $conversions = $this->referralConversionQuery()
+            ->get([
+                'registration_commission_amount',
+                'registration_commission_status',
+                'herregistration_commission_amount',
+                'herregistration_commission_status',
+                'semester1_commission_amount',
+                'semester1_commission_status',
+            ]);
+
+        return (int) $conversions->sum(function (ReferralConversion $conversion): int {
+            return (int) ($conversion->registration_commission_status === 'paid' ? $conversion->registration_commission_amount : 0)
+                + (int) ($conversion->herregistration_commission_status === 'paid' ? $conversion->herregistration_commission_amount : 0)
+                + (int) ($conversion->semester1_commission_status === 'paid' ? $conversion->semester1_commission_amount : 0);
+        });
     }
 }

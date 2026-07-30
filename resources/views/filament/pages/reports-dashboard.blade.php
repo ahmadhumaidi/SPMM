@@ -8,10 +8,10 @@
         ];
         $totalLeads = $sections[0]['rows']->sum('total');
         $stats = [
-            ['label' => 'Invoice pending', 'value' => number_format($payment['pending']), 'tone' => 'from-cyan-500 to-indigo-500'],
-            ['label' => 'Invoice paid', 'value' => number_format($payment['paid']), 'tone' => 'from-emerald-500 to-teal-500'],
-            ['label' => 'Invoice expired', 'value' => number_format($payment['expired']), 'tone' => 'from-amber-500 to-orange-500'],
-            ['label' => 'Total nominal paid', 'value' => 'Rp '.number_format($payment['paid_amount'], 0, ',', '.'), 'tone' => 'from-sky-600 to-cyan-500'],
+            ['label' => 'Transaction', 'value' => number_format($payment['transaction']), 'tone' => 'from-cyan-500 to-indigo-500'],
+            ['label' => 'Income', 'value' => 'Rp '.number_format($payment['income'], 0, ',', '.'), 'tone' => 'from-emerald-500 to-teal-500'],
+            ['label' => 'Expand', 'value' => 'Rp '.number_format($payment['expand'], 0, ',', '.'), 'tone' => 'from-amber-500 to-orange-500'],
+            ['label' => 'Total Funding', 'value' => 'Rp '.number_format($payment['total_funding'], 0, ',', '.'), 'tone' => 'from-sky-600 to-cyan-500'],
         ];
     @endphp
 
@@ -20,7 +20,7 @@
             <div>
                 <span class="spmm-report-kicker">MVP Command Center</span>
                 <h2>Ringkasan performa PMB dan pembayaran.</h2>
-                <p>Pantau lead, status invoice, distribusi kampus, dan kesiapan data mahasiswa aktif dalam satu dashboard ringkas.</p>
+                <p>Pantau lead, transaksi pembayaran realtime, komisi referral, dan total funding dalam satu dashboard ringkas.</p>
             </div>
             <div class="spmm-report-hero-card">
                 <span>Total Lead</span>

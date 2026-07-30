@@ -14,6 +14,7 @@ use App\Services\InvoiceRegenerationService;
 use App\Services\LeadAssignmentService;
 use App\Services\LeadProspectStatusService;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use DomainException;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
@@ -120,7 +121,10 @@ class LeadResource extends Resource
                         ->label('Status prospek')
                         ->options(static::prospectStatusOptions())
                         ->native(false),
-                    TextInput::make('payment_status')->label('Status pembayaran')->disabled(),
+                    TextInput::make('payment_status')
+                        ->label('Status pembayaran')
+                        ->formatStateUsing(fn (?Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                        ->disabled(),
                     TextInput::make('enrollment_status')->label('Status enrollment')->disabled(),
                     DateTimePicker::make('locked_at')->label('Dikunci pada')->disabled(),
                     Hidden::make('source_channel')
@@ -153,7 +157,11 @@ class LeadResource extends Resource
                             'D3 ke S1' => 'D3 ke S1',
                             'SMU/Sederajat ke S1' => 'SMU/Sederajat ke S1',
                         ]),
-                    TextInput::make('financial_status')->label('Status Keuangan')->disabled()->dehydrated(false),
+                    TextInput::make('financial_status')
+                        ->label('Status Keuangan')
+                        ->formatStateUsing(fn (?Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                        ->disabled()
+                        ->dehydrated(false),
                     Select::make('information_source')
                         ->label('Sumber Informasi')
                         ->options(StudentBiodataResourceSchema::informationSourceOptions())
@@ -277,7 +285,11 @@ class LeadResource extends Resource
                     ->formatStateUsing(fn (?string $state): string => static::sourceLabel($state))
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('payment_status')->badge(),
+                TextColumn::make('payment_status')
+                    ->label('Status Keuangan')
+                    ->state(fn (Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                    ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                    ->html(),
                 TextColumn::make('enrollment_status')->badge(),
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
@@ -551,3 +563,6 @@ class LeadResource extends Resource
         return $digits;
     }
 }
+
+
+

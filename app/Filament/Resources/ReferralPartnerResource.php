@@ -43,7 +43,7 @@ class ReferralPartnerResource extends Resource
     {
         $query = parent::getEloquentQuery()->with(['user.campuses', 'studentAccount.lead.campus']);
 
-        if (FilamentResourceScope::isSuperAdmin()) {
+        if (FilamentResourceScope::isSuperAdmin() || FilamentResourceScope::isDirector()) {
             return $query;
         }
 
@@ -232,7 +232,8 @@ class ReferralPartnerResource extends Resource
                     ->color(fn (string $state): string => $state === 'Terverifikasi' ? 'success' : 'warning'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => ! FilamentResourceScope::isDirector()),
                 Tables\Actions\Action::make('open_dashboard')
                     ->label('Dashboard')
                     ->icon('heroicon-o-arrow-top-right-on-square')
@@ -245,16 +246,31 @@ class ReferralPartnerResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->modalDescription('Link dashboard yang lama akan berhenti berfungsi. Bagikan link baru ke affiliator.')
-                    ->visible(fn (ReferralPartner $record): bool => $record->type === 'umum')
+                    ->visible(fn (ReferralPartner $record): bool => $record->type === 'umum' && ! FilamentResourceScope::isDirector())
                     ->action(fn (ReferralPartner $record) => $record->update(['dashboard_token' => Str::random(64)])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn (): bool => ! FilamentResourceScope::isDirector()),
                 ]),
             ]);
     }
 
+    public static function canCreate(): bool
+    {
+        return ! FilamentResourceScope::isDirector() && parent::canCreate();
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return ! FilamentResourceScope::isDirector() && parent::canEdit($record);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return ! FilamentResourceScope::isDirector() && parent::canDelete($record);
+    }
     public static function getPages(): array
     {
         return [
@@ -264,3 +280,5 @@ class ReferralPartnerResource extends Resource
         ];
     }
 }
+
+

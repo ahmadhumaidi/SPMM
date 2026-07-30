@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
+
 use App\Models\FeeScheme;
 use App\Models\Invoice;
 use App\Models\Lead;
@@ -50,8 +52,9 @@ class StudentPaymentScheduleService
             ];
 
             if (! $existingPaid->has(0)) {
-                $registrationPayload['status'] = $invoice?->status?->value === 'paid' ? 'paid' : 'unpaid';
-                $registrationPayload['paid_at'] = $invoice?->paid_at;
+                $registrationPaid = ($invoice?->status?->value === 'paid') || (($lead->payment_status?->value ?? $lead->payment_status) === PaymentStatus::Paid->value);
+                $registrationPayload['status'] = $registrationPaid ? 'paid' : 'unpaid';
+                $registrationPayload['paid_at'] = $registrationPaid ? ($invoice?->paid_at ?? now()) : null;
             }
 
             $records->push(StudentPayment::query()->updateOrCreate(
@@ -146,3 +149,4 @@ class StudentPaymentScheduleService
         return $feeScheme->installment_schedule_json ?: [];
     }
 }
+

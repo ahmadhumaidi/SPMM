@@ -6,8 +6,12 @@ use App\Enums\PaymentStatus;
 use App\Models\Campus;
 use App\Models\Lead;
 use App\Services\StudentBiodataProvisioner;
+use App\Services\StudentPaymentScheduleService;
 use App\Support\FilamentResourceScope;
 use App\Support\FilamentTable;
+use App\Support\FinancialStatusLabels;
+use App\Support\VirtualAccountNumber;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -51,6 +55,20 @@ class NewStudentFeeDetail extends Page implements HasTable
                     ->options(fn (): array => FilamentResourceScope::applyCampusScope(Campus::query()->orderBy('name'), 'id')->pluck('name', 'id')->all()),
             ])
             ->actions([
+                Tables\Actions\Action::make('generate_schedule')
+                    ->label('Generate RR')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->visible(fn (Lead $record): bool => $record->studentPayments->isEmpty())
+                    ->action(function (Lead $record): void {
+                        $payments = app(StudentPaymentScheduleService::class)->generateForLead($record, invoice: $record->latestInvoice);
+
+                        Notification::make()
+                            ->title($payments->count().' baris RR berhasil dibuat')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
@@ -67,11 +85,21 @@ class NewStudentFeeDetail extends Page implements HasTable
     {
         return FilamentResourceScope::applyManagedLeadCampusScope(Lead::query())
             ->with(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments'])
-            ->whereHas('studentPayments')
             ->where(function (Builder $query) use ($studentType): void {
                 if ($studentType === 'new') {
-                    $query->where(fn (Builder $noBiodataButPaid): Builder => $noBiodataButPaid->whereDoesntHave('studentBiodata')->where('payment_status', PaymentStatus::Paid))
-                        ->orWhereHas('studentBiodata', fn (Builder $biodataQuery): Builder => $biodataQuery->where('student_type', 'new'));
+                    $query
+                        ->whereHas('studentBiodata', fn (Builder $biodataQuery): Builder => $biodataQuery->where('student_type', 'new'))
+                        ->orWhere(function (Builder $paidRegistrationQuery): void {
+                            $paidRegistrationQuery
+                                ->whereDoesntHave('studentBiodata')
+                                ->where(function (Builder $statusQuery): void {
+                                    $statusQuery
+                                        ->where('payment_status', PaymentStatus::Paid->value)
+                                        ->orWhereHas('studentPayments', fn (Builder $paymentQuery): Builder => $paymentQuery
+                                            ->where('month', 0)
+                                            ->whereIn('status', ['paid', 'waived']));
+                                });
+                        });
 
                     return;
                 }
@@ -79,7 +107,6 @@ class NewStudentFeeDetail extends Page implements HasTable
                 $query->whereHas('studentBiodata', fn (Builder $biodataQuery): Builder => $biodataQuery->where('student_type', $studentType));
             });
     }
-
     protected function paymentColumns(): array
     {
         return [
@@ -90,9 +117,13 @@ class NewStudentFeeDetail extends Page implements HasTable
                 ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas('studentBiodata', fn (Builder $biodataQuery) => $biodataQuery->where('selection_number', 'like', "%{$search}%"))),
             TextColumn::make('latestInvoice.va_number')
                 ->label('VIRTUAL ACCOUNT')
-                ->state(fn (Lead $record): string => $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-')),
+                ->state(fn (Lead $record): string => VirtualAccountNumber::forLead($record)),
             TextColumn::make('full_name')->label('N A M A')->searchable()->sortable(),
-            TextColumn::make('payment_status')->label('STATUS')->badge(),
+            TextColumn::make('payment_status')
+                ->label('STATUS KEUANGAN')
+                ->state(fn (Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                ->html(),
             TextColumn::make('studentBiodata.group')
                 ->label('KLP')
                 ->state(fn (Lead $record): string => $record->studentBiodata?->group ?: ($record->classTrack?->name ?: '-')),
@@ -101,3 +132,5 @@ class NewStudentFeeDetail extends Page implements HasTable
         ];
     }
 }
+
+

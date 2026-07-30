@@ -10,6 +10,7 @@ use App\Services\StudentPaymentReceiptArchiver;
 use App\Services\StudentPaymentReceiptMailer;
 use App\Services\StudentPaymentScheduleService;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Section;
@@ -102,7 +103,10 @@ class StudentPaymentResource extends Resource
                     ->label('TRANSAKSI')
                     ->formatStateUsing(fn (?string $state, StudentPayment $record): string => $state ?: ((int) $record->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$record->month)),
                 TextColumn::make('amount')->label('NOMINAL')->money('IDR')->sortable()->alignEnd(),
-                TextColumn::make('status')->label('STATUS')->badge(),
+                TextColumn::make('status')
+                    ->label('STATUS KEUANGAN')
+                    ->formatStateUsing(fn (?string $state, StudentPayment $record) => FinancialStatusLabels::statusDotHtml(FinancialStatusLabels::paymentStatus($record)))
+                    ->html(),
                 TextColumn::make('paid_at')->label('TGL LUNAS')->dateTime('d M Y H:i')->sortable(),
                 TextColumn::make('lead.email')->label('EMAIL')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('receipt_archived_at')
@@ -217,3 +221,4 @@ class StudentPaymentResource extends Resource
         ];
     }
 }
+

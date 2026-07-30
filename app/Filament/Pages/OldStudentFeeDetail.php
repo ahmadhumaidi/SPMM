@@ -7,6 +7,8 @@ use App\Models\Lead;
 use App\Services\StudentBiodataProvisioner;
 use App\Support\FilamentResourceScope;
 use App\Support\FilamentTable;
+use App\Support\FinancialStatusLabels;
+use App\Support\VirtualAccountNumber;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -56,9 +58,13 @@ class OldStudentFeeDetail extends Page implements HasTable
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas('studentBiodata', fn (Builder $biodataQuery) => $biodataQuery->where('selection_number', 'like', "%{$search}%"))),
                 TextColumn::make('latestInvoice.va_number')
                     ->label('VIRTUAL ACCOUNT')
-                    ->state(fn (Lead $record): string => $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-')),
+                    ->state(fn (Lead $record): string => VirtualAccountNumber::forLead($record)),
                 TextColumn::make('full_name')->label('N A M A')->searchable()->sortable(),
-                TextColumn::make('payment_status')->label('STATUS')->badge(),
+                TextColumn::make('payment_status')
+                ->label('STATUS KEUANGAN')
+                ->state(fn (Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                ->html(),
                 TextColumn::make('studentBiodata.group')
                     ->label('KLP')
                     ->state(fn (Lead $record): string => $record->studentBiodata?->group ?: ($record->classTrack?->name ?: '-')),
@@ -83,3 +89,5 @@ class OldStudentFeeDetail extends Page implements HasTable
             ->bulkActions([]);
     }
 }
+
+

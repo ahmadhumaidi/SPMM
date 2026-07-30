@@ -5,6 +5,7 @@ namespace App\Filament\Resources\LeadResource\Pages;
 use App\Enums\ProspectStatus;
 use App\Filament\Resources\LeadResource;
 use App\Services\LeadProspectStatusService;
+use App\Support\FinancialStatusLabels;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
@@ -87,7 +88,7 @@ class EditLead extends EditRecord
                 'class_track_id' => $biodata->class_track_id ?: $lead->class_track_id,
                 'name' => $biodata->name ?: $lead->full_name,
                 'student_number' => $biodata->student_number ?: $lead->studentNumber?->nim,
-                'financial_status' => str($lead->payment_status->value ?? $lead->payment_status)->replace('_', ' ')->title()->toString(),
+                'financial_status' => FinancialStatusLabels::leadStatus($lead->loadMissing('studentPayments')),
                 'email' => $biodata->email ?: $lead->email,
                 'whatsapp_number' => $biodata->whatsapp_number ?: $lead->whatsapp_number,
             ]);
@@ -108,3 +109,4 @@ class EditLead extends EditRecord
         ));
     }
 }
+
