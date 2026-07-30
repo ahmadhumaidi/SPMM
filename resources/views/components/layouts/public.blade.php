@@ -47,9 +47,6 @@
                 </span>
             @else
                 <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" class="h-9 w-auto object-contain">
-                <span>
-                    <strong>Kampus Media</strong>
-                </span>
             @endif
         </a>
         <nav class="nav">
