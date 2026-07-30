@@ -31,7 +31,8 @@ class SendWhatsappBroadcastRecipientViaFonnte implements ShouldQueue
         $recipient->increment('attempts');
 
         $message = $recipient->broadcast->renderMessageForRecipient($recipient);
-        $token = config('spmm.whatsapp.fonnte_token');
+        $deviceKey = $recipient->broadcast->fonnte_device ?: 'primary';
+        $token = config("spmm.whatsapp.fonnte_devices.{$deviceKey}.token") ?: config('spmm.whatsapp.fonnte_token');
 
         try {
             $response = Http::asForm()

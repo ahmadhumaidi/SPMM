@@ -11,7 +11,7 @@ class WhatsappBroadcast extends Model
     protected $fillable = [
         'campus_id', 'created_by_user_id', 'name', 'template_name', 'template_language',
         'message_body', 'interval_seconds', 'max_recipients', 'lead_status', 'include_leads', 'status',
-        'recipients_file_path', 'recipient_count', 'sent_count', 'delivered_count',
+        'recipients_file_path', 'fonnte_device', 'recipient_count', 'sent_count', 'delivered_count',
         'read_count', 'failed_count', 'queued_at', 'completed_at',
     ];
 

@@ -19,6 +19,16 @@ return [
         'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '62'),
         'n8n_webhook_base' => env('N8N_WHATSAPP_WEBHOOK_BASE', 'https://n8n.maheramedia.com/webhook'),
         'fonnte_token' => env('FONNTE_TOKEN'),
+        'fonnte_devices' => [
+            'primary' => [
+                'label' => env('FONNTE_DEVICE_1_LABEL', '08999928709'),
+                'token' => env('FONNTE_DEVICE_1_TOKEN', env('FONNTE_TOKEN')),
+            ],
+            'secondary' => [
+                'label' => env('FONNTE_DEVICE_2_LABEL', '081190027830'),
+                'token' => env('FONNTE_DEVICE_2_TOKEN'),
+            ],
+        ],
     ],
 
     'ai_news' => [

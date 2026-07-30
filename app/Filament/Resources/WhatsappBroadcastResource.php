@@ -77,6 +77,13 @@ class WhatsappBroadcastResource extends Resource
                 ])
                 ->columnSpanFull()
                 ->maxSize(5120),
+            Select::make('fonnte_device')
+                ->label('Kirim otomatis dari nomor (Fonnte)')
+                ->helperText('Dipakai kalau nanti klik "Kirim via Fonnte". Tidak berpengaruh untuk pengiriman manual WhatsApp Web.')
+                ->options(collect(config('spmm.whatsapp.fonnte_devices'))->mapWithKeys(fn (array $device, string $key): array => [$key => $device['label']])->all())
+                ->default('primary')
+                ->required()
+                ->columnSpanFull(),
             FormActions::make([
                 static::messageTokenAction('nama', 'Nama', '{nama}'),
                 static::messageTokenAction('nomor', 'Nomor', '{nomor}'),
