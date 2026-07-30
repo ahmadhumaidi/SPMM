@@ -46,10 +46,9 @@
                     <strong>{{ $brandCampus->name }}</strong>
                 </span>
             @else
-                <span class="brand-mark">S</span>
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" class="h-9 w-auto object-contain">
                 <span>
-                    <strong>SPMM</strong>
-                    <small>Sistem Pusat Mahera Media</small>
+                    <strong>Kampus Media</strong>
                 </span>
             @endif
         </a>
