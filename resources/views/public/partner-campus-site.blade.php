@@ -189,7 +189,7 @@
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
     <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <link rel="stylesheet" href="/css/public.css?v=1">
+    <link rel="stylesheet" href="/css/public.css?v=2">
     <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
