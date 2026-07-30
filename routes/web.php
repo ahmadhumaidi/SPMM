@@ -95,6 +95,95 @@ Route::get('/admin/student-payments/transaction/{payment}/receipt', function (\A
     ]);
 })->middleware('auth')->name('admin.student-payments.transaction-receipt');
 
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/manual-runner', function (\App\Models\WhatsappBroadcast $broadcast) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.latestInvoice', 'lead.studyProgram'])
+        ->where('status', 'queued')
+        ->orderBy('id')
+        ->get()
+        ->map(fn (\App\Models\WhatsappBroadcastRecipient $recipient): array => [
+            'id' => $recipient->id,
+            'name' => $recipient->lead?->full_name ?? 'Tanpa nama',
+            'phone' => $recipient->recipient_number,
+            'url' => $broadcast->whatsappWebUrlForRecipient($recipient),
+        ])
+        ->values();
+
+    return view('admin.whatsapp-broadcast-runner', [
+        'broadcast' => $broadcast,
+        'recipients' => $recipients,
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.manual-runner');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/sent', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    if ($recipient->status !== 'sent') {
+        $recipient->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        $broadcast->increment('sent_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.sent');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/invalid', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    if ($recipient->status !== 'invalid') {
+        $recipient->update([
+            'status' => 'invalid',
+            'failed_reason' => 'Nomor invalid',
+        ]);
+
+        $broadcast->increment('failed_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.invalid');
+
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/report', function (\App\Models\WhatsappBroadcast $broadcast) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.studyProgram'])
+        ->orderBy('id')
+        ->get();
+
+    return view('admin.whatsapp-broadcast-report', [
+        'broadcast' => $broadcast,
+        'recipients' => $recipients,
+        'queuedCount' => $recipients->where('status', 'queued')->count(),
+        'sentCount' => $recipients->where('status', 'sent')->count(),
+        'invalidCount' => $recipients->where('status', 'invalid')->count(),
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.report');
+
 Route::get('/mahasiswa/login', [StudentPortalController::class, 'login'])->name('student-portal.login');
 Route::post('/mahasiswa/login', [StudentPortalController::class, 'authenticate'])->name('student-portal.authenticate');
 Route::get('/mahasiswa/lupa-password', [StudentPortalController::class, 'forgotPassword'])->name('student-portal.password.request');

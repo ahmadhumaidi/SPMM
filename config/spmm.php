@@ -19,7 +19,6 @@ return [
         'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '62'),
         'n8n_webhook_base' => env('N8N_WHATSAPP_WEBHOOK_BASE', 'https://n8n.maheramedia.com/webhook'),
         'fonnte_token' => env('FONNTE_TOKEN'),
-        'broadcast_per_minute' => (int) env('WHATSAPP_BROADCAST_PER_MINUTE', 20),
     ],
 
     'ai_news' => [

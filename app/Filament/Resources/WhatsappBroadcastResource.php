@@ -2,128 +2,151 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeadStatus;
 use App\Filament\Resources\WhatsappBroadcastResource\Pages;
-use App\Models\Lead;
+use App\Models\Campus;
 use App\Models\WhatsappBroadcast;
+use App\Services\Whatsapp\WhatsappBroadcastService;
 use App\Support\FilamentResourceScope;
-use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Actions as FormActions;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Throwable;
 
 class WhatsappBroadcastResource extends Resource
 {
     protected static ?string $model = WhatsappBroadcast::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-paper-airplane';
+    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
-    protected static ?string $navigationGroup = 'Reports';
+    protected static ?string $navigationGroup = 'CRM';
 
-    protected static ?string $navigationLabel = 'WA Broadcast';
+    protected static ?string $navigationLabel = 'Broadcast WhatsApp';
 
-    protected static ?string $modelLabel = 'WhatsApp Broadcast';
+    protected static ?string $modelLabel = 'Broadcast WhatsApp';
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::canAccessStudentRecords();
+        return FilamentResourceScope::canAccessMasterData();
     }
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                TextInput::make('name')
-                    ->label('Nama Broadcast')
-                    ->required()
-                    ->maxLength(255),
-                Select::make('lead_ids')
-                    ->label('Pilih dari Lead/Mahasiswa')
-                    ->multiple()
-                    ->searchable()
-                    ->getSearchResultsUsing(fn (string $search): array => Lead::query()
-                        ->where(fn ($query) => $query
-                            ->where('full_name', 'like', "%{$search}%")
-                            ->orWhere('whatsapp_number', 'like', "%{$search}%"))
-                        ->limit(50)
-                        ->get()
-                        ->mapWithKeys(fn (Lead $lead): array => [$lead->id => "{$lead->full_name} ({$lead->whatsapp_number})"])
-                        ->all())
-                    ->getOptionLabelsUsing(fn (array $values): array => Lead::query()
-                        ->whereIn('id', $values)
-                        ->get()
-                        ->mapWithKeys(fn (Lead $lead): array => [$lead->id => "{$lead->full_name} ({$lead->whatsapp_number})"])
-                        ->all()),
-                Textarea::make('manual_numbers')
-                    ->label('Atau tempel nomor manual')
-                    ->helperText('Satu nomor per baris, contoh: 08123456789')
-                    ->rows(4),
-                FileUpload::make('recipients_file')
-                    ->label('Atau upload file CSV/XLS/XLSX')
-                    ->helperText('Kolom: nama, nomor, variabel 1, variabel 2, variabel 3. Baris pertama boleh header atau langsung data.')
-                    ->disk('local')
-                    ->directory('wa-bulk-imports')
-                    ->visibility('private')
-                    ->acceptedFileTypes([
-                        'text/csv',
-                        'text/plain',
-                        'application/vnd.ms-excel',
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    ])
-                    ->storeFiles()
-                    ->maxSize(5120),
-                Textarea::make('message_body')
-                    ->label('Pesan')
-                    ->required()
-                    ->rows(6)
-                    ->helperText('Pakai {{nama}} untuk nama penerima. Pakai {{1}}, {{2}}, {{3}} untuk isi kolom variabel 1/2/3 dari file upload.'),
-            ]);
+        return $form->schema([
+            TextInput::make('name')->label('Nama broadcast')->required()->maxLength(255),
+            Select::make('campus_id')
+                ->label('Kampus')
+                ->options(fn (): array => FilamentResourceScope::applyCampusScope(Campus::query()->orderBy('name'), 'id')->pluck('name', 'id')->all())
+                ->searchable()
+                ->placeholder('Semua kampus'),
+            Select::make('lead_status')
+                ->label('Status lead')
+                ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $status) => [$status->value => str($status->value)->replace('_', ' ')->title()->toString()])->all())
+                ->placeholder('Semua status'),
+            FormActions::make([
+                static::messageTokenAction('nama', 'Nama', '{nama}'),
+                static::messageTokenAction('nomor', 'Nomor', '{nomor}'),
+                static::messageTokenAction('jurusan', 'Jurusan', '{jurusan}'),
+                static::messageTokenAction('tagihan', 'Tagihan', '{tagihan}'),
+            ])
+                ->label('Sisipkan data otomatis')
+                ->columnSpanFull(),
+            Textarea::make('message_body')
+                ->label('Isi pesan')
+                ->helperText('Pesan akan dibuka otomatis di WhatsApp Web, lalu admin klik kirim.')
+                ->required()
+                ->rows(6)
+                ->columnSpanFull(),
+            TextInput::make('interval_seconds')
+                ->label('Interval antar kontak (detik)')
+                ->numeric()
+                ->minValue(10)
+                ->default(45)
+                ->required(),
+            TextInput::make('max_recipients')
+                ->label('Maksimal penerima per sesi')
+                ->numeric()
+                ->minValue(1)
+                ->default(50)
+                ->required(),
+        ])->columns(2);
     }
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->defaultSort('created_at', 'desc')
-            ->columns([
-                TextColumn::make('name')->label('Nama')->searchable(),
-                TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'queued', 'sending' => 'warning',
-                        'completed' => 'success',
-                        default => 'gray',
-                    }),
-                TextColumn::make('recipient_count')->label('Penerima'),
-                TextColumn::make('sent_count')->label('Terkirim')->color('success'),
-                TextColumn::make('failed_count')->label('Gagal')->color('danger'),
-                TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
-            ])
-            ->actions([
-                Tables\Actions\Action::make('send')
-                    ->label('Kirim Sekarang')
-                    ->icon('heroicon-o-paper-airplane')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'draft')
-                    ->action(function (WhatsappBroadcast $record): void {
-                        app(\App\Services\Whatsapp\WhatsappBroadcastService::class)->dispatch($record);
-                    }),
-                Tables\Actions\ViewAction::make(),
-            ])
-            ->bulkActions([]);
+        return $table->defaultSort('created_at', 'desc')->columns([
+            TextColumn::make('name')->label('Broadcast')->searchable(),
+            TextColumn::make('message_body')->label('Pesan')->limit(42)->toggleable(),
+            TextColumn::make('status')
+                ->label('Status')
+                ->badge()
+                ->formatStateUsing(fn (WhatsappBroadcast $record): string => $record->sent_count > 0 ? 'Terkirim' : 'Tidak terkirim')
+                ->color(fn (WhatsappBroadcast $record): string => $record->sent_count > 0 ? 'success' : 'danger'),
+            TextColumn::make('recipient_count')->label('Penerima'),
+            TextColumn::make('sent_count')->label('Terkirim'),
+            TextColumn::make('failed_count')->label('Nomor invalid'),
+            TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable(),
+        ])->actions([
+            Tables\Actions\Action::make('send')
+                ->label('Antrekan kirim')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalDescription('Kontak dengan nomor WhatsApp akan dimasukkan ke antrean manual WhatsApp Web.')
+                ->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'draft')
+                ->action(function (WhatsappBroadcast $record): void {
+                    try {
+                        $count = app(WhatsappBroadcastService::class)->queue($record);
+                        Notification::make()->title("{$count} pesan masuk antrean")->success()->send();
+                    } catch (Throwable $exception) {
+                        Notification::make()->title('Broadcast tidak dapat dikirim')->body($exception->getMessage())->danger()->send();
+                    }
+                }),
+            Tables\Actions\Action::make('open_whatsapp')
+                ->label('Mulai WhatsApp Web')
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->color('info')
+                ->url(fn (WhatsappBroadcast $record): string => route('admin.whatsapp-broadcasts.manual-runner', $record))
+                ->openUrlInNewTab()
+                ->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'queued' && filled($record->nextWhatsappWebUrl())),
+            Tables\Actions\Action::make('report')
+                ->label('Report')
+                ->icon('heroicon-o-chart-bar-square')
+                ->color('gray')
+                ->url(fn (WhatsappBroadcast $record): string => route('admin.whatsapp-broadcasts.report', $record))
+                ->openUrlInNewTab(),
+            Tables\Actions\EditAction::make()->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'draft'),
+        ]);
     }
 
-    public static function getRelations(): array
+    public static function getEloquentQuery(): Builder
     {
-        return [
-            WhatsappBroadcastResource\RelationManagers\RecipientsRelationManager::class,
-        ];
+        return FilamentResourceScope::applyCampusScope(parent::getEloquentQuery());
+    }
+
+    private static function messageTokenAction(string $name, string $label, string $token): FormAction
+    {
+        return FormAction::make('insert_'.$name)
+            ->label($label)
+            ->button()
+            ->extraAttributes([
+                'style' => 'background: linear-gradient(135deg, #dc2626 0%, #7A1220 100%); color: #ffffff; border: 0;',
+            ])
+            ->action(function (Get $get, Set $set) use ($token): void {
+                $message = trim((string) $get('message_body'));
+                $set('message_body', trim($message.' '.$token));
+            });
     }
 
     public static function getPages(): array
@@ -131,7 +154,7 @@ class WhatsappBroadcastResource extends Resource
         return [
             'index' => Pages\ListWhatsappBroadcasts::route('/'),
             'create' => Pages\CreateWhatsappBroadcast::route('/create'),
-            'view' => Pages\ViewWhatsappBroadcast::route('/{record}'),
+            'edit' => Pages\EditWhatsappBroadcast::route('/{record}/edit'),
         ];
     }
 }

@@ -3,15 +3,14 @@
 namespace App\Filament\Resources\WhatsappBroadcastResource\Pages;
 
 use App\Filament\Resources\WhatsappBroadcastResource;
-use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Resources\Pages\EditRecord;
 
-class ListWhatsappBroadcasts extends ListRecords
+class EditWhatsappBroadcast extends EditRecord
 {
     protected static string $resource = WhatsappBroadcastResource::class;
 
-    protected function getHeaderActions(): array
+    protected function getRedirectUrl(): string
     {
-        return [Actions\CreateAction::make()];
+        return static::getResource()::getUrl('index');
     }
 }

@@ -2,152 +2,62 @@
 
 namespace App\Services\Whatsapp;
 
-use App\Jobs\SendWhatsappBroadcastRecipient;
 use App\Models\Lead;
 use App\Models\WhatsappBroadcast;
 use App\Models\WhatsappBroadcastRecipient;
 use DomainException;
-use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\DB;
 
 class WhatsappBroadcastService
 {
-    /**
-     * Build WhatsappBroadcastRecipient rows from raw form input
-     * (lead_ids, manual_numbers, recipients_file) and attach them to the broadcast.
-     *
-     * @param  array<string, mixed>  $rawData
-     */
-    public function buildRecipients(WhatsappBroadcast $broadcast, array $rawData): int
-    {
-        $recipients = [];
-
-        if (! empty($rawData['lead_ids'])) {
-            foreach (Lead::query()->whereIn('id', $rawData['lead_ids'])->get() as $lead) {
-                if (filled($lead->whatsapp_number)) {
-                    $recipients[] = [
-                        'lead_id' => $lead->id,
-                        'recipient_number' => $lead->whatsapp_number,
-                        'recipient_name' => $lead->full_name,
-                    ];
-                }
-            }
-        }
-
-        if (! empty($rawData['manual_numbers'])) {
-            foreach (preg_split('/\r\n|\r|\n/', (string) $rawData['manual_numbers']) as $line) {
-                $number = trim($line);
-                if ($number !== '') {
-                    $recipients[] = [
-                        'lead_id' => null,
-                        'recipient_number' => $number,
-                        'recipient_name' => null,
-                    ];
-                }
-            }
-        }
-
-        if (! empty($rawData['recipients_file'])) {
-            foreach ($this->parseRecipientsFile((string) $rawData['recipients_file']) as $row) {
-                $recipients[] = $row;
-            }
-
-            Storage::disk('local')->delete((string) $rawData['recipients_file']);
-        }
-
-        if (empty($recipients)) {
-            throw new DomainException('Tidak ada penerima yang dipilih.');
-        }
-
-        foreach ($recipients as $recipient) {
-            WhatsappBroadcastRecipient::create([
-                'whatsapp_broadcast_id' => $broadcast->id,
-                'lead_id' => $recipient['lead_id'],
-                'recipient_number' => $recipient['recipient_number'],
-                'recipient_name' => $recipient['recipient_name'],
-                'var_1' => $recipient['var_1'] ?? null,
-                'var_2' => $recipient['var_2'] ?? null,
-                'var_3' => $recipient['var_3'] ?? null,
-                'status' => 'queued',
-            ]);
-        }
-
-        $count = count($recipients);
-
-        $broadcast->update(['recipient_count' => $count]);
-
-        return $count;
-    }
-
-    public function dispatch(WhatsappBroadcast $broadcast): void
+    public function queue(WhatsappBroadcast $broadcast): int
     {
         if ($broadcast->status !== 'draft') {
-            throw new DomainException('Broadcast ini sudah pernah dikirim.');
+            throw new DomainException('Hanya broadcast berstatus draft yang dapat dikirim.');
         }
 
-        $recipientIds = $broadcast->recipients()->where('status', 'queued')->pluck('id');
+        $count = DB::transaction(function () use ($broadcast): int {
+            $query = Lead::query()
+                ->whereNotNull('whatsapp_number');
 
-        if ($recipientIds->isEmpty()) {
-            throw new DomainException('Tidak ada penerima untuk dikirim.');
-        }
-
-        foreach ($recipientIds as $recipientId) {
-            SendWhatsappBroadcastRecipient::dispatch($recipientId);
-        }
-
-        $broadcast->update([
-            'status' => 'queued',
-            'queued_at' => now(),
-        ]);
-    }
-
-    /**
-     * @return array<int, array{lead_id: null, recipient_number: string, recipient_name: ?string, var_1: ?string, var_2: ?string, var_3: ?string}>
-     */
-    private function parseRecipientsFile(string $relativePath): array
-    {
-        $fullPath = Storage::disk('local')->path($relativePath);
-
-        if (! is_file($fullPath)) {
-            return [];
-        }
-
-        $reader = IOFactory::createReaderForFile($fullPath);
-        $reader->setReadDataOnly(true);
-        $sheet = $reader->load($fullPath)->getActiveSheet();
-
-        $rows = [];
-
-        foreach ($sheet->toArray(null, true, true, false) as $index => $row) {
-            $name = isset($row[0]) ? trim((string) $row[0]) : '';
-            $number = isset($row[1]) ? trim((string) $row[1]) : '';
-            $var1 = isset($row[2]) ? trim((string) $row[2]) : '';
-            $var2 = isset($row[3]) ? trim((string) $row[3]) : '';
-            $var3 = isset($row[4]) ? trim((string) $row[4]) : '';
-
-            if ($number === '' && $name !== '') {
-                $number = $name;
-                $name = '';
+            if ($broadcast->campus_id) {
+                $query->where('campus_id', $broadcast->campus_id);
+            }
+            if ($broadcast->lead_status) {
+                $query->where('lead_status', $broadcast->lead_status);
             }
 
-            if ($number === '') {
-                continue;
+            $count = 0;
+            $limit = max(1, (int) ($broadcast->max_recipients ?: 50));
+
+            $query->select(['id', 'whatsapp_number'])->orderBy('id')->limit($limit)->get()->each(function (Lead $lead) use ($broadcast, &$count): void {
+                if ($count >= max(1, (int) ($broadcast->max_recipients ?: 50))) {
+                    return;
+                }
+
+                $recipient = WhatsappBroadcastRecipient::firstOrCreate(
+                    ['whatsapp_broadcast_id' => $broadcast->id, 'lead_id' => $lead->id],
+                    ['recipient_number' => $lead->whatsapp_number, 'status' => 'queued'],
+                );
+
+                if ($recipient->wasRecentlyCreated) {
+                    $count++;
+                }
+            });
+
+            if ($count === 0) {
+                throw new DomainException('Tidak ada penerima baru dengan nomor WhatsApp untuk filter ini.');
             }
 
-            if ($index === 0 && preg_match('/^(nama|name|nomor|no\.?\s*wa|whatsapp|phone|number)$/i', $number)) {
-                continue;
-            }
+            $broadcast->update([
+                'status' => 'queued',
+                'recipient_count' => $count,
+                'queued_at' => now(),
+            ]);
 
-            $rows[] = [
-                'lead_id' => null,
-                'recipient_number' => $number,
-                'recipient_name' => $name !== '' ? $name : null,
-                'var_1' => $var1 !== '' ? $var1 : null,
-                'var_2' => $var2 !== '' ? $var2 : null,
-                'var_3' => $var3 !== '' ? $var3 : null,
-            ];
-        }
+            return $count;
+        });
 
-        return $rows;
+        return $count;
     }
 }

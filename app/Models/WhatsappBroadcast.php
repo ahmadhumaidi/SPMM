@@ -9,26 +9,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WhatsappBroadcast extends Model
 {
     protected $fillable = [
-        'created_by_user_id',
-        'name',
-        'message_body',
-        'status',
-        'recipient_count',
-        'sent_count',
-        'failed_count',
-        'queued_at',
-        'completed_at',
+        'campus_id', 'created_by_user_id', 'name', 'template_name', 'template_language',
+        'message_body', 'interval_seconds', 'max_recipients', 'lead_status', 'status',
+        'recipient_count', 'sent_count', 'delivered_count', 'read_count', 'failed_count',
+        'queued_at', 'completed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'recipient_count' => 'integer',
-            'sent_count' => 'integer',
-            'failed_count' => 'integer',
+            'interval_seconds' => 'integer',
+            'max_recipients' => 'integer',
             'queued_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
+    }
+
+    public function campus(): BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
     }
 
     public function createdBy(): BelongsTo
@@ -41,12 +40,51 @@ class WhatsappBroadcast extends Model
         return $this->hasMany(WhatsappBroadcastRecipient::class);
     }
 
+    public function nextWhatsappWebUrl(): ?string
+    {
+        $recipient = $this->recipients()
+            ->with(['lead.latestInvoice', 'lead.studyProgram'])
+            ->where('status', 'queued')
+            ->orderBy('id')
+            ->first();
+
+        if (! $recipient) {
+            return null;
+        }
+
+        return $this->whatsappWebUrlForRecipient($recipient);
+    }
+
+    public function whatsappWebUrlForRecipient(WhatsappBroadcastRecipient $recipient): string
+    {
+        $phone = preg_replace('/\D+/', '', $recipient->recipient_number);
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '62'.substr($phone, 1);
+        } elseif (str_starts_with($phone, '8')) {
+            $phone = '62'.$phone;
+        }
+
+        $message = $this->renderMessageForRecipient($recipient);
+
+        return 'https://wa.me/'.$phone.'?text='.rawurlencode($message);
+    }
+
     public function renderMessageForRecipient(WhatsappBroadcastRecipient $recipient): string
     {
-        return str_replace(
-            ['{{nama}}', '{{1}}', '{{2}}', '{{3}}'],
-            [$recipient->recipient_name ?? '', $recipient->var_1 ?? '', $recipient->var_2 ?? '', $recipient->var_3 ?? ''],
-            $this->message_body ?? '',
-        );
+        $recipient->loadMissing(['lead.latestInvoice', 'lead.studyProgram']);
+
+        $lead = $recipient->lead;
+        $tagihan = $lead?->latestInvoice
+            ? 'Rp'.number_format((int) $lead->latestInvoice->amount, 0, ',', '.')
+            : 'Belum ada tagihan';
+
+        return strtr($this->message_body ?? '', [
+            '{nama}' => $lead?->full_name ?? 'Kak',
+            '{name}' => $lead?->full_name ?? 'Kak',
+            '{nomor}' => $recipient->recipient_number,
+            '{jurusan}' => $lead?->studyProgram?->name ?? '-',
+            '{tagihan}' => $tagihan,
+        ]);
     }
 }
