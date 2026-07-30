@@ -5,15 +5,15 @@
 @endphp
 
 <x-layouts.public title="Daftar Mahasiswa Baru" :campus="$selectedCampus">
-    <section class="relative overflow-hidden bg-slate-950 px-5 py-12 text-white sm:px-8 lg:px-16 lg:py-16">
+    <section class="sp-hero relative overflow-hidden bg-slate-950 px-5 py-12 text-white sm:px-8 lg:px-16 lg:py-16">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(6,182,212,.32),transparent_34%),radial-gradient(circle_at_90%_0%,rgba(245,158,11,.24),transparent_28%)]"></div>
         <div class="relative mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_29rem] lg:items-center">
             <div>
-                <p class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-cyan-100">Pendaftaran Mahasiswa Baru</p>
-                <h1 class="mt-5 max-w-4xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">Mulai pendaftaran kuliah dengan alur yang lebih mudah.</h1>
-                <p class="mt-5 max-w-2xl text-lg font-semibold leading-8 text-sky-100">Pilih kampus, program studi, dan program perkuliahan. Setelah submit, sistem otomatis membuat invoice dan mengirim akun mahasiswa ke email kamu.</p>
+                <p class="sp-reveal sp-reveal-1 inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-black text-cyan-100">Pendaftaran Mahasiswa Baru</p>
+                <h1 class="sp-reveal sp-reveal-2 mt-5 max-w-4xl text-4xl font-black leading-tight tracking-normal sm:text-6xl">Mulai pendaftaran kuliah dengan alur yang lebih mudah.</h1>
+                <p class="sp-reveal sp-reveal-3 mt-5 max-w-2xl text-lg font-semibold leading-8 text-sky-100">Pilih kampus, program studi, dan program perkuliahan. Setelah submit, sistem otomatis membuat invoice dan mengirim akun mahasiswa ke email kamu.</p>
 
-                <div class="mt-7 grid gap-3 sm:grid-cols-3">
+                <div class="sp-reveal sp-reveal-4 mt-7 grid gap-3 sm:grid-cols-3">
                     <div class="rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur">
                         <strong class="block text-3xl font-black text-white">{{ $campusCount }}</strong>
                         <span class="mt-1 block text-sm font-bold text-sky-100">Kampus aktif</span>
@@ -29,20 +29,27 @@
                 </div>
             </div>
 
-            <div class="rounded-[2rem] border border-white/15 bg-white/10 p-5 shadow-2xl shadow-cyan-950/30 backdrop-blur">
-                <div class="rounded-[1.5rem] bg-white p-5 text-slate-900">
-                    <p class="text-sm font-black uppercase tracking-wide text-cyan-700">Setelah submit</p>
-                    <div class="mt-4 grid gap-3">
-                        @foreach ([['1', 'Invoice otomatis dibuat'], ['2', 'Email verifikasi dan password dikirim'], ['3', 'Login akun mahasiswa'], ['4', 'Lengkapi biodata dan pemberkasan']] as $step)
-                            <div class="flex gap-3 rounded-2xl bg-slate-50 p-4">
-                                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-slate-950 to-cyan-700 text-sm font-black text-white">{{ $step[0] }}</span>
-                                <strong class="self-center text-sm font-black">{{ $step[1] }}</strong>
-                            </div>
-                        @endforeach
+            <div class="sp-hero-visual" aria-hidden="true" style="position: relative;">
+                <div class="sp-orbit sp-orbit-one"></div>
+                <div class="sp-orbit sp-orbit-two"></div>
+                <div class="sp-hero-glow"></div>
+
+                <div class="sp-hero-card rounded-[2rem] border border-white/15 bg-white/10 p-5 shadow-2xl shadow-cyan-950/30 backdrop-blur" style="position: relative;">
+                    <div class="rounded-[1.5rem] bg-white p-5 text-slate-900">
+                        <p class="text-sm font-black uppercase tracking-wide text-cyan-700"><span class="sp-status-dot"></span> Setelah submit</p>
+                        <div class="mt-4 grid gap-3">
+                            @foreach ([['1', 'Invoice otomatis dibuat'], ['2', 'Email verifikasi dan password dikirim'], ['3', 'Login akun mahasiswa'], ['4', 'Lengkapi biodata dan pemberkasan']] as $step)
+                                <div class="flex gap-3 rounded-2xl bg-slate-50 p-4">
+                                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-slate-950 to-cyan-700 text-sm font-black text-white">{{ $step[0] }}</span>
+                                    <strong class="self-center text-sm font-black">{{ $step[1] }}</strong>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="sp-hero-wave" aria-hidden="true"><span></span></div>
     </section>
 
     <section class="bg-slate-100 px-5 py-8 sm:px-8 lg:px-16 lg:py-12">
