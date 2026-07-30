@@ -101,11 +101,14 @@
             .reveal { transition-duration: .01ms !important; }
             .hero-orb { animation: none; }
         }
+        .glass-card {
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 24px 70px rgba(2, 8, 23, .4);
+        }
         .program-filter.is-active {
-            border-color: rgb(125 211 252);
-            background: rgb(224 242 254);
-            color: rgb(12 74 110);
-            box-shadow: 0 14px 30px rgba(2, 132, 199, .12);
+            border-color: rgba(255, 255, 255, .5);
+            background: rgba(255, 255, 255, .22);
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(2, 8, 23, .2);
         }
     </style>
 </head>
@@ -180,35 +183,35 @@
                 </div>
             </section>
 
-            <section class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 [transition-delay:120ms] sm:p-7">
+            <section class="reveal glass-card rounded-[2rem] border border-white/25 bg-white/10 p-5 text-white backdrop-blur-2xl [transition-delay:120ms] sm:p-7">
                 <div class="mb-5 flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-wide text-sky-700">Cari kampus</p>
-                        <h2 class="mt-1 text-2xl font-black text-navy">Kampus mitra aktif</h2>
+                        <p class="text-sm font-black uppercase tracking-wide text-sky-200">Cari kampus</p>
+                        <h2 class="mt-1 text-2xl font-black text-white">Kampus mitra aktif</h2>
                     </div>
-                    <span class="rounded-full bg-sky-50 px-3 py-1 text-sm font-black text-sky-700">{{ $campuses->count() }} kampus</span>
+                    <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-black text-white backdrop-blur">{{ $campuses->count() }} kampus</span>
                 </div>
-                <form id="campus-search-form" class="grid gap-2 text-sm font-bold">
+                <form id="campus-search-form" class="grid gap-2 text-sm font-bold text-white/90">
                     Nama kampus, kota, atau provinsi
                     <div class="relative">
-                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"></i>
-                        <input id="campus-search" class="h-14 w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-14 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
-                        <button id="campus-search-button" type="submit" class="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700" aria-label="Cari kampus">
+                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60"></i>
+                        <input id="campus-search" class="h-14 w-full rounded-2xl border border-white/25 bg-white/10 py-4 pl-12 pr-14 text-white placeholder-white/50 outline-none ring-white/20 backdrop-blur transition focus:border-white/50 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
+                        <button id="campus-search-button" type="submit" class="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-gold text-navy shadow-lg shadow-orange-500/20 transition hover:bg-yellow-400" aria-label="Cari kampus">
                             <i data-lucide="arrow-right" class="h-5 w-5"></i>
                         </button>
                     </div>
                 </form>
-                <div class="mt-5 grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
+                <div class="mt-5 grid grid-cols-2 gap-3 text-sm font-bold text-white/90">
                     @foreach ([['briefcase', 'Kuliah Karyawan', 'kuliah karyawan'], ['monitor-smartphone', 'Full Online', 'full online'], ['shuffle', 'Hybrid Learning', 'hybrid learning'], ['badge-check', 'RPL', 'rpl']] as $tag)
-                        <button type="button" data-program-filter="{{ $tag[2] }}" class="program-filter flex items-center gap-3 rounded-2xl border border-transparent bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50">
-                            <i data-lucide="{{ $tag[0] }}" class="h-5 w-5 text-sky-700"></i>
+                        <button type="button" data-program-filter="{{ $tag[2] }}" class="program-filter flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 text-left backdrop-blur transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/15">
+                            <i data-lucide="{{ $tag[0] }}" class="h-5 w-5 text-sky-200"></i>
                             <span>{{ $tag[1] }}</span>
                         </button>
                     @endforeach
                 </div>
-                <div class="mt-5 rounded-2xl bg-gradient-to-r from-yellow-50 to-orange-50 p-4">
-                    <p class="font-black text-navy">Promo beasiswa PMB</p>
-                    <p class="mt-1 text-sm font-semibold leading-6 text-slate-600">Konsultasi gratis untuk cek biaya, jadwal kuliah, dan kampus yang paling cocok.</p>
+                <div class="mt-5 rounded-2xl border border-white/15 bg-gradient-to-r from-white/15 to-white/5 p-4 backdrop-blur">
+                    <p class="font-black text-yellow-100">Promo beasiswa PMB</p>
+                    <p class="mt-1 text-sm font-semibold leading-6 text-white/80">Konsultasi gratis untuk cek biaya, jadwal kuliah, dan kampus yang paling cocok.</p>
                 </div>
             </section>
         </div>
