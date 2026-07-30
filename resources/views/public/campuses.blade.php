@@ -94,6 +94,7 @@
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
     <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
+    <link rel="stylesheet" href="/css/public.css?v=1">
     <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -155,6 +156,8 @@
 
     <header class="hero-bg relative -mt-[68px] overflow-hidden text-white">
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
+        <div class="sp-orbit sp-orbit-one" aria-hidden="true"></div>
+        <div class="sp-orbit sp-orbit-two" aria-hidden="true"></div>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
         <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 pb-10 pt-[calc(68px+2.5rem)] sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-16 lg:pt-[calc(68px+4rem)]">
             <section class="reveal">
