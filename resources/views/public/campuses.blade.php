@@ -191,7 +191,7 @@
                 </div>
             </section>
 
-            <section class="sp-hero-card reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 sm:p-7">
+            <section class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 sm:p-7">
                 <div class="mb-5 flex items-center justify-between gap-4">
                     <div>
                         <p class="text-sm font-black uppercase tracking-wide text-sky-700">Cari kampus</p>
