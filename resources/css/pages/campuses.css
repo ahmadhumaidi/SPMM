@@ -1,0 +1,55 @@
+.hero-bg {
+    background-image:
+        radial-gradient(circle at 18% 16%, rgba(245, 158, 11, .20), transparent 26%),
+        radial-gradient(circle at 82% 20%, rgba(56, 189, 248, .20), transparent 30%),
+        linear-gradient(135deg, #071a3d 0%, #0b2d63 55%, #0b5e8e 100%);
+}
+
+.grid-pattern {
+    background-image: linear-gradient(rgba(255, 255, 255, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .08) 1px, transparent 1px);
+    background-size: 44px 44px;
+}
+
+.reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease;
+}
+
+.reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.skeleton-loader.is-hidden {
+    display: none;
+}
+
+.hero-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    pointer-events: none;
+    animation: hero-orb-drift 9s ease-in-out infinite;
+}
+
+@keyframes hero-orb-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(24px, -18px) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal { transition-duration: .01ms !important; }
+    .hero-orb { animation: none; }
+}
+
+.glass-card {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 24px 70px rgba(2, 8, 23, .4);
+}
+
+.program-filter.is-active {
+    border-color: rgba(255, 255, 255, .5);
+    background: rgba(255, 255, 255, .22);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(2, 8, 23, .2);
+}

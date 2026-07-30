@@ -156,6 +156,8 @@ Atau jalankan manual:
 
 ```bash
 composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
 php artisan key:generate
 php artisan migrate --seed --force
 php artisan storage:link
@@ -164,6 +166,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
+
+`npm ci && npm run build` hanya dibutuhkan untuk halaman yang sudah memakai Vite (saat ini: halaman utama Kampus Media, `resources/views/public/campuses.blade.php`). `deploy/bootstrap-ubuntu.sh` sudah menginstal Node.js untuk kebutuhan ini.
 
 Jika `php artisan key:generate` mengubah `APP_KEY`, jangan jalankan lagi setelah aplikasi sudah dipakai live.
 
