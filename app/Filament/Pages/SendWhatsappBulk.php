@@ -114,6 +114,13 @@ class SendWhatsappBulk extends Page implements HasForms
     {
         $data = $this->form->getState();
 
+        \Illuminate\Support\Facades\Log::info('SendWhatsappBulk debug', [
+            'recipients_file' => $data['recipients_file'] ?? '(not set)',
+            'recipients_file_type' => gettype($data['recipients_file'] ?? null),
+            'lead_ids' => $data['lead_ids'] ?? null,
+            'manual_numbers' => $data['manual_numbers'] ?? null,
+        ]);
+
         $recipients = [];
 
         if (! empty($data['lead_ids'])) {
