@@ -127,7 +127,21 @@ class WhatsappBroadcastResource extends Resource
                 ->url(fn (WhatsappBroadcast $record): string => route('admin.whatsapp-broadcasts.report', $record))
                 ->openUrlInNewTab(),
             Tables\Actions\EditAction::make()->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'draft'),
-        ]);
+            Tables\Actions\DeleteAction::make()
+                ->label('Hapus')
+                ->modalHeading('Hapus broadcast')
+                ->modalDescription('Broadcast dan data penerimanya akan ikut dihapus. Riwayat yang sudah terkirim tidak bisa dibatalkan.')
+                ->modalSubmitActionLabel('Ya, hapus')
+                ->modalCancelActionLabel('Batal'),
+        ])
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->label('Hapus Terpilih')
+                    ->modalHeading('Hapus broadcast terpilih')
+                    ->modalDescription('Semua broadcast yang dicentang beserta data penerimanya akan dihapus.')
+                    ->modalSubmitActionLabel('Ya, hapus')
+                    ->modalCancelActionLabel('Batal'),
+            ]);
     }
 
     public static function getEloquentQuery(): Builder
