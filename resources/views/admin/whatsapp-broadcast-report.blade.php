@@ -69,7 +69,7 @@
                                 };
                             @endphp
                             <tr>
-                                <td class="px-6 py-4 font-bold">{{ $recipient->lead?->full_name ?? '-' }}</td>
+                                <td class="px-6 py-4 font-bold">{{ $recipient->lead?->full_name ?? $recipient->recipient_name ?? '-' }}</td>
                                 <td class="px-6 py-4">{{ $recipient->recipient_number }}</td>
                                 <td class="px-6 py-4">{{ $recipient->lead?->studyProgram?->name ?? '-' }}</td>
                                 <td class="px-6 py-4">

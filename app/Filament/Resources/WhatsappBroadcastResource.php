@@ -10,6 +10,7 @@ use App\Services\Whatsapp\WhatsappBroadcastService;
 use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\Actions as FormActions;
 use Filament\Forms\Components\Actions\Action as FormAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -54,6 +55,20 @@ class WhatsappBroadcastResource extends Resource
                 ->label('Status lead')
                 ->options(collect(LeadStatus::cases())->mapWithKeys(fn (LeadStatus $status) => [$status->value => str($status->value)->replace('_', ' ')->title()->toString()])->all())
                 ->placeholder('Semua status'),
+            FileUpload::make('recipients_file_path')
+                ->label('Atau upload nomor dari file CSV/XLS/XLSX')
+                ->helperText('Kolom: nama, nomor. Baris pertama boleh header atau langsung data. Ditambahkan sebagai penerima tambahan di luar filter kampus/status di atas.')
+                ->disk('local')
+                ->directory('wa-broadcast-imports')
+                ->visibility('private')
+                ->acceptedFileTypes([
+                    'text/csv',
+                    'text/plain',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ])
+                ->columnSpanFull()
+                ->maxSize(5120),
             FormActions::make([
                 static::messageTokenAction('nama', 'Nama', '{nama}'),
                 static::messageTokenAction('nomor', 'Nomor', '{nomor}'),

@@ -106,7 +106,7 @@ Route::get('/admin/whatsapp-broadcasts/{broadcast}/manual-runner', function (\Ap
         ->get()
         ->map(fn (\App\Models\WhatsappBroadcastRecipient $recipient): array => [
             'id' => $recipient->id,
-            'name' => $recipient->lead?->full_name ?? 'Tanpa nama',
+            'name' => $recipient->lead?->full_name ?? $recipient->recipient_name ?? 'Tanpa nama',
             'phone' => $recipient->recipient_number,
             'url' => $broadcast->whatsappWebUrlForRecipient($recipient),
         ])

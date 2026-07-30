@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class WhatsappBroadcastRecipient extends Model
 {
     protected $fillable = [
-        'whatsapp_broadcast_id', 'lead_id', 'recipient_number', 'status',
+        'whatsapp_broadcast_id', 'lead_id', 'recipient_number', 'recipient_name', 'status',
         'provider_reference', 'attempts', 'sent_at', 'delivered_at', 'read_at', 'failed_reason',
     ];
 

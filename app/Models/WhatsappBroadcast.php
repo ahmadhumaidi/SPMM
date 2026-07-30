@@ -11,8 +11,8 @@ class WhatsappBroadcast extends Model
     protected $fillable = [
         'campus_id', 'created_by_user_id', 'name', 'template_name', 'template_language',
         'message_body', 'interval_seconds', 'max_recipients', 'lead_status', 'status',
-        'recipient_count', 'sent_count', 'delivered_count', 'read_count', 'failed_count',
-        'queued_at', 'completed_at',
+        'recipients_file_path', 'recipient_count', 'sent_count', 'delivered_count',
+        'read_count', 'failed_count', 'queued_at', 'completed_at',
     ];
 
     protected function casts(): array
@@ -79,9 +79,11 @@ class WhatsappBroadcast extends Model
             ? 'Rp'.number_format((int) $lead->latestInvoice->amount, 0, ',', '.')
             : 'Belum ada tagihan';
 
+        $name = $lead?->full_name ?? $recipient->recipient_name ?? 'Kak';
+
         return strtr($this->message_body ?? '', [
-            '{nama}' => $lead?->full_name ?? 'Kak',
-            '{name}' => $lead?->full_name ?? 'Kak',
+            '{nama}' => $name,
+            '{name}' => $name,
             '{nomor}' => $recipient->recipient_number,
             '{jurusan}' => $lead?->studyProgram?->name ?? '-',
             '{tagihan}' => $tagihan,
