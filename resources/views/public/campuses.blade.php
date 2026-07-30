@@ -92,6 +92,15 @@
         .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
         .reveal.is-visible { opacity: 1; transform: translateY(0); }
         .skeleton-loader.is-hidden { display: none; }
+        .hero-orb { position: absolute; border-radius: 9999px; filter: blur(60px); pointer-events: none; animation: hero-orb-drift 9s ease-in-out infinite; }
+        @keyframes hero-orb-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(24px, -18px) scale(1.08); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition-duration: .01ms !important; }
+            .hero-orb { animation: none; }
+        }
         .program-filter.is-active {
             border-color: rgb(125 211 252);
             background: rgb(224 242 254);
@@ -136,32 +145,34 @@
     </nav>
 
     <header class="hero-bg relative overflow-hidden text-white">
+        <div class="hero-orb -left-16 -top-16 h-72 w-72 bg-gold/40" aria-hidden="true"></div>
+        <div class="hero-orb -right-10 top-24 h-80 w-80 bg-sky-400/40 [animation-delay:-4s]" aria-hidden="true"></div>
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
-        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">
-            <section class="reveal">
-                <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
+        <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:min-h-[calc(100vh-68px)] lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">
+            <section>
+                <div class="reveal mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
                     <i data-lucide="sparkles" class="h-4 w-4"></i>
                     Portal PMB kampus mitra se-Indonesia
                 </div>
-                <h1 class="max-w-4xl text-4xl font-black leading-[1.02] tracking-normal sm:text-5xl lg:text-7xl">
+                <h1 class="reveal max-w-4xl text-4xl font-black leading-[1.02] tracking-normal [transition-delay:90ms] sm:text-5xl lg:text-7xl">
                     Masa Depan yang Lebih Baik<br>Dimulai dari Keputusan Hari Ini.
                 </h1>
-                <p class="mt-6 max-w-2xl text-lg leading-8 text-sky-50 sm:text-xl">
+                <p class="reveal mt-6 max-w-2xl text-lg leading-8 text-sky-50 [transition-delay:170ms] sm:text-xl">
                     Temukan kampus dan program kuliah yang membantumu meraih karier, penghasilan, dan masa depan yang lebih cerah.
                 </p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="#kampus" class="inline-flex items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
+                <div class="reveal mt-8 flex flex-col gap-3 [transition-delay:250ms] sm:flex-row">
+                    <a href="#kampus" class="group inline-flex items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
                         Jelajahi Kampus
                     </a>
-                    <a href="{{ route('registration.create') }}" class="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
-                        <i data-lucide="send" class="h-5 w-5"></i>
+                    <a href="{{ route('registration.create') }}" class="group inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
+                        <i data-lucide="send" class="h-5 w-5 transition-transform group-hover:translate-x-1"></i>
                         Daftar Tanpa Pilih Kampus
                     </a>
                 </div>
-                <div class="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="reveal mt-10 grid max-w-2xl grid-cols-2 gap-3 [transition-delay:330ms] sm:grid-cols-4">
                     @foreach ([[$campuses->count(), 'Kampus Mitra'], [$totalPrograms ?: 300, 'Program Studi'], ['24 Jam', 'Daftar Online'], ['Rp '.number_format($lowestFee, 0, ',', '.'), 'Biaya Mulai']] as $stat)
-                        <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+                        <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15">
                             <strong class="block text-2xl font-black text-yellow-200">{{ $stat[0] }}</strong>
                             <span class="mt-1 block text-xs font-bold text-sky-100">{{ $stat[1] }}</span>
                         </div>
@@ -169,7 +180,7 @@
                 </div>
             </section>
 
-            <section class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 sm:p-7">
+            <section class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 [transition-delay:120ms] sm:p-7">
                 <div class="mb-5 flex items-center justify-between gap-4">
                     <div>
                         <p class="text-sm font-black uppercase tracking-wide text-sky-700">Cari kampus</p>
@@ -181,7 +192,7 @@
                     Nama kampus, kota, atau provinsi
                     <div class="relative">
                         <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"></i>
-                        <input id="campus-search" class="h-13 w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-14 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
+                        <input id="campus-search" class="h-14 w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-14 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
                         <button id="campus-search-button" type="submit" class="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700" aria-label="Cari kampus">
                             <i data-lucide="arrow-right" class="h-5 w-5"></i>
                         </button>
@@ -224,7 +235,7 @@
                 <div class="grid gap-5 md:grid-cols-3">
                     @foreach ([['graduation-cap', 'Cari Kampus & Program Studi', 'Temukan kampus terbaik, program studi sesuai minat, biaya kuliah, jadwal kelas, serta pilihan kelas karyawan, online, dan RPL dalam satu platform.'], ['book-open', 'Kuliah Fleksibel Sesuai Kesibukan', 'Pilih jalur pendidikan yang sesuai dengan kondisi Anda, mulai dari kelas karyawan, kuliah online, hybrid learning, hingga Rekognisi Pembelajaran Lampau (RPL).'], ['rocket', 'Pengembangan Karier & Masa Depan', 'Dapatkan informasi peluang karier, peningkatan kompetensi, sertifikasi, dan pendidikan lanjutan untuk membantu mencapai tujuan profesional Anda.']] as $service)
                         <article class="reveal rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                            <span class="grid h-13 w-13 place-items-center rounded-2xl bg-sky-50 text-sky-700"><i data-lucide="{{ $service[0] }}" class="h-7 w-7"></i></span>
+                            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-700"><i data-lucide="{{ $service[0] }}" class="h-7 w-7"></i></span>
                             <h3 class="mt-5 text-xl font-black text-navy">{{ $service[1] }}</h3>
                             <p class="mt-3 leading-7 text-slate-600">{{ $service[2] }}</p>
                         </article>
@@ -435,9 +446,9 @@
     </a>
 
     <script>
-        window.addEventListener('load', () => {
-            document.querySelector('.skeleton-loader')?.classList.add('is-hidden');
-        });
+        const hideSkeleton = () => document.querySelector('.skeleton-loader')?.classList.add('is-hidden');
+        requestAnimationFrame(() => requestAnimationFrame(hideSkeleton));
+        window.setTimeout(hideSkeleton, 3000);
 
         lucide.createIcons();
 
