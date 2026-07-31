@@ -8,6 +8,7 @@ use App\Http\Requests\CompleteStudentProfileRequest;
 use App\Http\Requests\RegisterLeadRequest;
 use App\Models\Campus;
 use App\Models\EducationNews;
+use App\Models\FeeScheme;
 use App\Models\Lead;
 use App\Models\ReferralPartner;
 use App\Services\LeadRegistrationService;
@@ -41,6 +42,8 @@ class PublicRegistrationController extends Controller
                 'classTracks' => fn ($query) => $query->where('status', 'active'),
                 'feeSchemes' => fn ($query) => $query->where('is_active', true),
             ]);
+
+            $this->hideOptionsWithoutFeeScheme($tenant);
 
             if ($request->wantsJson()) {
                 return response()->json(['data' => [$tenant]]);
@@ -97,7 +100,8 @@ class PublicRegistrationController extends Controller
                 'feeSchemes' => fn ($query) => $query->where('is_active', true),
             ])
             ->when($tenant, fn ($query) => $query->whereKey($tenant->id))
-            ->get();
+            ->get()
+            ->each(fn (Campus $campus) => $this->hideOptionsWithoutFeeScheme($campus));
 
         return view('public.register', [
             'campuses' => $campuses,
@@ -124,6 +128,8 @@ class PublicRegistrationController extends Controller
             'classTracks' => fn ($query) => $query->where('status', 'active'),
             'feeSchemes' => fn ($query) => $query->where('is_active', true),
         ]);
+
+        $this->hideOptionsWithoutFeeScheme($campus);
 
         return view('public.partner-campus-site', [
             'campus' => $campus,
@@ -754,6 +760,31 @@ class PublicRegistrationController extends Controller
             ->where('name', $campus)
             ->orWhere('slug', $campus)
             ->firstOrFail();
+    }
+
+    /**
+     * Hide study programs and class tracks that have no active fee scheme
+     * configured, so prospective students can't pick a combination that
+     * would fail registration with "biaya pendaftaran belum diatur".
+     */
+    private function hideOptionsWithoutFeeScheme(Campus $campus): void
+    {
+        $feeSchemes = $campus->feeSchemes;
+
+        $studyPrograms = $campus->studyPrograms->filter(
+            fn ($program): bool => $feeSchemes->contains(
+                fn (FeeScheme $fee): bool => $fee->study_program_id === null || $fee->study_program_id === $program->id
+            )
+        )->values();
+
+        $classTracks = $campus->classTracks->filter(
+            fn ($track): bool => $feeSchemes->contains(
+                fn (FeeScheme $fee): bool => $fee->class_track_id === null || $fee->class_track_id === $track->id
+            )
+        )->values();
+
+        $campus->setRelation('studyPrograms', $studyPrograms);
+        $campus->setRelation('classTracks', $classTracks);
     }
 
     private function campusNews(Campus $campus)
