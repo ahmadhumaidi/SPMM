@@ -32,7 +32,7 @@
     <meta name="twitter:image" content="{{ $imageUrl }}">
     <script type="application/ld+json">
         {!! json_encode([
-            '@context' => 'https://schema.org',
+            '@@context' => 'https://schema.org',
             '@type' => 'NewsArticle',
             'headline' => $news->title,
             'description' => $seoDescription,

@@ -6,6 +6,7 @@ use App\Enums\CampusStatus;
 use App\Models\Campus;
 use App\Models\EducationNews;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 
 class SeoController extends Controller
 {
@@ -13,28 +14,41 @@ class SeoController extends Controller
     {
         $publicUrl = rtrim(config('spmm.public_url', 'https://kampus.media'), '/');
 
+        $latestCampusUpdate = Campus::query()
+            ->where('status', CampusStatus::Active)
+            ->max('updated_at');
+        $latestCampusUpdate = $latestCampusUpdate ? Carbon::parse($latestCampusUpdate) : null;
+
+        $latestNewsUpdate = EducationNews::query()
+            ->where('status', 'published')
+            ->where(fn ($query) => $query->whereNull('published_at')->orWhere('published_at', '<=', now()))
+            ->max('published_at');
+        $latestNewsUpdate = $latestNewsUpdate ? Carbon::parse($latestNewsUpdate) : null;
+
+        $latestSiteUpdate = collect([$latestCampusUpdate, $latestNewsUpdate])->filter()->max() ?? now();
+
         $urls = collect([
             [
                 'loc' => $publicUrl.'/',
-                'lastmod' => now(),
+                'lastmod' => $latestSiteUpdate,
                 'changefreq' => 'daily',
                 'priority' => '1.0',
             ],
             [
                 'loc' => $publicUrl.'/kampus',
-                'lastmod' => now(),
+                'lastmod' => $latestCampusUpdate ?? now(),
                 'changefreq' => 'daily',
                 'priority' => '0.9',
             ],
             [
                 'loc' => $publicUrl.'/daftar',
-                'lastmod' => now(),
+                'lastmod' => $latestCampusUpdate ?? now(),
                 'changefreq' => 'weekly',
                 'priority' => '0.8',
             ],
             [
                 'loc' => $publicUrl.'/berita',
-                'lastmod' => now(),
+                'lastmod' => $latestNewsUpdate ?? now(),
                 'changefreq' => 'daily',
                 'priority' => '0.8',
             ],

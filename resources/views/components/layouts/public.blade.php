@@ -25,6 +25,29 @@
     <meta name="twitter:title" content="{{ $pageTitle }} | Kampus Media">
     <meta name="twitter:description" content="{{ $pageDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@@context' => 'https://schema.org',
+            '@graph' => array_filter([
+                [
+                    '@type' => 'Organization',
+                    'name' => 'Kampus Media',
+                    'url' => url('/'),
+                    'logo' => $seoImage,
+                ],
+                [
+                    '@type' => 'WebSite',
+                    'name' => 'Kampus Media',
+                    'url' => $canonicalUrl,
+                ],
+                $brandCampus ? [
+                    '@type' => 'EducationalOrganization',
+                    'name' => $brandCampus->name,
+                    'url' => $canonicalUrl,
+                ] : null,
+            ]),
+        ], JSON_UNESCAPED_SLASHES) !!}
+    </script>
     @vite(['resources/css/app.css', 'resources/css/pages/public-site.css'])
 </head>
 <body>
