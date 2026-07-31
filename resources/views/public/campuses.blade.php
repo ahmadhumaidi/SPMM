@@ -37,10 +37,15 @@
     $whatsappNumber = '6282199976600';
     $whatsappMessage = rawurlencode('halo min, saya mendapat informasi dari kampus media (KAMI), saya ingin mengetahui informasi lebih lanjut');
     $whatsappUrl = "https://wa.me/{$whatsappNumber}?text={$whatsappMessage}";
+    $faqs = [
+        ['Apakah bisa memilih kampus dulu sebelum daftar?', 'Bisa. Kamu bisa membuka kartu kampus, melihat detail prodi dan biaya, lalu daftar dari kampus tersebut.'],
+        ['Apakah biaya bisa dicicil?', 'Bisa, tergantung fee scheme dan program perkuliahan yang tersedia di kampus.'],
+        ['Apakah ada kelas online atau hybrid?', 'Ada untuk kampus dan program tertentu. Cek pilihan program perkuliahan di halaman kampus.'],
+    ];
 @endphp
 
 <!doctype html>
-<html lang="id" class="scroll-smooth">
+<html lang="id" class="scroll-smooth bg-navy">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -59,6 +64,35 @@
     <meta name="twitter:title" content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'Organization',
+                    'name' => 'Kampus Media',
+                    'url' => $canonicalUrl,
+                    'logo' => $seoImage,
+                ],
+                [
+                    '@type' => 'WebSite',
+                    'name' => 'Kampus Media',
+                    'url' => $canonicalUrl,
+                ],
+                [
+                    '@type' => 'FAQPage',
+                    'mainEntity' => collect($faqs)->map(fn (array $faq): array => [
+                        '@type' => 'Question',
+                        'name' => $faq[0],
+                        'acceptedAnswer' => [
+                            '@type' => 'Answer',
+                            'text' => $faq[1],
+                        ],
+                    ])->all(),
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
     @vite(['resources/css/app.css', 'resources/css/pages/campuses.css', 'resources/js/pages/campuses.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
@@ -75,7 +109,7 @@
     <nav class="sticky top-0 z-50 border-b border-white/10 bg-black/50 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" decoding="async" class="h-12 w-auto object-contain">
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" width="160" height="48" decoding="async" class="h-12 w-auto object-contain">
             </a>
             <div class="hidden items-center gap-7 text-sm font-bold text-sky-50 md:flex">
                 <a href="#kampus" class="hover:text-gold">Kampus</a>
@@ -199,7 +233,7 @@
         <section class="bg-white px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div class="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[.95fr_1.05fr]">
                 <div class="reveal relative">
-                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80" alt="Mahasiswa mencari kampus" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
+                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80" alt="Mahasiswa mencari kampus" width="1200" height="900" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
                     <div class="absolute -bottom-5 left-5 right-5 rounded-3xl bg-white p-5 shadow-soft sm:left-auto sm:w-80">
                         <p class="text-sm font-black text-sky-700">PMB online</p>
                         <strong class="mt-1 block text-2xl font-black text-navy">Cari kampus tanpa ribet</strong>
@@ -251,7 +285,7 @@
                             <article class="reveal group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft" data-campus-card data-programs="{{ $programTrackText }}" data-search="{{ strtolower($campus->name.' '.$campus->city.' '.$campus->province.' '.$campus->studyPrograms->pluck('name')->join(' ').' '.$programTrackText) }}">
                                 <div class="flex items-start gap-4">
                                     @if ($logoUrl)
-                                        <img class="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-1" src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}">
+                                        <img class="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-1" src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="64" height="64" loading="lazy" decoding="async">
                                     @else
                                         <div class="grid h-16 w-16 place-items-center rounded-2xl bg-navy text-2xl font-black text-white">{{ mb_substr($campus->name, 0, 1) }}</div>
                                     @endif
@@ -333,7 +367,7 @@
                                 $newsImage = $news->image_path ? Storage::url($news->image_path) : 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80';
                             @endphp
                             <article class="reveal overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                                <img src="{{ $newsImage }}" alt="{{ $news->title }}" class="aspect-[16/10] w-full object-cover">
+                                <img src="{{ $newsImage }}" alt="{{ $news->title }}" width="640" height="400" loading="lazy" decoding="async" class="aspect-[16/10] w-full object-cover">
                                 <div class="p-6">
                                     <div class="flex flex-wrap gap-2">
                                         <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">{{ $news->category }}</span>
@@ -364,7 +398,7 @@
                     <a href="{{ route('registration.create') }}" class="mt-8 inline-flex rounded-full bg-gold px-7 py-4 font-black text-navy">Mulai Daftar</a>
                 </div>
                 <div class="space-y-4">
-                    @foreach ([['Apakah bisa memilih kampus dulu sebelum daftar?', 'Bisa. Kamu bisa membuka kartu kampus, melihat detail prodi dan biaya, lalu daftar dari kampus tersebut.'], ['Apakah biaya bisa dicicil?', 'Bisa, tergantung fee scheme dan program perkuliahan yang tersedia di kampus.'], ['Apakah ada kelas online atau hybrid?', 'Ada untuk kampus dan program tertentu. Cek pilihan program perkuliahan di halaman kampus.']] as $faq)
+                    @foreach ($faqs as $faq)
                         <details class="reveal group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black text-navy">
                                 {{ $faq[0] }}
