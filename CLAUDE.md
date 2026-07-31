@@ -22,6 +22,7 @@ php artisan serve
 - **There is no test suite in this repo** (no `tests/` directory, no `phpunit.xml`). CI (`.github/workflows/laravel-ci.yml`) only runs `composer install`, migrations against SQLite, and `config:cache` / `route:cache` / `view:cache` / `optimize:clear` as a smoke check. If you add tests, you'll need to create `tests/` and `phpunit.xml` first.
 - Queue worker / scheduler: standard Laravel (`php artisan queue:work`, `php artisan schedule:work`). Scheduled jobs are defined in `routes/console.php`.
 - Custom artisan commands live under the `spmm:` namespace (e.g. `spmm:meta-leads:import`, `spmm:invoices:expire-pending`) — see `app/Console/Commands/`.
+- Most Blade views load Tailwind/Lucide from CDN directly (no build step). One page has been migrated to a real Vite build (`resources/css/`, `resources/js/`, `vite.config.js`, `tailwind.config.js`): `resources/views/public/campuses.blade.php`. If you touch that page, run `npm install` then `npm run dev` (or `npm run build` for production) — `@vite(...)` in its `<head>` will fail to resolve without a build present. Other views are unaffected and still work without Node.
 
 ## Architecture
 

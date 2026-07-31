@@ -29,6 +29,12 @@ if ! command -v composer >/dev/null 2>&1; then
     rm -f composer-setup.php
 fi
 
+if ! command -v node >/dev/null 2>&1; then
+    echo "==> Installing Node.js (for building frontend assets)"
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt install -y nodejs
+fi
+
 echo "==> Creating PostgreSQL database and user"
 sudo -u postgres psql <<SQL
 DO

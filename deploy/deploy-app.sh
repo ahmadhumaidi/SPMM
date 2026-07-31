@@ -40,6 +40,12 @@ fi
 echo "==> Installing Composer dependencies"
 composer install --no-dev --optimize-autoloader --no-interaction
 
+if [ -f "package.json" ]; then
+    echo "==> Installing frontend dependencies and building assets"
+    npm ci
+    npm run build
+fi
+
 if ! grep -q "^APP_KEY=base64:" .env; then
     echo "==> Generating application key"
     php artisan key:generate --force

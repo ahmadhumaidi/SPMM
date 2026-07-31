@@ -93,31 +93,7 @@
             ],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
-    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <link rel="stylesheet" href="/css/public.css?v=3">
-    <script src="https://unpkg.com/lucide@1.26.0"></script>
-    <style>
-        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .hero-bg {
-            background-image:
-                radial-gradient(circle at 18% 16%, rgba(245, 158, 11, .20), transparent 26%),
-                radial-gradient(circle at 82% 20%, rgba(56, 189, 248, .20), transparent 30%),
-                linear-gradient(135deg, #071a3d 0%, #0b2d63 55%, #0b5e8e 100%);
-        }
-        .grid-pattern {
-            background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-            background-size: 44px 44px;
-        }
-        .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
-        .reveal.is-visible { opacity: 1; transform: translateY(0); }
-        .skeleton-loader.is-hidden { display: none; }
-        .program-filter.is-active {
-            border-color: rgb(125 211 252);
-            background: rgb(224 242 254);
-            color: rgb(12 74 110);
-            box-shadow: 0 14px 30px rgba(2, 132, 199, .12);
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/css/pages/campuses.css', 'resources/js/pages/campuses.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <div class="skeleton-loader fixed inset-0 z-[70] bg-white p-6">
@@ -154,36 +130,35 @@
         </div>
     </nav>
 
-    <header class="hero-bg relative -mt-[68px] overflow-hidden text-white">
+    <header class="hero-bg relative overflow-hidden text-white">
+        <div class="hero-orb -left-16 -top-16 h-72 w-72 bg-gold/40" aria-hidden="true"></div>
+        <div class="hero-orb -right-10 top-24 h-80 w-80 bg-sky-400/40 [animation-delay:-4s]" aria-hidden="true"></div>
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
-        <div class="sp-orbit sp-orbit-one" aria-hidden="true"></div>
-        <div class="sp-orbit sp-orbit-two" aria-hidden="true"></div>
-        <div class="sp-hero-glow-fixed" aria-hidden="true"></div>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
-        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 pb-10 pt-[calc(68px+2.5rem)] sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-16 lg:pt-[calc(68px+4rem)]">
-            <section class="reveal">
-                <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
+        <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:min-h-[calc(100vh-68px)] lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">
+            <section>
+                <div class="reveal mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
                     <i data-lucide="sparkles" class="h-4 w-4"></i>
                     Portal PMB kampus mitra se-Indonesia
                 </div>
-                <h1 class="max-w-4xl text-4xl font-black leading-[1.02] tracking-normal sm:text-5xl lg:text-7xl">
+                <h1 class="reveal max-w-4xl text-4xl font-black leading-[1.02] tracking-normal [transition-delay:90ms] sm:text-5xl lg:text-7xl">
                     Masa Depan yang Lebih Baik<br>Dimulai dari Keputusan Hari Ini.
                 </h1>
-                <p class="mt-6 max-w-2xl text-lg leading-8 text-sky-50 sm:text-xl">
+                <p class="reveal mt-6 max-w-2xl text-lg leading-8 text-sky-50 [transition-delay:170ms] sm:text-xl">
                     Temukan kampus dan program kuliah yang membantumu meraih karier, penghasilan, dan masa depan yang lebih cerah.
                 </p>
-                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a href="#kampus" class="inline-flex items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
+                <div class="reveal mt-8 flex flex-col gap-3 [transition-delay:250ms] sm:flex-row">
+                    <a href="#kampus" class="group inline-flex items-center justify-center rounded-full bg-gold px-7 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
                         Jelajahi Kampus
                     </a>
-                    <a href="{{ route('registration.create') }}" class="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
-                        <i data-lucide="send" class="h-5 w-5"></i>
+                    <a href="{{ route('registration.create') }}" class="group inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-7 py-4 font-black text-white backdrop-blur transition hover:-translate-y-1 hover:bg-white/20">
+                        <i data-lucide="send" class="h-5 w-5 transition-transform group-hover:translate-x-1"></i>
                         Daftar Tanpa Pilih Kampus
                     </a>
                 </div>
-                <div class="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                <div class="reveal mt-10 grid max-w-2xl grid-cols-2 gap-3 [transition-delay:330ms] sm:grid-cols-4">
                     @foreach ([[$campuses->count(), 'Kampus Mitra'], [$totalPrograms ?: 300, 'Program Studi'], ['24 Jam', 'Daftar Online'], ['Rp '.number_format($lowestFee, 0, ',', '.'), 'Biaya Mulai']] as $stat)
-                        <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+                        <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15">
                             <strong class="block text-2xl font-black text-yellow-200">{{ $stat[0] }}</strong>
                             <span class="mt-1 block text-xs font-bold text-sky-100">{{ $stat[1] }}</span>
                         </div>
@@ -191,39 +166,38 @@
                 </div>
             </section>
 
-            <section class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 sm:p-7">
+            <section class="reveal glass-card rounded-[2rem] border border-white/25 bg-white/10 p-5 text-white backdrop-blur-2xl [transition-delay:120ms] sm:p-7">
                 <div class="mb-5 flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-wide text-sky-700">Cari kampus</p>
-                        <h2 class="mt-1 text-2xl font-black text-navy">Kampus mitra aktif</h2>
+                        <p class="text-sm font-black uppercase tracking-wide text-sky-200">Cari kampus</p>
+                        <h2 class="mt-1 text-2xl font-black text-white">Kampus mitra aktif</h2>
                     </div>
-                    <span class="rounded-full bg-sky-50 px-3 py-1 text-sm font-black text-sky-700">{{ $campuses->count() }} kampus</span>
+                    <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-black text-white backdrop-blur">{{ $campuses->count() }} kampus</span>
                 </div>
-                <form id="campus-search-form" class="grid gap-2 text-sm font-bold">
+                <form id="campus-search-form" class="grid gap-2 text-sm font-bold text-white/90">
                     Nama kampus, kota, atau provinsi
                     <div class="relative">
-                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"></i>
-                        <input id="campus-search" class="h-13 w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-14 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
-                        <button id="campus-search-button" type="submit" class="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-sky-600 text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700" aria-label="Cari kampus">
+                        <i data-lucide="search" class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/60"></i>
+                        <input id="campus-search" class="h-14 w-full rounded-2xl border border-white/25 bg-white/10 py-4 pl-12 pr-14 text-white placeholder-white/50 outline-none ring-white/20 backdrop-blur transition focus:border-white/50 focus:ring-4" placeholder="Contoh: Jakarta, STIE, Surabaya">
+                        <button id="campus-search-button" type="submit" class="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-gold text-navy shadow-lg shadow-orange-500/20 transition hover:bg-yellow-400" aria-label="Cari kampus">
                             <i data-lucide="arrow-right" class="h-5 w-5"></i>
                         </button>
                     </div>
                 </form>
-                <div class="mt-5 grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
+                <div class="mt-5 grid grid-cols-2 gap-3 text-sm font-bold text-white/90">
                     @foreach ([['briefcase', 'Kuliah Karyawan', 'kuliah karyawan'], ['monitor-smartphone', 'Full Online', 'full online'], ['shuffle', 'Hybrid Learning', 'hybrid learning'], ['badge-check', 'RPL', 'rpl']] as $tag)
-                        <button type="button" data-program-filter="{{ $tag[2] }}" class="program-filter flex items-center gap-3 rounded-2xl border border-transparent bg-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50">
-                            <i data-lucide="{{ $tag[0] }}" class="h-5 w-5 text-sky-700"></i>
+                        <button type="button" data-program-filter="{{ $tag[2] }}" class="program-filter flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 text-left backdrop-blur transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/15">
+                            <i data-lucide="{{ $tag[0] }}" class="h-5 w-5 text-sky-200"></i>
                             <span>{{ $tag[1] }}</span>
                         </button>
                     @endforeach
                 </div>
-                <div class="mt-5 rounded-2xl bg-gradient-to-r from-yellow-50 to-orange-50 p-4">
-                    <p class="font-black text-navy">Promo beasiswa PMB</p>
-                    <p class="mt-1 text-sm font-semibold leading-6 text-slate-600">Konsultasi gratis untuk cek biaya, jadwal kuliah, dan kampus yang paling cocok.</p>
+                <div class="mt-5 rounded-2xl border border-white/15 bg-gradient-to-r from-white/15 to-white/5 p-4 backdrop-blur">
+                    <p class="font-black text-yellow-100">Promo beasiswa PMB</p>
+                    <p class="mt-1 text-sm font-semibold leading-6 text-white/80">Konsultasi gratis untuk cek biaya, jadwal kuliah, dan kampus yang paling cocok.</p>
                 </div>
             </section>
         </div>
-        <div class="sp-hero-wave" aria-hidden="true"><span></span></div>
     </header>
 
     <main>
@@ -247,7 +221,7 @@
                 <div class="grid gap-5 md:grid-cols-3">
                     @foreach ([['graduation-cap', 'Cari Kampus & Program Studi', 'Temukan kampus terbaik, program studi sesuai minat, biaya kuliah, jadwal kelas, serta pilihan kelas karyawan, online, dan RPL dalam satu platform.'], ['book-open', 'Kuliah Fleksibel Sesuai Kesibukan', 'Pilih jalur pendidikan yang sesuai dengan kondisi Anda, mulai dari kelas karyawan, kuliah online, hybrid learning, hingga Rekognisi Pembelajaran Lampau (RPL).'], ['rocket', 'Pengembangan Karier & Masa Depan', 'Dapatkan informasi peluang karier, peningkatan kompetensi, sertifikasi, dan pendidikan lanjutan untuk membantu mencapai tujuan profesional Anda.']] as $service)
                         <article class="reveal rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                            <span class="grid h-13 w-13 place-items-center rounded-2xl bg-sky-50 text-sky-700"><i data-lucide="{{ $service[0] }}" class="h-7 w-7"></i></span>
+                            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-700"><i data-lucide="{{ $service[0] }}" class="h-7 w-7"></i></span>
                             <h3 class="mt-5 text-xl font-black text-navy">{{ $service[1] }}</h3>
                             <p class="mt-3 leading-7 text-slate-600">{{ $service[2] }}</p>
                         </article>
@@ -457,97 +431,5 @@
         <img src="/images/social/whatsapp.png" alt="WhatsApp" loading="lazy" decoding="async" class="h-full w-full object-contain">
     </a>
 
-    <script>
-        window.addEventListener('load', () => {
-            document.querySelector('.skeleton-loader')?.classList.add('is-hidden');
-        });
-
-        lucide.createIcons();
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) entry.target.classList.add('is-visible');
-            });
-        }, { threshold: 0.12 });
-
-        document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-
-        const searchForm = document.getElementById('campus-search-form');
-        const search = document.getElementById('campus-search');
-        const campusSection = document.getElementById('kampus');
-        const filterButtons = Array.from(document.querySelectorAll('[data-program-filter]'));
-        const cards = Array.from(document.querySelectorAll('[data-campus-card]'));
-        const showAllButton = document.getElementById('campus-show-all');
-        const selectedPrograms = new Set();
-        let showAllCampuses = false;
-        const programAliases = {
-            'kuliah karyawan': ['kuliah karyawan', 'kelas karyawan', 'professional', 'profesional', 'program kuliah professional'],
-            'full online': ['full online', 'online'],
-            'hybrid learning': ['hybrid learning', 'hybird learning', 'hybrid', 'hybird'],
-            'rpl': ['rpl', 'rekognisi pembelajaran lampau'],
-        };
-
-        const applyCampusFilters = () => {
-            const term = search?.value.toLowerCase().trim() || '';
-            const activePrograms = Array.from(selectedPrograms);
-            const isMobile = window.matchMedia('(max-width: 767px)').matches;
-            const initialCampusLimit = isMobile ? 3 : 6;
-            const shouldLimitCampuses = ! showAllCampuses && ! term && activePrograms.length === 0;
-            let visibleIndex = 0;
-
-            cards.forEach((card) => {
-                const searchableText = card.dataset.search || '';
-                const programText = card.dataset.programs || '';
-                const matchesSearch = ! term || searchableText.includes(term);
-                const matchesProgram = activePrograms.length === 0 || activePrograms.some((program) => {
-                    return (programAliases[program] || [program]).some((alias) => programText.includes(alias));
-                });
-
-                const isMatch = matchesSearch && matchesProgram;
-                const shouldHideByLimit = shouldLimitCampuses && visibleIndex >= initialCampusLimit;
-
-                card.hidden = ! isMatch || shouldHideByLimit;
-
-                if (isMatch) {
-                    visibleIndex += 1;
-                }
-            });
-
-            if (showAllButton) {
-                showAllButton.hidden = ! shouldLimitCampuses || visibleIndex <= initialCampusLimit;
-            }
-        };
-
-        showAllButton?.addEventListener('click', () => {
-            showAllCampuses = true;
-            applyCampusFilters();
-        });
-
-        filterButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const filter = button.dataset.programFilter;
-
-                if (selectedPrograms.has(filter)) {
-                    selectedPrograms.delete(filter);
-                    button.classList.remove('is-active');
-                } else {
-                    selectedPrograms.add(filter);
-                    button.classList.add('is-active');
-                }
-
-                applyCampusFilters();
-            });
-        });
-
-        search?.addEventListener('input', applyCampusFilters);
-        window.addEventListener('resize', applyCampusFilters);
-        searchForm?.addEventListener('submit', (event) => {
-            event.preventDefault();
-            applyCampusFilters();
-            campusSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-
-        applyCampusFilters();
-    </script>
 </body>
 </html>
