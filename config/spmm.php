@@ -7,11 +7,28 @@ return [
     'payment' => [
         'provider' => env('PAYMENT_PROVIDER', 'mock'),
         'invoice_expiry_hours' => (int) env('PAYMENT_INVOICE_EXPIRY_HOURS', 24),
+        'midtrans' => [
+            'server_key' => env('MIDTRANS_SERVER_KEY'),
+            'client_key' => env('MIDTRANS_CLIENT_KEY'),
+            'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
+        ],
     ],
 
     'whatsapp' => [
         'provider' => env('WHATSAPP_PROVIDER', 'log'),
         'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '62'),
+        'n8n_webhook_base' => env('N8N_WHATSAPP_WEBHOOK_BASE', 'https://n8n.maheramedia.com/webhook'),
+        'fonnte_token' => env('FONNTE_TOKEN'),
+        'fonnte_devices' => [
+            'primary' => [
+                'label' => env('FONNTE_DEVICE_1_LABEL', '08999928709'),
+                'token' => env('FONNTE_DEVICE_1_TOKEN', env('FONNTE_TOKEN')),
+            ],
+            'secondary' => [
+                'label' => env('FONNTE_DEVICE_2_LABEL', '081190027830'),
+                'token' => env('FONNTE_DEVICE_2_TOKEN'),
+            ],
+        ],
     ],
 
     'ai_news' => [
@@ -103,6 +120,9 @@ return [
         'verify_token' => env('META_LEADS_VERIFY_TOKEN'),
         'page_access_token' => env('META_LEADS_PAGE_ACCESS_TOKEN'),
         'graph_version' => env('META_GRAPH_VERSION', 'v20.0'),
+        'page_id' => env('META_LEADS_PAGE_ID'),
+        'form_id' => env('META_LEADS_FORM_ID'),
+        'auto_import_limit' => env('META_LEADS_AUTO_IMPORT_LIMIT', 100),
         'default_campus_id' => env('META_LEADS_DEFAULT_CAMPUS_ID'),
         'default_study_program_id' => env('META_LEADS_DEFAULT_STUDY_PROGRAM_ID'),
         'default_class_track_id' => env('META_LEADS_DEFAULT_CLASS_TRACK_ID'),
@@ -114,5 +134,10 @@ return [
         'graph_version' => env('META_CAPI_GRAPH_VERSION', env('META_GRAPH_VERSION', 'v20.0')),
         'test_event_code' => env('META_CAPI_TEST_EVENT_CODE'),
         'action_source' => env('META_CAPI_ACTION_SOURCE', 'system_generated'),
+    ],
+
+    'siakad_integration' => [
+        'base_url' => env('SIAKAD_INTEGRATION_BASE_URL'),
+        'api_token' => env('SIAKAD_INTEGRATION_API_TOKEN'),
     ],
 ];

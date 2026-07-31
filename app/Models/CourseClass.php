@@ -15,8 +15,8 @@ class CourseClass extends Model
         'academic_term_id',
         'course_id',
         'class_track_id',
+        'lecturer_id',
         'class_name',
-        'lecturer_name',
         'day_of_week',
         'starts_at',
         'ends_at',
@@ -38,6 +38,11 @@ class CourseClass extends Model
     public function classTrack(): BelongsTo
     {
         return $this->belongsTo(ClassTrack::class);
+    }
+
+    public function lecturer(): BelongsTo
+    {
+        return $this->belongsTo(Lecturer::class);
     }
 
     public function studyPlanItems(): HasMany

@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\StudentPaymentResource;
 use App\Models\Campus;
 use App\Models\Lead;
+use App\Services\StudentBiodataProvisioner;
 use App\Support\FilamentResourceScope;
+use App\Support\FilamentTable;
+use App\Support\FinancialStatusLabels;
+use App\Support\VirtualAccountNumber;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -48,16 +51,20 @@ class OldStudentFeeDetail extends Page implements HasTable
             )
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('id')->label('NO')->sortable(),
+                FilamentTable::rowNumberColumn(),
                 TextColumn::make('studentBiodata.selection_number')
                     ->label('NO. SELEKSI')
-                    ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? StudentPaymentResource::selectionNumberFor($record))
+                    ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? app(StudentBiodataProvisioner::class)->selectionNumberFor($record))
                     ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas('studentBiodata', fn (Builder $biodataQuery) => $biodataQuery->where('selection_number', 'like', "%{$search}%"))),
                 TextColumn::make('latestInvoice.va_number')
                     ->label('VIRTUAL ACCOUNT')
-                    ->state(fn (Lead $record): string => $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-')),
+                    ->state(fn (Lead $record): string => VirtualAccountNumber::forLead($record)),
                 TextColumn::make('full_name')->label('N A M A')->searchable()->sortable(),
-                TextColumn::make('payment_status')->label('STATUS')->badge(),
+                TextColumn::make('payment_status')
+                ->label('STATUS KEUANGAN')
+                ->state(fn (Lead $record): string => FinancialStatusLabels::leadStatus($record))
+                ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                ->html(),
                 TextColumn::make('studentBiodata.group')
                     ->label('KLP')
                     ->state(fn (Lead $record): string => $record->studentBiodata?->group ?: ($record->classTrack?->name ?: '-')),
@@ -73,12 +80,14 @@ class OldStudentFeeDetail extends Page implements HasTable
                 Tables\Actions\Action::make('view')
                     ->label('Lihat')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Lead $record): string => StudentPaymentResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (Lead $record): string => EditStudentFeePlan::getUrl(['lead' => $record->id])),
                 Tables\Actions\Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil-square')
-                    ->url(fn (Lead $record): string => StudentPaymentResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn (Lead $record): string => EditStudentFeePlan::getUrl(['lead' => $record->id])),
             ])
             ->bulkActions([]);
     }
 }
+
+

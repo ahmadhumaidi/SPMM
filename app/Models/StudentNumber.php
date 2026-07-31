@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class StudentNumber extends Model
 {
@@ -12,6 +14,7 @@ class StudentNumber extends Model
 
     protected $fillable = [
         'lead_id',
+        'uuid',
         'nim',
         'issued_by_user_id',
         'issued_at',
@@ -24,6 +27,13 @@ class StudentNumber extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (StudentNumber $studentNumber): void {
+            $studentNumber->uuid ??= (string) Str::uuid();
+        });
+    }
+
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
@@ -32,5 +42,10 @@ class StudentNumber extends Model
     public function issuedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'issued_by_user_id');
+    }
+
+    public function siakadSyncEvents(): HasMany
+    {
+        return $this->hasMany(SiakadStudentSyncEvent::class);
     }
 }

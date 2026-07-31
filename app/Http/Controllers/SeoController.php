@@ -51,6 +51,12 @@ class SeoController extends Controller
                     'changefreq' => 'weekly',
                     'priority' => '0.8',
                 ]);
+                $urls->push([
+                    'loc' => route('campuses.news.index', ['campus' => $campus->name]),
+                    'lastmod' => $campus->updated_at,
+                    'changefreq' => 'weekly',
+                    'priority' => '0.6',
+                ]);
             });
 
         EducationNews::query()
@@ -83,6 +89,8 @@ class SeoController extends Controller
             'Disallow: /mahasiswa',
             'Disallow: /siakad',
             'Disallow: /lms',
+            'Disallow: /thank-you',
+            'Disallow: /pemberkasan',
             '',
             'Sitemap: '.$publicUrl.'/sitemap.xml',
             '',

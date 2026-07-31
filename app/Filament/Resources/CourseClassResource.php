@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CourseClassResource\Pages;
 use App\Models\CourseClass;
+use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
@@ -12,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class CourseClassResource extends Resource
 {
@@ -23,11 +25,14 @@ class CourseClassResource extends Resource
 
     protected static ?string $navigationLabel = 'Kelas & Jadwal';
 
-    protected static bool $shouldRegisterNavigation = false;
-
     public static function canAccess(): bool
     {
-        return false;
+        return FilamentResourceScope::canAccessAcademic();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return FilamentResourceScope::applyRelatedCampusScope(parent::getEloquentQuery(), 'academicTerm');
     }
 
     public static function form(Form $form): Form
@@ -37,7 +42,7 @@ class CourseClassResource extends Resource
             Select::make('course_id')->label('Mata Kuliah')->relationship('course', 'name')->searchable()->preload()->required(),
             Select::make('class_track_id')->label('Program Perkuliahan')->relationship('classTrack', 'name')->searchable()->preload(),
             TextInput::make('class_name')->label('Nama Kelas')->default('A')->required(),
-            TextInput::make('lecturer_name')->label('Dosen Pengampu')->maxLength(255),
+            Select::make('lecturer_id')->label('Dosen Pengampu')->relationship('lecturer', 'name')->searchable()->preload(),
             Select::make('day_of_week')->label('Hari')->options([
                 'Senin' => 'Senin',
                 'Selasa' => 'Selasa',
@@ -64,7 +69,7 @@ class CourseClassResource extends Resource
                 TextColumn::make('course.code')->label('Kode')->searchable(),
                 TextColumn::make('course.name')->label('Mata Kuliah')->searchable(),
                 TextColumn::make('class_name')->label('Kelas'),
-                TextColumn::make('lecturer_name')->label('Dosen')->searchable(),
+                TextColumn::make('lecturer.name')->label('Dosen')->searchable(),
                 TextColumn::make('day_of_week')->label('Hari'),
                 TextColumn::make('starts_at')->label('Mulai'),
                 TextColumn::make('ends_at')->label('Selesai'),

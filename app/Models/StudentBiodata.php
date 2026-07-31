@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\AcademicStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class StudentBiodata extends Model
 {
@@ -25,6 +28,7 @@ class StudentBiodata extends Model
         'group',
         'cohort_year',
         'financial_status',
+        'academic_status',
         'entry_type',
         'class_time',
         'photo_path',
@@ -72,7 +76,17 @@ class StudentBiodata extends Model
             'semester_education_contribution' => 'integer',
             'almamater_jacket_fee' => 'integer',
             'form_fee' => 'integer',
+            'academic_status' => AcademicStatus::class,
         ];
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => filled($value)
+                ? ucwords(Str::lower(trim(preg_replace('/\s+/', ' ', $value))), " \t\r\n\f\v.")
+                : $value,
+        );
     }
 
     public function campus(): BelongsTo

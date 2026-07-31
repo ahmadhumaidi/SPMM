@@ -54,6 +54,20 @@
             <div class="mb-6 rounded-3xl border border-green-200 bg-green-50 p-4 font-bold text-green-700 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-200">{{ session('status') }}</div>
         @endif
 
+        @if ($errors->any())
+            <div class="mb-6 flex items-start gap-3 rounded-3xl border border-red-200 bg-red-50 p-4 font-bold text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
+                <i data-lucide="alert-triangle" class="mt-0.5 h-5 w-5 shrink-0"></i>
+                <div>
+                    <p>Password belum berhasil diubah:</p>
+                    <ul class="mt-1 list-disc pl-5 font-semibold">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
         <section class="grid gap-6 xl:grid-cols-[.85fr_1.15fr]">
             <article class="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/10">
                 <div class="flex items-center gap-3">
@@ -87,13 +101,14 @@
 
                     <label class="grid gap-2 text-sm font-bold">
                         Password baru
-                        <input type="password" name="password" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
+                        <input type="password" name="password" required minlength="8" class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
+                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Minimal 8 karakter.</span>
                         @error('password') <span class="text-sm font-bold text-red-600 dark:text-red-300">{{ $message }}</span> @enderror
                     </label>
 
                     <label class="grid gap-2 text-sm font-bold">
                         Konfirmasi password baru
-                        <input type="password" name="password_confirmation" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
+                        <input type="password" name="password_confirmation" required minlength="8" class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
                     </label>
 
                     <button class="rounded-2xl bg-gradient-to-r from-navy to-cyanx px-6 py-4 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-1">

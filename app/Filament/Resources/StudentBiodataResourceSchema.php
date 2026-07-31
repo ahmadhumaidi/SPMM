@@ -3,7 +3,9 @@
 namespace App\Filament\Resources;
 
 use App\Models\StudyProgram;
+use App\Models\StudentBiodata;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Section;
@@ -20,11 +22,24 @@ use Illuminate\Database\Eloquent\Builder;
 
 class StudentBiodataResourceSchema
 {
+    /**
+     * Rows missing core identity/demographic data — a proxy for "belum lengkap,
+     * perlu dicek admin" used to badge the Biodata Mahasiswa Baru/Lama menus.
+     */
+    public static function applyIncompleteScope(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereNull('identity_number')
+            ->orWhereNull('birth_date')
+            ->orWhereNull('gender')
+            ->orWhereNull('address'));
+    }
+
     public static function form(): array
     {
         return [
             Section::make('Data Pendaftaran')
-                ->columns(2)
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 3])
                 ->schema([
                     Select::make('campus_id')
                         ->label('Kampus')
@@ -83,7 +98,8 @@ class StudentBiodataResourceSchema
                         ->options([
                             'Belum bayar' => 'Belum bayar',
                             'RR' => 'RR',
-                            'Lunas' => 'Lunas',
+                            'Registrasi' => 'Registrasi',
+                            'Herregistrasi' => 'Herregistrasi',
                             'Tunggakan' => 'Tunggakan',
                         ])
                         ->searchable(),
@@ -128,7 +144,7 @@ class StudentBiodataResourceSchema
                         ->columnSpanFull(),
                 ]),
             Section::make('Biodata Mahasiswa')
-                ->columns(2)
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 3])
                 ->schema([
                     TextInput::make('birth_place')->label('Tempat Lahir')->maxLength(255),
                     DatePicker::make('birth_date')->label('Tanggal Lahir'),
@@ -163,7 +179,7 @@ class StudentBiodataResourceSchema
                     TextInput::make('identity_number')->label('NIK KTP Mahasiswa')->maxLength(32),
                 ]),
             Section::make('Data Keluarga')
-                ->columns(2)
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 3])
                 ->schema([
                     TextInput::make('mother_name')->label('Nama Ibu Kandung')->maxLength(255),
                     TextInput::make('family_name')->label('Nama kontak keluarga')->maxLength(255),
@@ -171,7 +187,7 @@ class StudentBiodataResourceSchema
                     TextInput::make('family_relationship')->label('Hubungan')->maxLength(255),
                 ]),
             Section::make('Data Pekerjaan')
-                ->columns(2)
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 3])
                 ->schema([
                     TextInput::make('company_name')->label('Perusahaan/Instansi')->maxLength(255),
                     TextInput::make('job_title')->label('Jabatan')->maxLength(255),
@@ -181,7 +197,7 @@ class StudentBiodataResourceSchema
                     TextInput::make('company_phone')->label('No. Telepon')->maxLength(32),
                 ]),
             Section::make('Data Biaya')
-                ->columns(2)
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 3])
                 ->schema([
                     TextInput::make('development_contribution')
                         ->label('Sumbangan Pengembangan')
@@ -216,22 +232,30 @@ class StudentBiodataResourceSchema
                 TextColumn::make('student_number')->label('No. Pokok')->searchable(),
                 TextColumn::make('selection_number')->label('No. Seleksi')->searchable()->toggleable(),
                 TextColumn::make('campus.name')->label('Kampus')->sortable(),
+                TextColumn::make('studyProgram.degree_level')->label('Jenjang')->sortable(),
                 TextColumn::make('studyProgram.name')->label('Program Studi')->searchable(),
                 TextColumn::make('cohort_year')->label('Angkatan')->sortable(),
-                TextColumn::make('financial_status')->label('Status Keuangan')->badge(),
-                TextColumn::make('information_source')->label('Sumber Informasi')->toggleable(),
+                TextColumn::make('financial_status')
+                    ->label('Status Keuangan')
+                    ->state(fn (StudentBiodata $record): string => FinancialStatusLabels::leadStatus($record->lead))
+                    ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                    ->html(),
+                TextColumn::make('information_source')->label('Sumber Informasi')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('affiliator_code')->label('Kode Affiliator')->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('entry_type')->label('Baru/Pindahan')->toggleable(),
-                TextColumn::make('whatsapp_number')->label('No. WA')->searchable()->toggleable(),
+                TextColumn::make('entry_type')->label('Baru/Pindahan')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('whatsapp_number')->label('No. WA')->searchable()->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('campus_id')
                     ->label('Kampus')
                     ->relationship('campus', 'name', fn (Builder $query): Builder => FilamentResourceScope::applyCampusScope($query->orderBy('name'), 'campuses.id')),
                 Tables\Filters\SelectFilter::make('financial_status')->label('Status Keuangan')->options([
-                    'Belum bayar' => 'Belum bayar',
-                    'RR' => 'RR',
-                    'Lunas' => 'Lunas',
+                    'Belum Registrasi' => 'Belum Registrasi',
+                    'Registrasi' => 'Registrasi',
+                    'Herregistrasi' => 'Herregistrasi',
+                    'Menunggu Registrasi' => 'Menunggu Registrasi',
+                    'Tagihan Kadaluarsa' => 'Tagihan Kadaluarsa',
                     'Tunggakan' => 'Tunggakan',
                 ]),
                 Tables\Filters\SelectFilter::make('cohort_year')->label('Angkatan')->options(
@@ -267,3 +291,4 @@ class StudentBiodataResourceSchema
         ];
     }
 }
+

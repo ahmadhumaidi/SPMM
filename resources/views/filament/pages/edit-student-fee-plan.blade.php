@@ -1,28 +1,38 @@
 <x-filament-panels::page>
     @php
-        $record = $this->record;
-        $record->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
-        $schedulePayments = $record->studentPayments
+        $lead = $this->lead;
+        $lead->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('month')]);
+        $schedulePayments = $lead->studentPayments
             ->filter(fn ($payment) => $payment->payment_type !== 'manual')
             ->values();
-        $selectionNumber = $record->studentBiodata?->selection_number ?? \App\Filament\Resources\StudentPaymentResource::selectionNumberFor($record);
-        $virtualAccount = $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-');
+        $selectionNumber = $lead->studentBiodata?->selection_number ?? app(\App\Services\StudentBiodataProvisioner::class)->selectionNumberFor($lead);
+        $virtualAccount = $lead->latestInvoice?->va_number ?: ($lead->latestInvoice?->gateway_reference ?: '-');
         $formPayment = $schedulePayments->firstWhere('month', 0);
         $semesterPayments = $schedulePayments->where('month', '>', 0)->values();
         $semesterGroups = $semesterPayments->groupBy(fn ($payment) => (int) ceil($payment->month / 6));
+        $cancelUrl = $this->redirectUrlForLead();
+        $locked = $this->planIsLocked();
     @endphp
 
     <form wire:submit.prevent="savePayments" class="spmm-payment-detail">
+        @if ($locked)
+            <div class="fi-in-text-message">
+                <p style="padding: 0.85rem 1.1rem; border-radius: 0.9rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: #b91c1c; font-weight: 700; font-size: 0.85rem;">
+                    Lead ini belum punya biodata mahasiswa baru. Rencana dan realita pembayaran hanya bisa diedit setelah biodata dibuat — lengkapi biodata terlebih dahulu untuk membuka mode edit.
+                </p>
+            </div>
+        @endif
+
         <section class="spmm-payment-hero">
             <div>
                 <span class="spmm-report-kicker">Ubah Pembayaran Mahasiswa</span>
-                <h2>{{ $record->full_name }}</h2>
-                <p>{{ $selectionNumber }} - {{ $record->studyProgram?->name ?? 'Jurusan belum diisi' }} - {{ $record->campus?->name ?? 'Kampus belum diisi' }}</p>
+                <h2>{{ $lead->full_name }}</h2>
+                <p>{{ $selectionNumber }} - {{ $lead->studyProgram?->name ?? 'Jurusan belum diisi' }} - {{ $lead->campus?->name ?? 'Kampus belum diisi' }}</p>
             </div>
             <div class="spmm-payment-summary">
                 <span>Virtual Account</span>
                 <strong>{{ $virtualAccount }}</strong>
-                <small>Status: {{ str($record->payment_status->value ?? $record->payment_status)->replace('_', ' ')->title() }}</small>
+                <small>Status: {{ str($lead->payment_status->value ?? $lead->payment_status)->replace('_', ' ')->title() }}</small>
             </div>
         </section>
 
@@ -33,11 +43,11 @@
             </div>
             <div>
                 <span>KLP</span>
-                <strong>{{ $record->studentBiodata?->group ?: ($record->classTrack?->name ?: '-') }}</strong>
+                <strong>{{ $lead->studentBiodata?->group ?: ($lead->classTrack?->name ?: '-') }}</strong>
             </div>
             <div>
                 <span>JRS</span>
-                <strong>{{ $record->studyProgram?->name ?? '-' }}</strong>
+                <strong>{{ $lead->studyProgram?->name ?? '-' }}</strong>
             </div>
         </section>
 
@@ -50,13 +60,13 @@
             <div class="spmm-payment-planning-fields">
                 <label>
                     <span>Pembayaran ke-1</span>
-                    <input type="date" wire:model.change="planningFirstPaymentDate">
+                    <input type="date" wire:model.change="planningFirstPaymentDate" @disabled($locked)>
                 </label>
                 <label>
                     <span>Pembayaran ke-2</span>
-                    <input type="date" wire:model.change="planningSecondPaymentDate">
+                    <input type="date" wire:model.change="planningSecondPaymentDate" @disabled($locked)>
                 </label>
-                <button type="button" wire:click="runPlanning">Jalankan Perencanaan</button>
+                <button type="button" wire:click="runPlanning" @disabled($locked)>Jalankan Perencanaan</button>
             </div>
         </section>
 
@@ -67,8 +77,8 @@
                     <p>Komponen dengan nominal 0 tidak ditampilkan. Baris pendaftaran hanya menampilkan formulir.</p>
                 </div>
                 <div class="spmm-payment-savebar spmm-payment-savebar-inline">
-                    <a href="{{ \App\Filament\Resources\StudentPaymentResource::getUrl('index') }}">Batal</a>
-                    <button type="submit">Simpan Pembayaran</button>
+                    <a href="{{ $cancelUrl }}">Batal</a>
+                    <button type="submit" @disabled($locked)>Simpan Pembayaran</button>
                 </div>
             </header>
 
@@ -91,20 +101,20 @@
                                 <td class="font-bold">{{ $formPayment->payment_label }}</td>
                                 <td>
                                     <label>Formulir</label>
-                                    <input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.registration_fee">
+                                    <input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.registration_fee" @disabled($locked)>
                                 </td>
-                                <td><input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.amount"></td>
-                                <td><input type="date" wire:model.change="paymentRows.{{ $formPayment->id }}.due_date"></td>
+                                <td><input type="number" wire:model.defer="paymentRows.{{ $formPayment->id }}.amount" @disabled($locked)></td>
+                                <td><input type="date" wire:model.change="paymentRows.{{ $formPayment->id }}.due_date" @disabled($locked)></td>
                                 <td>
-                                    <select wire:model.defer="paymentRows.{{ $formPayment->id }}.status">
+                                    <select wire:model.defer="paymentRows.{{ $formPayment->id }}.status" @disabled($locked)>
                                         <option value="unpaid">Belum dibayar</option>
                                         <option value="pending">Menunggu verifikasi</option>
                                         <option value="paid">Lunas</option>
                                         <option value="waived">Dibebaskan</option>
                                     </select>
                                 </td>
-                                <td><input type="datetime-local" wire:model.defer="paymentRows.{{ $formPayment->id }}.paid_at"></td>
-                                <td><input type="text" wire:model.defer="paymentRows.{{ $formPayment->id }}.notes"></td>
+                                <td><input type="datetime-local" wire:model.defer="paymentRows.{{ $formPayment->id }}.paid_at" @disabled($locked)></td>
+                                <td><input type="text" wire:model.defer="paymentRows.{{ $formPayment->id }}.notes" @disabled($locked)></td>
                             </tr>
                         @endif
 
@@ -128,24 +138,24 @@
                                         <div class="spmm-payment-component-stack">
                                             @forelse ($components as $component)
                                                 <label>{{ $component['label'] }}</label>
-                                                <input type="number" wire:model.defer="paymentRows.{{ $payment->id }}.{{ $component['key'] }}">
+                                                <input type="number" wire:model.defer="paymentRows.{{ $payment->id }}.{{ $component['key'] }}" @disabled($locked)>
                                             @empty
                                                 -
                                             @endforelse
                                         </div>
                                     </td>
-                                    <td><input type="number" wire:model.defer="paymentRows.{{ $payment->id }}.amount"></td>
-                                    <td><input type="date" wire:model.change="paymentRows.{{ $payment->id }}.due_date"></td>
+                                    <td><input type="number" wire:model.defer="paymentRows.{{ $payment->id }}.amount" @disabled($locked)></td>
+                                    <td><input type="date" wire:model.change="paymentRows.{{ $payment->id }}.due_date" @disabled($locked)></td>
                                     <td>
-                                        <select wire:model.defer="paymentRows.{{ $payment->id }}.status">
+                                        <select wire:model.defer="paymentRows.{{ $payment->id }}.status" @disabled($locked)>
                                             <option value="unpaid">Belum dibayar</option>
                                             <option value="pending">Menunggu verifikasi</option>
                                             <option value="paid">Lunas</option>
                                             <option value="waived">Dibebaskan</option>
                                         </select>
                                     </td>
-                                    <td><input type="datetime-local" wire:model.defer="paymentRows.{{ $payment->id }}.paid_at"></td>
-                                    <td><input type="text" wire:model.defer="paymentRows.{{ $payment->id }}.notes"></td>
+                                    <td><input type="datetime-local" wire:model.defer="paymentRows.{{ $payment->id }}.paid_at" @disabled($locked)></td>
+                                    <td><input type="text" wire:model.defer="paymentRows.{{ $payment->id }}.notes" @disabled($locked)></td>
                                 </tr>
                             @endforeach
                         @empty

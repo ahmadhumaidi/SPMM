@@ -40,8 +40,8 @@ return new class extends Migration
             $table->foreignId('academic_term_id')->constrained()->cascadeOnDelete();
             $table->foreignId('course_id')->constrained()->cascadeOnDelete();
             $table->foreignId('class_track_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('lecturer_id')->nullable()->constrained()->nullOnDelete();
             $table->string('class_name')->default('A');
-            $table->string('lecturer_name')->nullable();
             $table->string('day_of_week')->nullable();
             $table->time('starts_at')->nullable();
             $table->time('ends_at')->nullable();

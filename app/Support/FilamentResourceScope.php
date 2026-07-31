@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\UserRole;
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 
 class FilamentResourceScope
@@ -37,6 +38,23 @@ class FilamentResourceScope
         return $query->whereRaw('1 = 0');
     }
 
+    public static function applyRelatedCampusScope(Builder $query, string $relation, string $campusColumn = 'campus_id'): Builder
+    {
+        $user = auth()->user();
+
+        if ($user === null || $user->isSuperAdmin() || static::isDirector()) {
+            return $query;
+        }
+
+        if (in_array($user->role, [UserRole::KoordinatorPmb, UserRole::StaffPmb], true)) {
+            $campusIds = $user->campuses()->select('campuses.id');
+
+            return $query->whereHas($relation, fn (Builder $related): Builder => $related->whereIn($campusColumn, $campusIds));
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
     public static function applyLeadScope(Builder $query): Builder
     {
         $user = auth()->user();
@@ -54,6 +72,29 @@ class FilamentResourceScope
         }
 
         return $query;
+    }
+
+    public static function canAccessCampus(?int $campusId): bool
+    {
+        $user = auth()->user();
+
+        if ($user === null) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin() || static::isDirector()) {
+            return true;
+        }
+
+        if ($campusId === null) {
+            return false;
+        }
+
+        if (in_array($user->role, [UserRole::KoordinatorPmb, UserRole::StaffPmb], true)) {
+            return $user->campuses()->where('campuses.id', $campusId)->exists();
+        }
+
+        return false;
     }
 
     public static function isSuperAdmin(): bool
@@ -79,6 +120,15 @@ class FilamentResourceScope
     public static function canAccessMasterData(): bool
     {
         return static::isSuperAdmin() || static::isCoordinator();
+    }
+
+    public static function canAccessAcademic(): bool
+    {
+        if (Filament::getCurrentPanel()?->getId() !== 'siakad') {
+            return false;
+        }
+
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator();
     }
 
     public static function canAccessPortalPublic(): bool

@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\EnrollmentStatus;
 use App\Filament\Resources\StudentNumberResource\Pages;
+use App\Models\Lead;
 use App\Models\StudentNumber;
 use App\Support\FilamentResourceScope;
 use Filament\Forms\Components\DateTimePicker;
@@ -25,6 +27,18 @@ class StudentNumberResource extends Resource
     public static function canAccess(): bool
     {
         return FilamentResourceScope::canAccessPddikti();
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = Lead::query()->where('enrollment_status', EnrollmentStatus::ProsesPemutakhiran)->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return 'warning';
     }
 
     public static function form(Form $form): Form

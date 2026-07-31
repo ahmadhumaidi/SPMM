@@ -30,8 +30,35 @@
     <meta name="twitter:title" content="{{ $news->title }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
     <meta name="twitter:image" content="{{ $imageUrl }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'NewsArticle',
+            'headline' => $news->title,
+            'description' => $seoDescription,
+            'image' => [$imageUrl],
+            'datePublished' => $news->published_at?->toAtomString(),
+            'dateModified' => $news->updated_at?->toAtomString(),
+            'author' => [
+                '@type' => 'Organization',
+                'name' => $news->author_name ?: 'Kampus Media',
+            ],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'Kampus Media',
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => url('/images/social/logo%20kampus%20media.png'),
+                ],
+            ],
+            'mainEntityOfPage' => [
+                '@type' => 'WebPage',
+                '@id' => $canonicalUrl,
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
+    <script src="https://unpkg.com/lucide@1.26.0"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <nav class="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl">

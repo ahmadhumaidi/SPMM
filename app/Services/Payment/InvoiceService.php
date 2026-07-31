@@ -9,6 +9,7 @@ use App\Models\FeeScheme;
 use App\Models\Invoice;
 use App\Models\Lead;
 use Illuminate\Support\Facades\DB;
+use App\Support\VirtualAccountNumber;
 use Illuminate\Support\Str;
 
 class InvoiceService
@@ -54,7 +55,7 @@ class InvoiceService
                 'payment_method' => $result->paymentMethod,
                 'payment_url' => $result->paymentUrl,
                 'qr_string' => $result->qrString,
-                'va_number' => $result->vaNumber,
+                'va_number' => $result->vaNumber ?: VirtualAccountNumber::forLead($lead),
             ]);
 
             $lead->update(['payment_status' => PaymentStatus::Pending]);
@@ -70,3 +71,4 @@ class InvoiceService
         });
     }
 }
+

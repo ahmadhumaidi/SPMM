@@ -26,10 +26,11 @@ class PaymentItemResource extends Resource
     protected static ?string $navigationLabel = 'Item Pembayaran';
     protected static ?string $modelLabel = 'Item Pembayaran';
     protected static ?string $pluralModelLabel = 'Item Pembayaran';
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::canAccessPayments();
+        return false;
     }
 
     public static function form(Form $form): Form
@@ -61,7 +62,7 @@ class PaymentItemResource extends Resource
                 \App\Support\FilamentTable::rowNumberColumn(),
                 TextColumn::make('name')->label('Item')->searchable()->sortable(),
                 TextColumn::make('campus.name')->label('Kampus')->placeholder('Semua kampus')->searchable(),
-                TextColumn::make('default_amount')->label('Nominal default')->money('IDR')->sortable(),
+                TextColumn::make('default_amount')->label('Nominal default')->money('IDR')->sortable()->alignEnd(),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime()->sortable(),
             ])

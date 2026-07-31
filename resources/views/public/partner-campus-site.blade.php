@@ -104,6 +104,13 @@
     $faqs = filled($settings['faqs'] ?? null)
         ? $settings['faqs']
         : [['question' => 'Apakah biaya bisa dicicil?', 'answer' => 'Bisa. Tersedia skema cicilan bulanan sesuai program dan model pembiayaan kampus.'], ['question' => 'Apakah bisa kuliah sambil kerja?', 'answer' => 'Bisa. Tersedia kelas karyawan, reguler, online, dan hybrid sesuai pilihan kampus.'], ['question' => 'Apakah tersedia kelas online?', 'answer' => 'Tersedia untuk program tertentu. Konsultan PMB akan membantu mengecek pilihan kelas yang aktif.']];
+    $classSchedules = filled($settings['class_schedules'] ?? null)
+        ? collect($settings['class_schedules'])->filter(fn (array $row): bool => filled($row['day'] ?? null) || filled($row['time'] ?? null) || filled($row['title'] ?? null))->values()
+        : collect([
+            ['day' => 'Senin - Jumat', 'time' => '18.30 - 21.00', 'title' => 'Kelas Karyawan Malam', 'mode' => 'Hybrid', 'location' => 'Kampus / Online', 'note' => 'Cocok untuk mahasiswa yang bekerja pada jam kantor.'],
+            ['day' => 'Sabtu', 'time' => '08.00 - 16.00', 'title' => 'Kelas Weekend', 'mode' => 'Tatap muka', 'location' => 'Kampus', 'note' => 'Jadwal intensif akhir pekan untuk perkuliahan reguler/karyawan.'],
+            ['day' => 'Fleksibel', 'time' => 'Sesuai LMS', 'title' => 'Kelas Online', 'mode' => 'Online', 'location' => 'LMS / Zoom', 'note' => 'Materi dan pertemuan online mengikuti ketentuan program studi.'],
+        ]);
     $programFallbacks = [
         ['name' => 'Manajemen', 'degree' => 'S1', 'accreditation' => 'Baik Sekali'],
         ['name' => 'Akuntansi', 'degree' => 'S1', 'accreditation' => 'Baik Sekali'],
@@ -132,7 +139,7 @@
 @endphp
 
 <!doctype html>
-<html lang="id" class="scroll-smooth">
+<html lang="id" class="scroll-smooth bg-navy">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -151,24 +158,39 @@
     <meta name="twitter:title" content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDescription }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navy: '#071a3d',
-                        ink: '#102033',
-                        gold: '#f59e0b',
-                    },
-                    boxShadow: {
-                        soft: '0 24px 70px rgba(15, 23, 42, .12)',
-                    },
-                },
-            },
-        }
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'EducationalOrganization',
+                    'name' => $campus->name,
+                    'url' => $canonicalUrl,
+                    'logo' => $logoUrl,
+                    'address' => array_filter([
+                        '@type' => 'PostalAddress',
+                        'addressLocality' => $campus->city,
+                        'addressRegion' => $campus->province,
+                        'streetAddress' => $campus->address,
+                    ]),
+                ],
+                [
+                    '@type' => 'FAQPage',
+                    'mainEntity' => collect($faqs)->map(fn (array $faq): array => [
+                        '@type' => 'Question',
+                        'name' => $faq['question'] ?? '',
+                        'acceptedAnswer' => [
+                            '@type' => 'Answer',
+                            'text' => $faq['answer'] ?? '',
+                        ],
+                    ])->all(),
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
+    <link rel="stylesheet" href="/css/public.css?v=3">
+    <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
         .pattern {
@@ -201,7 +223,7 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="#home" class="flex items-center gap-3">
                 @if ($logoUrl)
-                    <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" class="h-11 w-11 rounded-xl bg-white object-contain p-1">
+                    <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="44" height="44" decoding="async" class="h-11 w-11 rounded-xl bg-white object-contain p-1">
                 @else
                     <span class="grid h-11 w-11 place-items-center rounded-xl bg-white text-lg font-black text-navy">{{ $campusInitial }}</span>
                 @endif
@@ -213,6 +235,7 @@
             <div class="hidden items-center gap-7 text-sm font-bold text-sky-50 md:flex">
                 <a href="#keunggulan" class="hover:text-gold">Keunggulan</a>
                 <a href="#program" class="hover:text-gold">Program Studi</a>
+                <a href="#jadwal" class="hover:text-gold">Jadwal</a>
                 <a href="#biaya" class="hover:text-gold">Biaya</a>
                 <a href="#galeri" class="hover:text-gold">Galeri</a>
                 <a href="#berita" class="hover:text-gold">Berita</a>
@@ -224,9 +247,12 @@
         </div>
     </nav>
 
-    <header id="home" class="pattern relative overflow-hidden text-white">
+    <header id="home" class="pattern relative -mt-[68px] overflow-hidden text-white">
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
-        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">
+        <div class="sp-orbit sp-orbit-one" aria-hidden="true"></div>
+        <div class="sp-orbit sp-orbit-two" aria-hidden="true"></div>
+        <div class="sp-hero-glow-fixed" aria-hidden="true"></div>
+        <div class="relative mx-auto grid min-h-[calc(100vh-68px)] max-w-7xl items-center gap-10 px-4 pb-10 pt-[calc(68px+2.5rem)] sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:pb-16 lg:pt-[calc(68px+4rem)]">
             <section class="reveal">
                 <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold text-yellow-100 backdrop-blur">
                     <i data-lucide="sparkles" class="h-4 w-4"></i>
@@ -335,6 +361,7 @@
                 </form>
             </section>
         </div>
+        <div class="sp-hero-wave" aria-hidden="true"><span></span></div>
     </header>
 
     <main>
@@ -370,7 +397,7 @@
         <section class="overflow-hidden bg-white px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div class="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[.9fr_1.1fr]">
                 <div class="reveal relative">
-                    <img src="{{ $heroImage }}" alt="Mahasiswa kampus Indonesia" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
+                    <img src="{{ $heroImage }}" alt="Mahasiswa kampus Indonesia" width="1100" height="825" loading="lazy" decoding="async" class="aspect-[4/3] w-full rounded-[2rem] object-cover shadow-soft">
                     <div class="absolute -bottom-5 left-5 right-5 rounded-3xl bg-white p-5 shadow-soft sm:left-auto sm:w-72">
                         <p class="text-sm font-black text-sky-700">PMB aktif</p>
                         <strong class="mt-1 block text-2xl font-black text-navy">Konsultasi gratis setiap hari</strong>
@@ -505,6 +532,47 @@
             @endforeach
         @endif
 
+
+        <section id="jadwal" class="bg-slate-50 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+            <div class="mx-auto max-w-7xl">
+                <div class="reveal mb-10 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+                    <div class="max-w-3xl">
+                        <p class="text-sm font-black uppercase tracking-wide text-sky-700">Jadwal Kuliah</p>
+                        <h2 class="mt-3 text-3xl font-black text-navy sm:text-5xl">Pilihan jadwal yang fleksibel untuk kuliah sambil beraktivitas.</h2>
+                        <p class="mt-4 text-lg leading-8 text-slate-600">Jadwal dapat berbeda untuk tiap program studi dan periode akademik. Hubungi konsultan PMB untuk memastikan kelas yang sedang dibuka.</p>
+                    </div>
+                    <a href="{{ $whatsappUrl }}" class="inline-flex rounded-full bg-gold px-6 py-3 font-black text-navy shadow-lg shadow-orange-500/20">Konsultasi Jadwal</a>
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-3">
+                    @foreach ($classSchedules as $schedule)
+                        <article class="reveal rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
+                            <div class="flex items-start justify-between gap-4">
+                                <span class="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-700">
+                                    <i data-lucide="calendar-clock" class="h-6 w-6"></i>
+                                </span>
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ $schedule['mode'] ?? 'Hybrid' }}</span>
+                            </div>
+                            <p class="mt-5 text-sm font-black uppercase tracking-wide text-sky-700">{{ $schedule['day'] ?? 'Fleksibel' }}</p>
+                            <h3 class="mt-2 text-2xl font-black text-navy">{{ $schedule['title'] ?? 'Jadwal Kuliah' }}</h3>
+                            <div class="mt-5 grid gap-3 text-sm font-bold text-slate-600">
+                                <div class="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                                    <i data-lucide="clock-3" class="h-5 w-5 text-sky-700"></i>
+                                    <span>{{ $schedule['time'] ?? 'Sesuai jadwal kampus' }}</span>
+                                </div>
+                                <div class="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                                    <i data-lucide="map-pin" class="h-5 w-5 text-sky-700"></i>
+                                    <span>{{ $schedule['location'] ?? 'Kampus / Online' }}</span>
+                                </div>
+                            </div>
+                            @if (filled($schedule['note'] ?? null))
+                                <p class="mt-5 leading-7 text-slate-600">{{ $schedule['note'] }}</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
         <section id="biaya" class="bg-navy px-4 py-16 text-white sm:px-6 lg:px-8 lg:py-24">
             <div class="mx-auto max-w-7xl">
                 <div class="reveal mb-10 max-w-3xl">
@@ -690,7 +758,7 @@
                         @endphp
                         <article class="reveal group overflow-hidden rounded-[1.75rem] bg-slate-100 shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
                             <div class="relative">
-                                <img src="{{ $galleryImage }}" alt="{{ $item['title'] ?? 'Galeri kampus' }}" class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105">
+                                <img src="{{ $galleryImage }}" alt="{{ $item['title'] ?? 'Galeri kampus' }}" width="600" height="450" loading="lazy" decoding="async" class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent"></div>
                                 <div class="absolute bottom-0 left-0 right-0 p-5 text-white">
                                     <h3 class="text-xl font-black">{{ $item['title'] ?? 'Galeri Kampus' }}</h3>
@@ -731,7 +799,7 @@
                                     <p class="mt-5 leading-8 text-slate-700">{{ $testimonial['quote'] ?? '' }}</p>
                                     <div class="mt-6 flex items-center gap-3">
                                         @if ($testimonialPhoto)
-                                            <img src="{{ $testimonialPhoto }}" alt="Foto {{ $testimonial['name'] ?? 'Mahasiswa' }}" class="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm">
+                                            <img src="{{ $testimonialPhoto }}" alt="Foto {{ $testimonial['name'] ?? 'Mahasiswa' }}" width="56" height="56" loading="lazy" decoding="async" class="h-14 w-14 rounded-full border-2 border-white object-cover shadow-sm">
                                         @else
                                             <span class="grid h-14 w-14 place-items-center rounded-full bg-navy font-black text-white">{{ mb_substr($testimonial['name'] ?? 'M', 0, 1) }}</span>
                                         @endif
@@ -776,7 +844,7 @@
                             @endphp
                             <article class="min-w-full px-2 md:min-w-[50%] xl:min-w-[33.333%]">
                                 <div class="reveal h-full overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-soft">
-                                    <img src="{{ $newsImage }}" alt="{{ $news->title }}" class="aspect-[16/10] w-full object-cover">
+                                    <img src="{{ $newsImage }}" alt="{{ $news->title }}" width="640" height="400" loading="lazy" decoding="async" class="aspect-[16/10] w-full object-cover">
                                     <div class="p-6">
                                         <div class="flex flex-wrap gap-2">
                                             <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-black text-sky-700">{{ $news->category }}</span>
@@ -825,7 +893,7 @@
             <div>
                 <div class="flex items-center gap-3">
                     @if ($logoUrl)
-                        <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" class="h-12 w-12 rounded-xl bg-white object-contain p-1">
+                        <img src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="48" height="48" loading="lazy" decoding="async" class="h-12 w-12 rounded-xl bg-white object-contain p-1">
                     @else
                         <span class="grid h-12 w-12 place-items-center rounded-xl bg-white font-black text-navy">{{ $campusInitial }}</span>
                     @endif
@@ -838,6 +906,7 @@
                 <div class="mt-4 grid gap-3 text-sky-100">
                     <a href="#keunggulan">Keunggulan</a>
                     <a href="#program">Program Studi</a>
+                    <a href="#jadwal">Jadwal Kuliah</a>
                     <a href="#biaya">Biaya Kuliah</a>
                     <a href="#galeri">Galeri</a>
                     <a href="#berita">Berita</a>

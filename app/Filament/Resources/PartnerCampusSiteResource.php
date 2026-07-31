@@ -38,7 +38,7 @@ class PartnerCampusSiteResource extends Resource
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::isSuperAdmin();
+        return FilamentResourceScope::canAccessPortalPublic();
     }
 
     public static function getEloquentQuery(): Builder
@@ -83,7 +83,7 @@ class PartnerCampusSiteResource extends Resource
                     Placeholder::make('local_preview')
                         ->label('Preview lokal')
                         ->content(fn (Campus $record): HtmlString => new HtmlString(
-                            '<a href="'.route('campuses.show', ['campus' => $record->name]).'" target="_blank">'.route('campuses.show', ['campus' => $record->name]).'</a>'
+                            '<a href="'.$record->publicUrl().'" target="_blank">'.$record->publicUrl().'</a>'
                         )),
                     Placeholder::make('subdomain_preview')
                         ->label('URL subdomain produksi')
@@ -175,6 +175,58 @@ class PartnerCampusSiteResource extends Resource
                         ->columns(3)
                         ->defaultItems(0)
                         ->addActionLabel('Tambah keunggulan')
+                        ->columnSpanFull(),
+                ]),
+            Section::make('Jadwal Kuliah')
+                ->description('Jadwal ini tampil di halaman publik kampus mitra. Isi jadwal umum seperti kelas malam, weekend, online, atau hybrid.')
+                ->schema([
+                    Repeater::make('website_settings.class_schedules')
+                        ->label('Jadwal kuliah')
+                        ->schema([
+                            Select::make('day')
+                                ->label('Hari')
+                                ->options([
+                                    'Senin' => 'Senin',
+                                    'Selasa' => 'Selasa',
+                                    'Rabu' => 'Rabu',
+                                    'Kamis' => 'Kamis',
+                                    'Jumat' => 'Jumat',
+                                    'Sabtu' => 'Sabtu',
+                                    'Minggu' => 'Minggu',
+                                    'Fleksibel' => 'Fleksibel',
+                                ])
+                                ->required(),
+                            TextInput::make('time')
+                                ->label('Jam')
+                                ->placeholder('18.30 - 21.00')
+                                ->maxLength(80)
+                                ->required(),
+                            TextInput::make('title')
+                                ->label('Nama kelas / program')
+                                ->placeholder('Kelas Karyawan Malam')
+                                ->maxLength(140)
+                                ->required(),
+                            Select::make('mode')
+                                ->label('Mode')
+                                ->options([
+                                    'Tatap muka' => 'Tatap muka',
+                                    'Online' => 'Online',
+                                    'Hybrid' => 'Hybrid',
+                                    'RPL' => 'RPL',
+                                ])
+                                ->default('Hybrid'),
+                            TextInput::make('location')
+                                ->label('Lokasi')
+                                ->placeholder('Kampus / Zoom / LMS')
+                                ->maxLength(140),
+                            Textarea::make('note')
+                                ->label('Keterangan')
+                                ->rows(2)
+                                ->maxLength(220),
+                        ])
+                        ->columns(3)
+                        ->defaultItems(0)
+                        ->addActionLabel('Tambah jadwal kuliah')
                         ->columnSpanFull(),
                 ]),
             Section::make('Testimoni')
@@ -272,7 +324,7 @@ class PartnerCampusSiteResource extends Resource
                     ->copyable(),
                 TextColumn::make('slug')
                     ->label('Preview lokal')
-                    ->formatStateUsing(fn (string $state, Campus $record): string => route('campuses.show', ['campus' => $record->name]))
+                    ->formatStateUsing(fn (string $state, Campus $record): string => $record->publicUrl())
                     ->copyable(),
                 TextColumn::make('status')
                     ->label('Status')
@@ -289,7 +341,7 @@ class PartnerCampusSiteResource extends Resource
                 Tables\Actions\Action::make('open_public')
                     ->label('Buka')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (Campus $record): string => route('campuses.show', ['campus' => $record->name]))
+                    ->url(fn (Campus $record): string => $record->publicUrl())
                     ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
             ]);

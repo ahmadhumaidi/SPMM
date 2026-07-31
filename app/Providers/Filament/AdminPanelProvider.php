@@ -9,6 +9,9 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
+use App\Support\FilamentBackButton;
 use Illuminate\Support\HtmlString;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -32,11 +35,28 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->font('Inter')
+            ->maxContentWidth(MaxWidth::Full)
+            ->navigationGroups([
+                'Reports',
+                'Master Data',
+                'Portal Publik',
+                'CRM',
+                'Payment',
+                'Mahasiswa Baru',
+                'Mahasiswa Lama',
+                'Afiliasi',
+                'PDDIKTI',
+                'Access',
+            ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
             ->renderHook(
                 'panels::head.end',
-                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=23">'),
+                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=34">'),
+            )
+            ->renderHook(
+                PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE,
+                FilamentBackButton::renderHook(),
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -57,3 +77,5 @@ class AdminPanelProvider extends PanelProvider
             ]);
     }
 }
+
+

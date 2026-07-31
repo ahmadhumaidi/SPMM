@@ -5,10 +5,15 @@ namespace App\Filament\Resources;
 use App\Enums\InvoiceStatus;
 use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
+use App\Services\InvoicePaymentReminderMailer;
+use App\Services\InvoiceRegenerationService;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
+use DomainException;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -42,7 +47,10 @@ class InvoiceResource extends Resource
                 ->disabled(),
             TextInput::make('payment_method')->disabled(),
             TextInput::make('payment_url')->disabled()->columnSpanFull(),
-            TextInput::make('status')->disabled(),
+            TextInput::make('status')
+                ->label('Status Keuangan')
+                ->formatStateUsing(fn ($state, ?Invoice $record): string => static::financialStatusLabel($record))
+                ->disabled(),
             DateTimePicker::make('expires_at')->disabled(),
             DateTimePicker::make('paid_at')->disabled(),
         ]);
@@ -71,21 +79,63 @@ class InvoiceResource extends Resource
                 TextColumn::make('amount')
                     ->label('Tagihan Aktif')
                     ->state(fn (Invoice $record): int => static::activeBillingAmount($record))
-                    ->money('IDR'),
-                TextColumn::make('status')->badge(),
+                    ->money('IDR')
+                    ->alignEnd(),
+                TextColumn::make('status')
+                    ->label('Status Keuangan')
+                    ->state(fn (Invoice $record): string => static::financialStatusLabel($record))
+                    ->formatStateUsing(fn (string $state) => FinancialStatusLabels::statusDotHtml($state))
+                    ->html(),
                 TextColumn::make('payment_gateway'),
                 TextColumn::make('expires_at')->dateTime()->sortable(),
                 TextColumn::make('paid_at')->dateTime()->sortable(),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')->options([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Status invoice teknis')
+                    ->options([
                     InvoiceStatus::Pending->value => 'Pending',
                     InvoiceStatus::Paid->value => 'Paid',
                     InvoiceStatus::Expired->value => 'Expired',
                     InvoiceStatus::Cancelled->value => 'Cancelled',
                 ]),
             ])
-            ->actions([Tables\Actions\ViewAction::make()]);
+            ->actions([
+                Tables\Actions\Action::make('send_payment_reminder')
+                    ->label('Kirim Invoice')
+                    ->icon('heroicon-o-envelope')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (Invoice $record): string => 'Kirim email tagihan pendaftaran ini ke '.($record->lead?->email ?: 'email calon mahasiswa').'?')
+                    ->visible(fn (Invoice $record): bool => $record->isPayable() && filled($record->lead?->email))
+                    ->action(function (Invoice $record): void {
+                        app(InvoicePaymentReminderMailer::class)->send($record);
+
+                        Notification::make()
+                            ->title('Invoice dikirim ke '.$record->lead?->email)
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('regenerate_invoice')
+                    ->label('Buat Ulang Tagihan')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->visible(fn (Invoice $record): bool => in_array($record->status, [InvoiceStatus::Expired, InvoiceStatus::Cancelled], true)
+                        && $record->lead !== null
+                        && $record->id === $record->lead->latestInvoice?->id)
+                    ->action(function (Invoice $record, InvoiceRegenerationService $regeneration): void {
+                        try {
+                            $regeneration->regenerate($record->lead);
+
+                            Notification::make()->title('Invoice baru dibuat')->success()->send();
+                        } catch (DomainException $exception) {
+                            Notification::make()->title($exception->getMessage())->danger()->send();
+                        }
+                    }),
+                Tables\Actions\ViewAction::make(),
+            ]);
     }
 
     public static function getPages(): array
@@ -96,6 +146,25 @@ class InvoiceResource extends Resource
         ];
     }
 
+    private static function financialStatusLabel(?Invoice $invoice): string
+    {
+        if (! $invoice?->lead) {
+            return '-';
+        }
+
+        return FinancialStatusLabels::leadStatus($invoice->lead->loadMissing('studentPayments'));
+    }
+
+    private static function financialStatusColor(string $state): string
+    {
+        return match (true) {
+            str_contains($state, 'Herregistrasi') && (str_contains($state, 'Lunas') || str_contains($state, 'Dibebaskan')) => 'success',
+            str_contains($state, 'Registrasi') && (str_contains($state, 'Lunas') || str_contains($state, 'Dibebaskan')) => 'info',
+            str_contains($state, 'Menunggu') => 'warning',
+            str_contains($state, 'Kedaluwarsa') || str_contains($state, 'Ditolak') || str_contains($state, 'Batal') => 'danger',
+            default => 'gray',
+        };
+    }
     private static function activeBillingAmount(?Invoice $invoice): int
     {
         if (! $invoice?->lead) {
@@ -126,3 +195,5 @@ class InvoiceResource extends Resource
             ->sum('amount');
     }
 }
+
+

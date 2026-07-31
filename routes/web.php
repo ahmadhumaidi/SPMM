@@ -32,6 +32,13 @@ Route::domain('affiliate.kampus.media')->group(function (): void {
 });
 
 Route::redirect('/login', '/admin/login')->name('login');
+
+if ($adminHost = parse_url(config('spmm.admin_url', ''), PHP_URL_HOST)) {
+    // Kampus Media's public portal has migrated to its own domain; this app's
+    // own admin domain should no longer serve it and must go straight to login.
+    Route::domain($adminHost)->get('/', fn () => redirect('/admin/login'))->name('home.admin-domain');
+}
+
 Route::get('/', [PublicRegistrationController::class, 'index'])->name('home');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
@@ -48,6 +55,7 @@ Route::get('/affiliate/verifikasi/{token}', [PublicRegistrationController::class
 Route::get('/daftar', [PublicRegistrationController::class, 'create'])->name('registration.create');
 Route::post('/daftar', [PublicRegistrationController::class, 'store'])->name('registration.store');
 Route::get('/thank-you/{lead}', [PublicRegistrationController::class, 'thankYou'])->name('registration.thank-you');
+Route::post('/thank-you/{lead}/bukti-pembayaran', [StudentPortalController::class, 'uploadPublicPaymentProof'])->name('registration.payment-proof.upload');
 Route::get('/local-email/{lead}', [PublicRegistrationController::class, 'localVerificationEmail'])->name('registration.local-email');
 Route::get('/pemberkasan/{token}', [PublicRegistrationController::class, 'showPemberkasan'])->name('student-profile.show');
 Route::post('/pemberkasan/{token}', [PublicRegistrationController::class, 'storePemberkasan'])->name('student-profile.store');
@@ -56,7 +64,7 @@ Route::get('/exports/mahasiswa-aktif.csv', [StudentExportController::class, 'act
 Route::get('/admin/student-payments/{lead}/receipt', function (\App\Models\Lead $lead) {
     $lead->loadMissing(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'studentNumber', 'latestInvoice', 'studentPayments' => fn ($query) => $query->orderBy('paid_at')->orderBy('month')]);
 
-    abort_unless(auth()->check(), 403);
+    abort_unless(auth()->check() && \App\Support\FilamentResourceScope::canAccessCampus($lead->campus_id), 403);
 
     $paidPayments = $lead->studentPayments
         ->filter(fn ($payment) => $payment->payment_type !== 'manual')
@@ -72,6 +80,110 @@ Route::get('/admin/student-payments/{lead}/receipt', function (\App\Models\Lead 
         'totalPaid' => (int) $paidPayments->sum('amount'),
     ], 'kwitansi-'.$lead->id.'.pdf');
 })->middleware('auth')->name('admin.student-payments.receipt');
+
+Route::get('/admin/student-payments/transaction/{payment}/receipt', function (\App\Models\StudentPayment $payment, \Illuminate\Http\Request $request, \App\Services\StudentPaymentReceiptArchiver $archiver) {
+    abort_unless(auth()->check() && \App\Support\FilamentResourceScope::canAccessCampus($payment->lead?->campus_id), 403);
+    abort_unless(in_array($payment->status, ['paid', 'waived'], true), 404);
+
+    $filename = 'kwitansi-'.$payment->lead_id.'-'.$payment->id.'.pdf';
+    $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+    return response($archiver->contentsFor($payment), 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+    ]);
+})->middleware('auth')->name('admin.student-payments.transaction-receipt');
+
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/manual-runner', function (\App\Models\WhatsappBroadcast $broadcast) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.latestInvoice', 'lead.studyProgram'])
+        ->where('status', 'queued')
+        ->orderBy('id')
+        ->get()
+        ->map(fn (\App\Models\WhatsappBroadcastRecipient $recipient): array => [
+            'id' => $recipient->id,
+            'name' => $recipient->lead?->full_name ?? $recipient->recipient_name ?? 'Tanpa nama',
+            'phone' => $recipient->recipient_number,
+            'url' => $broadcast->whatsappWebUrlForRecipient($recipient),
+        ])
+        ->values();
+
+    return view('admin.whatsapp-broadcast-runner', [
+        'broadcast' => $broadcast,
+        'recipients' => $recipients,
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.manual-runner');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/sent', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    if ($recipient->status !== 'sent') {
+        $recipient->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        $broadcast->increment('sent_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.sent');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/invalid', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    if ($recipient->status !== 'invalid') {
+        $recipient->update([
+            'status' => 'invalid',
+            'failed_reason' => 'Nomor invalid',
+        ]);
+
+        $broadcast->increment('failed_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.invalid');
+
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/report', function (\App\Models\WhatsappBroadcast $broadcast) {
+    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.studyProgram'])
+        ->orderBy('id')
+        ->get();
+
+    return view('admin.whatsapp-broadcast-report', [
+        'broadcast' => $broadcast,
+        'recipients' => $recipients,
+        'queuedCount' => $recipients->where('status', 'queued')->count(),
+        'sentCount' => $recipients->where('status', 'sent')->count(),
+        'invalidCount' => $recipients->where('status', 'invalid')->count(),
+        'failedCount' => $recipients->where('status', 'failed')->count(),
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.report');
 
 Route::get('/mahasiswa/login', [StudentPortalController::class, 'login'])->name('student-portal.login');
 Route::post('/mahasiswa/login', [StudentPortalController::class, 'authenticate'])->name('student-portal.authenticate');
@@ -96,10 +208,6 @@ Route::get('/mahasiswa/tugas', [StudentPortalController::class, 'assignments'])-
 Route::post('/mahasiswa/tugas/{assignment}', [StudentPortalController::class, 'submitAssignment'])->name('student-portal.assignments.submit');
 Route::get('/mahasiswa/pengaturan-akun', [StudentPortalController::class, 'accountSettings'])->name('student-portal.account-settings');
 Route::post('/mahasiswa/logout', [StudentPortalController::class, 'logout'])->name('student-portal.logout');
-
-Route::get('/siakad/login', [SeparateSystemPortalController::class, 'login'])->defaults('system', 'siakad')->name('siakad.login');
-Route::post('/siakad/login', [SeparateSystemPortalController::class, 'authenticate'])->defaults('system', 'siakad')->name('siakad.authenticate');
-Route::get('/siakad/dashboard', [SeparateSystemPortalController::class, 'dashboard'])->defaults('system', 'siakad')->middleware('auth')->name('siakad.dashboard');
 
 Route::get('/lms/login', [SeparateSystemPortalController::class, 'login'])->defaults('system', 'lms')->name('lms.login');
 Route::post('/lms/login', [SeparateSystemPortalController::class, 'authenticate'])->defaults('system', 'lms')->name('lms.authenticate');

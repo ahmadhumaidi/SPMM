@@ -4,7 +4,7 @@
     $nim = $lead->studentNumber?->nim ?? 'NIM sementara';
     $avatarInitial = mb_substr($studentName, 0, 1);
     $invoice = $lead->latestInvoice;
-    $virtualAccount = $invoice?->va_number ?: ($invoice?->gateway_reference ?: '-');
+    $virtualAccount = \App\Support\VirtualAccountNumber::forLead($lead);
     $billablePayments = $billablePayments ?? $payments;
     $totalPlan = $billablePayments->sum('amount');
     $totalPaid = $billablePayments->whereIn('status', ['paid', 'waived'])->sum('amount');
@@ -13,12 +13,7 @@
     $activePaymentTotal = $activePaymentTotal ?? 0;
     $billingMonthLabel = $billingMonthLabel ?? now()->translatedFormat('F Y');
     $progress = (int) round(($totalPaid / max($totalPlan, 1)) * 100);
-    $statusLabel = [
-        'unpaid' => 'Belum dibayar',
-        'pending' => 'Menunggu verifikasi',
-        'paid' => 'Lunas',
-        'waived' => 'Dibebaskan',
-    ];
+    $statusLabel = fn ($payment): string => \App\Support\FinancialStatusLabels::paymentStatus($payment);
     $componentLabel = function ($payment): string {
         return collect([
             'Formulir' => $payment->registration_fee,
@@ -150,7 +145,7 @@
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <strong class="text-lg font-black text-navy dark:text-white">{{ $payment->payment_label ?: 'Bulan '.$payment->month }}</strong>
-                                    <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700 dark:bg-red-500/10 dark:text-red-200">{{ $statusLabel[$payment->status] ?? str($payment->status)->replace('_', ' ')->title() }}</span>
+                                    <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700 dark:bg-red-500/10 dark:text-red-200">{{ $statusLabel($payment) }}</span>
                                 </div>
                                 <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $componentLabel($payment) }} - Tgl rencana {{ $payment->due_date?->translatedFormat('d M Y') ?? '-' }}</p>
                             </div>
@@ -228,7 +223,7 @@
                             <label class="grid gap-2">
                                 <span class="text-sm font-black text-slate-700 dark:text-slate-200">Upload struk transfer</span>
                                 <input type="file" name="proof_path" accept=".jpg,.jpeg,.png,.pdf" required class="rounded-2xl border border-slate-200 bg-white p-3 text-sm font-bold file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 8 MB.</span>
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 5 MB.</span>
                             </label>
                             <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyanx px-6 py-4 font-black text-white shadow-glow transition hover:-translate-y-1">
                                 <i data-lucide="upload-cloud" class="h-5 w-5"></i>
@@ -293,7 +288,7 @@
                                 <td class="px-5 py-4 font-semibold text-slate-600 dark:text-slate-300">{{ $componentLabel($payment) }}</td>
                                 <td class="px-5 py-4 text-right font-black text-navy dark:text-white">Rp {{ number_format($payment->amount, 0, ',', '.') }}</td>
                                 <td class="px-5 py-4 font-semibold text-slate-600 dark:text-slate-300">{{ $payment->due_date?->translatedFormat('d M Y') ?? '-' }}</td>
-                                <td class="px-5 py-4"><span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass }}">{{ $statusLabel[$payment->status] ?? str($payment->status)->replace('_', ' ')->title() }}</span></td>
+                                <td class="px-5 py-4"><span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass }}">{{ $statusLabel($payment) }}</span></td>
                                 <td class="px-5 py-4 font-semibold text-slate-600 dark:text-slate-300">{{ $payment->paid_at?->translatedFormat('d M Y H:i') ?? '-' }}</td>
                                 <td class="px-5 py-4 font-semibold text-slate-500 dark:text-slate-400">{{ $payment->notes ?: '-' }}</td>
                             </tr>
@@ -328,3 +323,6 @@
     </script>
 </body>
 </html>
+
+
+

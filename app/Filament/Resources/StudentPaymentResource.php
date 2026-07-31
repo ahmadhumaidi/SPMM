@@ -5,11 +5,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\StudentPaymentResource\Pages;
 use App\Models\Campus;
 use App\Models\Lead;
+use App\Models\StudentPayment;
+use App\Services\StudentPaymentReceiptArchiver;
+use App\Services\StudentPaymentReceiptMailer;
 use App\Services\StudentPaymentScheduleService;
 use App\Support\FilamentResourceScope;
+use App\Support\FinancialStatusLabels;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -25,170 +28,140 @@ use Illuminate\Database\Eloquent\Builder;
 
 class StudentPaymentResource extends Resource
 {
-    protected static ?string $model = Lead::class;
+    protected static ?string $model = StudentPayment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $navigationGroup = 'Payment';
 
-    protected static ?string $navigationLabel = 'Mahasiswa Sudah Bayar';
+    protected static ?string $navigationLabel = 'Pembayaran Realtime';
 
-    protected static ?string $modelLabel = 'Mahasiswa Sudah Bayar';
+    protected static ?string $modelLabel = 'Pembayaran Realtime';
 
     protected static ?int $navigationSort = 1;
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     public static function canAccess(): bool
     {
         return FilamentResourceScope::canAccessPayments();
     }
 
-    public static function isSuperAdmin(): bool
-    {
-        return auth()->user()?->isSuperAdmin() ?? false;
-    }
-
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Section::make('Data Mahasiswa')
-                ->columns(3)
+            Section::make('Transaksi')
+                ->columns(2)
                 ->schema([
-                    TextInput::make('studentBiodata.selection_number')->label('No. Seleksi')->disabled(),
-                    TextInput::make('latestInvoice.va_number')->label('Virtual Account')->disabled(),
-                    TextInput::make('payment_status')
+                    TextInput::make('lead.full_name')->label('Mahasiswa')->disabled()->dehydrated(false),
+                    TextInput::make('lead.campus.name')->label('Kampus')->disabled()->dehydrated(false),
+                    TextInput::make('lead.email')->label('Email')->disabled()->dehydrated(false),
+                    TextInput::make('payment_label')->label('Keterangan Transaksi')->maxLength(255),
+                    TextInput::make('amount')->label('Nominal')->prefix('Rp')->numeric()->required(),
+                    Select::make('status')
                         ->label('Status')
-                        ->formatStateUsing(fn ($state): string => $state?->value ?? (string) $state)
-                        ->disabled(),
-                    TextInput::make('full_name')->label('Nama')->disabled(),
-                    TextInput::make('studentBiodata.group')->label('KLP')->disabled(),
-                    TextInput::make('studyProgram.name')->label('JRS')->disabled(),
-                    TextInput::make('campus.name')->label('Kampus')->disabled(),
-                    TextInput::make('classTrack.name')->label('Program perkuliahan')->disabled(),
-                    TextInput::make('email')->label('Email')->disabled(),
-                ]),
-            Section::make('Tagihan Pendaftaran')
-                ->columns(3)
-                ->schema([
-                    TextInput::make('latestInvoice.invoice_number')->label('No. Invoice')->disabled(),
-                    TextInput::make('latestInvoice.amount')->label('Nominal pendaftaran')->prefix('Rp')->disabled(),
-                    TextInput::make('latestInvoice.status')->label('Status invoice')->disabled(),
-                ]),
-            Section::make('Tabel Rencana dan Realita Pembayaran')
-                ->schema([
-                    Repeater::make('studentPayments')
-                        ->hiddenLabel()
-                        ->relationship(modifyQueryUsing: fn (Builder $query): Builder => $query->orderBy('month'))
-                        ->itemLabel(fn (array $state): string => ((int) ($state['month'] ?? 0)) === 0 ? 'Formulir Pendaftaran' : 'Bulan '.($state['month'] ?? '-'))
-                        ->schema([
-                            TextInput::make('month')->label('Bulan')->helperText('0 = pendaftaran, 1-48 = cicilan.')->numeric()->disabled(fn (): bool => ! static::isSuperAdmin())->dehydrated(),
-                            TextInput::make('payment_label')->label('Rencana')->disabled(fn (): bool => ! static::isSuperAdmin())->dehydrated(),
-                            TextInput::make('registration_fee')
-                                ->label('Formulir')
-                                ->prefix('Rp')
-                                ->numeric()
-                                ->disabled(fn (): bool => ! static::isSuperAdmin())
-                                ->visible(fn ($get): bool => (int) ($get('month') ?? 0) === 0)
-                                ->dehydrated(),
-                            TextInput::make('development_fee')
-                                ->label('Development')
-                                ->prefix('Rp')
-                                ->numeric()
-                                ->disabled(fn (): bool => ! static::isSuperAdmin())
-                                ->visible(fn ($get): bool => (int) ($get('month') ?? 0) > 0)
-                                ->dehydrated(),
-                            TextInput::make('tuition_fee')
-                                ->label('Tuition')
-                                ->prefix('Rp')
-                                ->numeric()
-                                ->disabled(fn (): bool => ! static::isSuperAdmin())
-                                ->visible(fn ($get): bool => (int) ($get('month') ?? 0) > 0)
-                                ->dehydrated(),
-                            TextInput::make('ukt')
-                                ->label('UKT')
-                                ->prefix('Rp')
-                                ->numeric()
-                                ->disabled(fn (): bool => ! static::isSuperAdmin())
-                                ->visible(fn ($get): bool => (int) ($get('month') ?? 0) > 0)
-                                ->dehydrated(),
-                            TextInput::make('amount')->label('Total rencana')->prefix('Rp')->numeric()->disabled(fn (): bool => ! static::isSuperAdmin())->dehydrated(),
-                            DatePicker::make('due_date')->label('Tgl rencana pembayaran')->disabled(fn (): bool => ! static::isSuperAdmin()),
-                            Select::make('status')
-                                ->label('Realita')
-                                ->options([
-                                    'unpaid' => 'Belum dibayar',
-                                    'pending' => 'Menunggu verifikasi',
-                                    'paid' => 'Lunas',
-                                    'waived' => 'Dibebaskan',
-                                ])
-                                ->required(),
-                            DateTimePicker::make('paid_at')->label('Tgl realita/lunas'),
-                            Textarea::make('notes')->label('Catatan')->rows(1)->columnSpanFull(),
+                        ->options([
+                            'unpaid' => 'Belum dibayar',
+                            'pending' => 'Menunggu verifikasi',
+                            'paid' => 'Lunas',
+                            'waived' => 'Dibebaskan',
                         ])
-                        ->columns(6)
-                        ->defaultItems(0)
-                        ->addable(fn (): bool => static::isSuperAdmin())
-                        ->deletable(fn (): bool => static::isSuperAdmin())
-                        ->reorderable(false),
-                ])
-                ->columnSpanFull(),
+                        ->required(),
+                    DatePicker::make('due_date')->label('Tanggal jatuh tempo'),
+                    DateTimePicker::make('paid_at')->label('Tanggal lunas'),
+                    Textarea::make('notes')->label('Catatan')->columnSpanFull(),
+                ]),
         ]);
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return FilamentResourceScope::applyManagedLeadCampusScope(
+        return FilamentResourceScope::applyRelatedCampusScope(
             parent::getEloquentQuery()
-                ->with(['campus', 'studyProgram', 'classTrack', 'studentBiodata', 'latestInvoice', 'studentPayments'])
+                ->with(['lead.campus', 'lead.studyProgram', 'lead.classTrack'])
+                ->where('status', 'paid')
+                ->where(fn (Builder $query): Builder => $query->whereNull('payment_type')->orWhere('payment_type', '!=', 'manual')),
+            'lead'
         );
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->whereHas(
-                'studentPayments',
-                fn (Builder $paymentQuery): Builder => $paymentQuery
-                    ->where('status', 'paid')
-                    ->where(fn (Builder $typeQuery): Builder => $typeQuery
-                        ->whereNull('payment_type')
-                        ->orWhere('payment_type', '!=', 'manual')),
-            ))
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('paid_at', 'desc')
             ->groups([
-                Group::make('campus.name')->label('Kampus')->collapsible(),
+                Group::make('lead.campus.name')->label('Kampus')->collapsible(),
             ])
             ->columns([
                 \App\Support\FilamentTable::rowNumberColumn(),
-                TextColumn::make('studentBiodata.selection_number')
-                    ->label('NO. SELEKSI')
-                    ->state(fn (Lead $record): string => $record->studentBiodata?->selection_number ?? static::selectionNumberFor($record))
-                    ->searchable(query: fn (Builder $query, string $search): Builder => $query->whereHas('studentBiodata', fn (Builder $biodataQuery) => $biodataQuery->where('selection_number', 'like', "%{$search}%"))),
-                TextColumn::make('latestInvoice.va_number')
-                    ->label('VIRTUAL ACCOUNT')
-                    ->state(fn (Lead $record): string => $record->latestInvoice?->va_number ?: ($record->latestInvoice?->gateway_reference ?: '-')),
-                TextColumn::make('full_name')->label('N A M A')->searchable()->sortable(),
-                TextColumn::make('payment_status')->label('STATUS')->badge(),
-                TextColumn::make('studentBiodata.group')
-                    ->label('KLP')
-                    ->state(fn (Lead $record): string => $record->studentBiodata?->group ?: ($record->classTrack?->name ?: '-')),
-                TextColumn::make('studyProgram.name')->label('JRS')->searchable(),
+                TextColumn::make('lead.full_name')->label('MAHASISWA')->searchable()->sortable(),
+                TextColumn::make('lead.campus.name')->label('KAMPUS')->searchable(),
+                TextColumn::make('payment_label')
+                    ->label('TRANSAKSI')
+                    ->formatStateUsing(fn (?string $state, StudentPayment $record): string => $state ?: ((int) $record->month === 0 ? 'Formulir Pendaftaran' : 'Bulan '.$record->month)),
+                TextColumn::make('amount')->label('NOMINAL')->money('IDR')->sortable()->alignEnd(),
+                TextColumn::make('status')
+                    ->label('STATUS KEUANGAN')
+                    ->formatStateUsing(fn (?string $state, StudentPayment $record) => FinancialStatusLabels::statusDotHtml(FinancialStatusLabels::paymentStatus($record)))
+                    ->html(),
+                TextColumn::make('paid_at')->label('TGL LUNAS')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('lead.email')->label('EMAIL')->searchable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('receipt_archived_at')
+                    ->label('ARSIP')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-archive-box')
+                    ->falseIcon('heroicon-o-exclamation-circle')
+                    ->trueColor('success')
+                    ->falseColor('warning')
+                    ->tooltip(fn (StudentPayment $record): string => $record->receipt_archived_at
+                        ? 'Diarsipkan '.$record->receipt_archived_at->format('d M Y H:i')
+                        : 'Kwitansi belum diarsipkan'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('campus_id')
+                Tables\Filters\SelectFilter::make('campus')
                     ->label('Kampus')
                     ->options(fn (): array => FilamentResourceScope::applyCampusScope(Campus::query()->orderBy('name'), 'id')->pluck('name', 'id')->all())
-                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null) ? $query->where('leads.campus_id', $data['value']) : $query),
+                    ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
+                        ? $query->whereHas('lead', fn (Builder $leadQuery) => $leadQuery->where('campus_id', $data['value']))
+                        : $query),
+                Tables\Filters\Filter::make('unarchived_receipt')
+                    ->label('Kwitansi belum diarsipkan')
+                    ->query(fn (Builder $query): Builder => $query->whereNull('receipt_pdf_path')),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('archive_receipts')
+                    ->label('Arsipkan kwitansi tertunda')
+                    ->icon('heroicon-o-archive-box-arrow-down')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (): string => 'Membuat dan menyimpan file PDF untuk semua kwitansi lunas yang belum diarsipkan.')
+                    ->action(function (StudentPaymentReceiptArchiver $archiver): void {
+                        $pending = StudentPayment::query()
+                            ->whereIn('status', ['paid', 'waived'])
+                            ->whereNull('receipt_pdf_path')
+                            ->get();
+
+                        foreach ($pending as $payment) {
+                            $archiver->contentsFor($payment);
+                        }
+
+                        Notification::make()
+                            ->title($pending->count().' kwitansi berhasil diarsipkan')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('generate_schedules')
                     ->label('Generate semua jadwal')
                     ->icon('heroicon-o-arrow-path')
-                    ->visible(fn (): bool => static::isSuperAdmin())
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                     ->requiresConfirmation()
                     ->action(function (StudentPaymentScheduleService $service): void {
                         $count = 0;
 
-                        static::getEloquentQuery()
+                        Lead::query()
                             ->with(['latestInvoice'])
                             ->whereDoesntHave('studentPayments')
                             ->chunkById(100, function ($leads) use ($service, &$count): void {
@@ -209,17 +182,34 @@ class StudentPaymentResource extends Resource
                     ->label('Kwitansi')
                     ->icon('heroicon-o-printer')
                     ->color('gray')
-                    ->url(fn (Lead $record): string => route('admin.student-payments.receipt', $record))
+                    ->url(fn (StudentPayment $record): string => route('admin.student-payments.transaction-receipt', $record))
                     ->openUrlInNewTab(),
+                Tables\Actions\Action::make('download_receipt')
+                    ->label('Unduh')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->visible(fn (StudentPayment $record): bool => in_array($record->status, ['paid', 'waived'], true))
+                    ->url(fn (StudentPayment $record): string => route('admin.student-payments.transaction-receipt', ['payment' => $record, 'download' => 1])),
+                Tables\Actions\Action::make('send_receipt_email')
+                    ->label('Kirim Email')
+                    ->icon('heroicon-o-envelope')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn (StudentPayment $record): string => 'Kirim ulang kwitansi transaksi ini ke '.($record->lead?->email ?: 'email mahasiswa').'?')
+                    ->visible(fn (StudentPayment $record): bool => filled($record->lead?->email))
+                    ->action(function (StudentPayment $record): void {
+                        app(StudentPaymentReceiptMailer::class)->send($record);
+
+                        Notification::make()
+                            ->title('Kwitansi dikirim ke '.$record->lead?->email)
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\ViewAction::make()->label('Lihat'),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => FilamentResourceScope::isSuperAdmin()),
             ])
             ->bulkActions([]);
-    }
-
-    public static function selectionNumberFor(Lead $lead): string
-    {
-        return 'SEL-'.($lead->created_at?->format('Ymd') ?? now()->format('Ymd')).'-'.str_pad((string) $lead->id, 5, '0', STR_PAD_LEFT);
     }
 
     public static function getPages(): array
@@ -231,3 +221,4 @@ class StudentPaymentResource extends Resource
         ];
     }
 }
+
