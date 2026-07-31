@@ -99,6 +99,11 @@ class NewStudentFeeDetail extends Page implements HasTable
                                             ->where('month', 0)
                                             ->whereIn('status', ['paid', 'waived']));
                                 });
+                        })
+                        ->orWhere(function (Builder $unscheduledQuery): void {
+                            $unscheduledQuery
+                                ->whereDoesntHave('studentBiodata')
+                                ->whereDoesntHave('studentPayments');
                         });
 
                     return;
