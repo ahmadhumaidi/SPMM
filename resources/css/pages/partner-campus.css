@@ -1,0 +1,13 @@
+.pattern {
+    background-image:
+        radial-gradient(circle at 20% 15%, rgba(245, 158, 11, .18), transparent 26%),
+        radial-gradient(circle at 85% 10%, rgba(14, 165, 233, .20), transparent 30%),
+        linear-gradient(135deg, #071a3d 0%, #0b2d63 54%, #0a4a78 100%);
+}
+.grid-pattern {
+    background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
+    background-size: 42px 42px;
+}
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+.skeleton-loader.is-hidden { display: none; }

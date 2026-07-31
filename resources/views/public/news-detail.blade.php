@@ -57,8 +57,7 @@
             ],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
-    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <script src="https://unpkg.com/lucide@1.26.0"></script>
+    @vite(['resources/css/app.css', 'resources/js/pages/news.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <nav class="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
@@ -104,6 +103,5 @@
         </article>
     </main>
 
-    <script>lucide.createIcons();</script>
 </body>
 </html>

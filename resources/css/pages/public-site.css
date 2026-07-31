@@ -1172,6 +1172,28 @@ small {
     to { transform: translateX(-7%) rotate(1deg); }
 }
 
+.sp-glass-field {
+    background: rgba(255, 255, 255, .1);
+    border: 1px solid rgba(255, 255, 255, .25);
+    color: #fff;
+}
+.sp-glass-field::placeholder {
+    color: rgba(255, 255, 255, .55);
+}
+.sp-glass-field:focus {
+    border-color: rgba(255, 255, 255, .5);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .18);
+    outline: none;
+}
+.sp-glass-field option {
+    color: #0f172a;
+}
+.sp-glass-error {
+    background: rgba(248, 113, 113, .12);
+    border: 1px solid rgba(248, 113, 113, .35);
+    color: #fecaca;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .sp-reveal,
     .sp-hero-visual {

@@ -188,25 +188,7 @@
             ],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
     </script>
-    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <link rel="stylesheet" href="/css/public.css?v=3">
-    <script src="https://unpkg.com/lucide@1.26.0"></script>
-    <style>
-        body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .pattern {
-            background-image:
-                radial-gradient(circle at 20% 15%, rgba(245, 158, 11, .18), transparent 26%),
-                radial-gradient(circle at 85% 10%, rgba(14, 165, 233, .20), transparent 30%),
-                linear-gradient(135deg, #071a3d 0%, #0b2d63 54%, #0a4a78 100%);
-        }
-        .grid-pattern {
-            background-image: linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px);
-            background-size: 42px 42px;
-        }
-        .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
-        .reveal.is-visible { opacity: 1; transform: translateY(0); }
-        .skeleton-loader.is-hidden { display: none; }
-    </style>
+    @vite(['resources/css/app.css', 'resources/css/pages/public-site.css', 'resources/css/pages/partner-campus.css', 'resources/js/pages/partner-campus.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <div class="skeleton-loader fixed inset-0 z-[70] bg-white p-6">
@@ -283,18 +265,18 @@
                 </div>
             </section>
 
-            <section id="daftar" class="reveal rounded-[2rem] border border-white/20 bg-white p-5 text-slate-900 shadow-2xl shadow-slate-950/25 sm:p-7">
+            <section id="daftar" class="reveal rounded-[2rem] border border-white/25 bg-white/10 p-5 text-white shadow-2xl shadow-slate-950/25 backdrop-blur-xl sm:p-7">
                 <div class="mb-5 flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm font-black uppercase tracking-wide text-sky-700">Form Pendaftaran Cepat</p>
-                        <h2 class="mt-1 text-2xl font-black text-navy">Mulai konsultasi PMB</h2>
+                        <p class="text-sm font-black uppercase tracking-wide text-sky-100">Form Pendaftaran Cepat</p>
+                        <h2 class="mt-1 text-2xl font-black text-white">Mulai konsultasi PMB</h2>
                     </div>
-                    <span class="grid h-12 w-12 place-items-center rounded-2xl bg-sky-50 text-sky-700">
+                    <span class="grid h-12 w-12 place-items-center rounded-2xl border border-white/20 bg-white/15 text-sky-100">
                         <i data-lucide="graduation-cap" class="h-6 w-6"></i>
                     </span>
                 </div>
                 @if ($errors->any())
-                    <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+                    <div class="sp-glass-error mb-4 rounded-2xl p-4 text-sm font-semibold">
                         <p>Mohon periksa lagi data pendaftaran.</p>
                         <ul class="mt-2 list-disc space-y-1 pl-5">
                             @foreach ($errors->all() as $error)
@@ -311,20 +293,20 @@
 
                     <label class="grid gap-2 text-sm font-bold">
                         Nama
-                        <input name="full_name" value="{{ old('full_name') }}" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="Nama lengkap">
+                        <input name="full_name" value="{{ old('full_name') }}" required class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition" placeholder="Nama lengkap">
                     </label>
                     <label class="grid gap-2 text-sm font-bold">
                         No WhatsApp
-                        <input name="whatsapp_number" value="{{ old('whatsapp_number') }}" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="08xxxxxxxxxx">
+                        <input name="whatsapp_number" value="{{ old('whatsapp_number') }}" required class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition" placeholder="08xxxxxxxxxx">
                     </label>
                     <label class="grid gap-2 text-sm font-bold">
                         Email Mahasiswa
-                        <input type="email" name="email" value="{{ old('email') }}" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4" placeholder="nama@email.com">
+                        <input type="email" name="email" value="{{ old('email') }}" required class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition" placeholder="nama@email.com">
                     </label>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="grid gap-2 text-sm font-bold">
                             Jenjang Pendidikan
-                            <select class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4">
+                            <select class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition">
                                 <option>S1 Sarjana</option>
                                 <option>D3 Diploma</option>
                                 <option>D4 Sarjana Terapan</option>
@@ -333,7 +315,7 @@
                         </label>
                         <label class="grid gap-2 text-sm font-bold">
                             Program Studi
-                            <select name="study_program_id" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4">
+                            <select name="study_program_id" required class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition">
                                 <option value="">Pilih prodi</option>
                                 @foreach ($campus->studyPrograms as $program)
                                     <option value="{{ $program->id }}" @selected(old('study_program_id') == $program->id)>
@@ -345,7 +327,7 @@
                     </div>
                     <label class="grid gap-2 text-sm font-bold">
                         Waktu Kuliah
-                        <select name="class_track_id" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 outline-none ring-sky-500/20 transition focus:border-sky-500 focus:ring-4">
+                        <select name="class_track_id" required class="sp-glass-field h-12 rounded-2xl px-4 outline-none transition">
                             <option value="">Pilih waktu kuliah</option>
                             @foreach ($activeTracks as $track)
                                 <option value="{{ $track->id }}" @selected(old('class_track_id') == $track->id)>{{ $track->name }}</option>
@@ -354,14 +336,13 @@
                     </label>
                     <input type="hidden" name="origin_school" value="{{ old('origin_school') }}">
                     <input type="hidden" name="graduation_year" value="{{ old('graduation_year') }}">
-                    <button class="mt-2 h-13 rounded-2xl bg-navy px-6 py-4 font-black text-white shadow-xl shadow-slate-900/20 transition hover:-translate-y-1 hover:bg-sky-900">
+                    <button class="mt-2 h-13 rounded-2xl bg-gold px-6 py-4 font-black text-navy shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:bg-yellow-400">
                         Daftar
                     </button>
-                    <p class="text-center text-xs font-semibold leading-5 text-slate-500">Tim PMB akan menghubungi via WhatsApp untuk konsultasi dan arahan pembayaran.</p>
+                    <p class="text-center text-xs font-semibold leading-5 text-sky-100">Tim PMB akan menghubungi via WhatsApp untuk konsultasi dan arahan pembayaran.</p>
                 </form>
             </section>
         </div>
-        <div class="sp-hero-wave" aria-hidden="true"><span></span></div>
     </header>
 
     <main>
@@ -933,20 +914,6 @@
     </a>
 
     <script>
-        window.addEventListener('load', () => {
-            document.querySelector('.skeleton-loader')?.classList.add('is-hidden');
-        });
-
-        lucide.createIcons();
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) entry.target.classList.add('is-visible');
-            });
-        }, { threshold: 0.12 });
-
-        document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
-
         const track = document.querySelector('[data-testimonial-track]');
         let slide = 0;
         const maxSlide = 2;

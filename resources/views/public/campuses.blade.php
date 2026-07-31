@@ -133,6 +133,7 @@
     <header class="hero-bg relative overflow-hidden text-white">
         <div class="hero-orb -left-16 -top-16 h-72 w-72 bg-gold/40" aria-hidden="true"></div>
         <div class="hero-orb -right-10 top-24 h-80 w-80 bg-sky-400/40 [animation-delay:-4s]" aria-hidden="true"></div>
+        <div class="hero-orb -bottom-16 right-8 h-96 w-96 bg-fuchsia-400/50 [animation-delay:-2s]" aria-hidden="true"></div>
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
         <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
         <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:min-h-[calc(100vh-68px)] lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-16">

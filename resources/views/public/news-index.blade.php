@@ -25,8 +25,7 @@
     <meta name="twitter:title" content="{{ $title }} | Kampus Media">
     <meta name="twitter:description" content="{{ $subtitle }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
-    <link rel="stylesheet" href="/css/tailwind-build.css?v=1">
-    <script src="https://unpkg.com/lucide@1.26.0"></script>
+    @vite(['resources/css/app.css', 'resources/js/pages/news.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
     <nav class="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
@@ -90,6 +89,5 @@
         @endif
     </main>
 
-    <script>lucide.createIcons();</script>
 </body>
 </html>
