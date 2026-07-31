@@ -11,20 +11,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title }} | Kampus Media</title>
-    <meta name="description" content="{{ $subtitle }}">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="{{ $canonicalUrl }}">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Kampus Media">
-    <meta property="og:title" content="{{ $title }} | Kampus Media">
-    <meta property="og:description" content="{{ $subtitle }}">
-    <meta property="og:url" content="{{ $canonicalUrl }}">
-    <meta property="og:image" content="{{ $seoImage }}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $title }} | Kampus Media">
-    <meta name="twitter:description" content="{{ $subtitle }}">
-    <meta name="twitter:image" content="{{ $seoImage }}">
+    <x-seo-meta
+        :title="$title.' | Kampus Media'"
+        :description="$subtitle"
+        :canonical="$canonicalUrl"
+        :image="$seoImage"
+    />
     @vite(['resources/css/app.css', 'resources/js/pages/news.js'])
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">

@@ -4,27 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     @php
-        $pageTitle = $title ?? 'Kampus Media';
+        $pageTitle = ($title ?? 'Kampus Media').' | Kampus Media';
         $pageDescription = $description ?? 'Daftar kuliah online melalui Kampus Media. Pilih kampus, program studi, program perkuliahan, dan dapatkan invoice pendaftaran otomatis.';
         $canonicalUrl = $canonical ?? url()->current();
         $seoImage = url('/images/social/logo%20kampus%20media.png');
         $brandCampus = $campus ?? null;
         $brandLogoUrl = $brandCampus?->logo_path ? \Illuminate\Support\Facades\Storage::url($brandCampus->logo_path) : null;
     @endphp
-    <title>{{ $pageTitle }} | Kampus Media</title>
-    <meta name="description" content="{{ $pageDescription }}">
-    <meta name="robots" content="{{ ($noindex ?? false) ? 'noindex, nofollow' : 'index, follow' }}">
-    <link rel="canonical" href="{{ $canonicalUrl }}">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Kampus Media">
-    <meta property="og:title" content="{{ $pageTitle }} | Kampus Media">
-    <meta property="og:description" content="{{ $pageDescription }}">
-    <meta property="og:url" content="{{ $canonicalUrl }}">
-    <meta property="og:image" content="{{ $seoImage }}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $pageTitle }} | Kampus Media">
-    <meta name="twitter:description" content="{{ $pageDescription }}">
-    <meta name="twitter:image" content="{{ $seoImage }}">
+    <x-seo-meta
+        :title="$pageTitle"
+        :description="$pageDescription"
+        :canonical="$canonicalUrl"
+        :image="$seoImage"
+        :noindex="$noindex ?? false"
+    />
     <script type="application/ld+json">
         {!! json_encode([
             '@@context' => 'https://schema.org',

@@ -143,21 +143,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $seoTitle }}</title>
-    <meta name="description" content="{{ $seoDescription }}">
-    <meta name="keywords" content="PMB, kuliah karyawan, kuliah online, {{ $campus->name }}, kampus Indonesia">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="{{ $canonicalUrl }}">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Kampus Media">
-    <meta property="og:title" content="{{ $seoTitle }}">
-    <meta property="og:description" content="{{ $seoDescription }}">
-    <meta property="og:url" content="{{ $canonicalUrl }}">
-    <meta property="og:image" content="{{ $seoImage }}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $seoTitle }}">
-    <meta name="twitter:description" content="{{ $seoDescription }}">
-    <meta name="twitter:image" content="{{ $seoImage }}">
+    <x-seo-meta
+        :title="$seoTitle"
+        :description="$seoDescription"
+        :canonical="$canonicalUrl"
+        :image="$seoImage"
+        :keywords="'PMB, kuliah karyawan, kuliah online, '.$campus->name.', kampus Indonesia'"
+    />
     <script type="application/ld+json">
         {!! json_encode([
             '@@context' => 'https://schema.org',
