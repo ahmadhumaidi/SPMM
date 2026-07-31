@@ -1,7 +1,7 @@
 @php
     use Illuminate\Support\Facades\Storage;
     $canonicalUrl = $campus
-        ? route('campuses.news.index', ['campus' => $campus->name])
+        ? route('campuses.news.index', ['campus' => $campus->slug])
         : route('news.index');
     $seoImage = url('/images/social/logo%20kampus%20media.png');
 @endphp
@@ -30,7 +30,7 @@
 <body class="bg-slate-50 text-slate-900 antialiased">
     <nav class="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <a href="{{ $campus ? route('campuses.show', ['campus' => $campus->name]) : route('campuses.index') }}" class="flex items-center gap-3">
+            <a href="{{ $campus ? route('campuses.show', ['campus' => $campus->slug]) : route('campuses.index') }}" class="flex items-center gap-3">
                 <span class="grid h-11 w-11 place-items-center rounded-xl bg-[#071a3d] text-lg font-black text-white">KN</span>
                 <span>
                     <span class="block text-sm font-black leading-tight text-[#071a3d] sm:text-base">Kampus Media</span>

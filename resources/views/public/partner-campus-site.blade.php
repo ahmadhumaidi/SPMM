@@ -807,7 +807,7 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-news-prev class="grid h-11 w-11 place-items-center rounded-full border border-slate-200 bg-white text-navy shadow-sm"><i data-lucide="chevron-left" class="h-5 w-5"></i></button>
                         <button type="button" data-news-next class="grid h-11 w-11 place-items-center rounded-full border border-slate-200 bg-white text-navy shadow-sm"><i data-lucide="chevron-right" class="h-5 w-5"></i></button>
-                        <a href="{{ route('campuses.news.index', ['campus' => $campus->name]) }}" class="inline-flex rounded-full bg-gold px-6 py-3 font-black text-navy shadow-lg shadow-orange-500/20">Lihat Semua Berita</a>
+                        <a href="{{ route('campuses.news.index', ['campus' => $campus->slug]) }}" class="inline-flex rounded-full bg-gold px-6 py-3 font-black text-navy shadow-lg shadow-orange-500/20">Lihat Semua Berita</a>
                     </div>
                 </div>
 
@@ -841,7 +841,7 @@
                         </div>
                     </div>
                     <div class="reveal mt-8 text-center">
-                        <a href="{{ route('campuses.news.index', ['campus' => $campus->name]) }}" class="inline-flex rounded-full border border-slate-200 bg-white px-7 py-4 font-black text-navy shadow-sm transition hover:-translate-y-1 hover:shadow-soft">Selengkapnya</a>
+                        <a href="{{ route('campuses.news.index', ['campus' => $campus->slug]) }}" class="inline-flex rounded-full border border-slate-200 bg-white px-7 py-4 font-black text-navy shadow-sm transition hover:-translate-y-1 hover:shadow-soft">Selengkapnya</a>
                     </div>
                 @endif
             </div>

@@ -310,7 +310,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-6 flex gap-3">
-                                    <a class="flex-1 rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-black text-navy transition group-hover:border-sky-300" href="{{ route('campuses.show', ['campus' => $campus->name]) }}">Kunjungi</a>
+                                    <a class="flex-1 rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-black text-navy transition group-hover:border-sky-300" href="{{ route('campuses.show', ['campus' => $campus->slug]) }}">Kunjungi</a>
                                     <a class="flex-1 rounded-full bg-sky-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-sky-700" href="{{ route('registration.create', ['kampus' => $campus->slug]) }}">Daftar</a>
                                 </div>
                             </article>

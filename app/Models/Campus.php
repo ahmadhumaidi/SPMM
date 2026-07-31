@@ -70,6 +70,6 @@ class Campus extends Model
             return 'https://'.$this->subdomain.'.kampus.media';
         }
 
-        return route('campuses.show', ['campus' => $this->name]);
+        return route('campuses.show', ['campus' => $this->slug]);
     }
 }

@@ -464,11 +464,18 @@ class PublicRegistrationController extends Controller
         ]);
     }
 
-    public function campusNewsIndex(Campus|string $campus): View
+    public function campusNewsIndex(Request $request, Campus|string $campus): RedirectResponse|View
     {
         $campus = $this->resolveCampusRouteValue($campus);
 
         abort_unless($campus->status->value === 'active', 404);
+
+        $publicUrl = $campus->publicUrl();
+        $publicHost = parse_url($publicUrl, PHP_URL_HOST);
+
+        if (! app()->environment('local') && filled($publicHost) && $request->getHost() !== $publicHost) {
+            return redirect()->away(rtrim($publicUrl, '/').'/kampus/'.$campus->slug.'/berita');
+        }
 
         $educationNews = $this->campusNewsQuery($campus)->paginate(12);
 

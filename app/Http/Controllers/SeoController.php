@@ -52,7 +52,7 @@ class SeoController extends Controller
                     'priority' => '0.8',
                 ]);
                 $urls->push([
-                    'loc' => route('campuses.news.index', ['campus' => $campus->name]),
+                    'loc' => route('campuses.news.index', ['campus' => $campus->slug]),
                     'lastmod' => $campus->updated_at,
                     'changefreq' => 'weekly',
                     'priority' => '0.6',
