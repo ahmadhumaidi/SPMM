@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\AffiliateCommission;
+use App\Models\AffiliateNetwork;
 use App\Models\Campus;
 use App\Models\ClassTrack;
 use App\Models\EducationNews;
@@ -17,11 +19,12 @@ use App\Models\StudentProfile;
 use App\Models\StudyProgram;
 use App\Models\User;
 use App\Observers\AuditModelObserver;
+use App\Observers\StudentPaymentCommissionObserver;
 use App\Services\AuditLogger;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
         foreach ($this->auditedModels() as $model) {
             $model::observe(AuditModelObserver::class);
         }
+
+        StudentPayment::observe(StudentPaymentCommissionObserver::class);
 
         Event::listen(Login::class, function (Login $event): void {
             $user = $event->user;
@@ -68,6 +73,8 @@ class AppServiceProvider extends ServiceProvider
     private function auditedModels(): array
     {
         return [
+            AffiliateCommission::class,
+            AffiliateNetwork::class,
             Campus::class,
             StudyProgram::class,
             ClassTrack::class,
@@ -85,4 +92,3 @@ class AppServiceProvider extends ServiceProvider
         ];
     }
 }
-

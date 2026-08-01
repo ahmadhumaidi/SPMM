@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\WhatsappBroadcastRecipient;
+use App\Support\PhoneNumber;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
@@ -39,7 +40,7 @@ class SendWhatsappBroadcastRecipientViaFonnte implements ShouldQueue
                 ->timeout(15)
                 ->withHeaders(['Authorization' => $token])
                 ->post('https://api.fonnte.com/send', [
-                    'target' => $recipient->recipient_number,
+                    'target' => PhoneNumber::normalizeWhatsapp((string) $recipient->recipient_number, config('spmm.whatsapp.default_country_code')),
                     'message' => $message,
                 ]);
 

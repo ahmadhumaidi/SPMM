@@ -5,6 +5,8 @@ namespace App\Services\Whatsapp;
 use App\Models\Lead;
 use App\Models\WhatsappBroadcast;
 use App\Models\WhatsappBroadcastRecipient;
+use App\Support\FilamentResourceScope;
+use App\Support\PhoneNumber;
 use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -44,7 +46,8 @@ class WhatsappBroadcastService
             return 0;
         }
 
-        $query = Lead::query()->whereNotNull('whatsapp_number');
+        $query = FilamentResourceScope::applyManagedLeadCampusScope(Lead::query())
+            ->whereNotNull('whatsapp_number');
 
         if ($broadcast->campus_id) {
             $query->where('campus_id', $broadcast->campus_id);
@@ -77,17 +80,29 @@ class WhatsappBroadcastService
         }
 
         $count = 0;
+        $existingNumbers = $broadcast->recipients()
+            ->pluck('recipient_number')
+            ->map(fn (string $number): string => $this->normalizeRecipientNumber($number))
+            ->filter()
+            ->flip();
 
         foreach ($this->parseRecipientsFile($broadcast->recipients_file_path) as $row) {
+            $number = $this->normalizeRecipientNumber($row['recipient_number']);
+
+            if ($number === '' || $existingNumbers->has($number)) {
+                continue;
+            }
+
             $recipient = WhatsappBroadcastRecipient::create([
                 'whatsapp_broadcast_id' => $broadcast->id,
                 'lead_id' => null,
-                'recipient_number' => $row['recipient_number'],
+                'recipient_number' => $number,
                 'recipient_name' => $row['recipient_name'],
                 'status' => 'queued',
             ]);
 
             if ($recipient->wasRecentlyCreated) {
+                $existingNumbers->put($number, true);
                 $count++;
             }
         }
@@ -98,6 +113,12 @@ class WhatsappBroadcastService
         return $count;
     }
 
+    private function normalizeRecipientNumber(string $number): string
+    {
+        $normalized = PhoneNumber::normalizeWhatsapp($number, config('spmm.whatsapp.default_country_code'));
+
+        return strlen($normalized) >= 9 ? $normalized : '';
+    }
     /**
      * @return array<int, array{recipient_number: string, recipient_name: ?string}>
      */

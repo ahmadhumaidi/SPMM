@@ -8,6 +8,8 @@ use App\Models\ReferralPartner;
 
 class ReferralService
 {
+    public function __construct(private readonly AffiliateCommissionEngine $commissionEngine) {}
+
     public function partnerForCode(?string $code): ?ReferralPartner
     {
         if (blank($code)) {
@@ -38,9 +40,9 @@ class ReferralService
                 'commission_status' => 'pending',
                 'registration_commission_amount' => 0,
                 'registration_commission_status' => 'pending',
-                'herregistration_commission_amount' => 500000,
+                'herregistration_commission_amount' => 400000,
                 'herregistration_commission_status' => 'pending',
-                'semester1_commission_amount' => 500000,
+                'semester1_commission_amount' => 400000,
                 'semester1_commission_status' => 'pending',
             ],
         );
@@ -53,90 +55,6 @@ class ReferralService
 
     public function syncMilestones(Lead $lead): void
     {
-        $conversion = $lead->referralConversion;
-
-        if (! $conversion) {
-            return;
-        }
-
-        $allPayments = $lead->studentPayments()
-            ->where(fn ($query) => $query->whereNull('payment_type')->orWhere('payment_type', '!=', 'manual'))
-            ->get();
-
-        $paidStatuses = ['paid', 'waived'];
-
-        $registrationPayment = $allPayments
-            ->where('month', 0)
-            ->first(fn ($payment): bool => in_array($payment->status, $paidStatuses, true));
-
-        $payments = $allPayments->where('month', '>', 0);
-
-        $herregistrationPayment = $payments
-            ->where('month', 1)
-            ->first(fn ($payment): bool => in_array($payment->status, $paidStatuses, true));
-
-        $semesterOnePayments = $payments
-            ->filter(fn ($payment): bool => (int) $payment->month >= 1 && (int) $payment->month <= 6)
-            ->filter(fn ($payment): bool => (int) $payment->amount > 0);
-
-        $semesterOnePaid = $semesterOnePayments->isNotEmpty()
-            && $semesterOnePayments->every(fn ($payment): bool => in_array($payment->status, $paidStatuses, true));
-
-        $payload = [
-            'herregistration_commission_amount' => $conversion->herregistration_commission_amount ?: 500000,
-            'semester1_commission_amount' => $conversion->semester1_commission_amount ?: 500000,
-        ];
-
-        if ($registrationPayment) {
-            $payload['registration_commission_amount'] = $conversion->registration_commission_amount
-                ?: (int) round($registrationPayment->amount * 0.5);
-            $payload['registration_paid_at'] = $conversion->registration_paid_at ?? $registrationPayment->paid_at ?? now();
-            $payload['registration_commission_status'] = $conversion->registration_commission_status === 'paid' ? 'paid' : 'approved';
-        } elseif ($conversion->registration_commission_status !== 'paid') {
-            $payload['registration_paid_at'] = null;
-            $payload['registration_commission_status'] = 'pending';
-        }
-
-        if ($herregistrationPayment) {
-            $payload['paid_at'] = $conversion->paid_at ?? $herregistrationPayment->paid_at ?? now();
-            $payload['herregistration_paid_at'] = $conversion->herregistration_paid_at ?? $herregistrationPayment->paid_at ?? now();
-            $payload['herregistration_commission_status'] = $conversion->herregistration_commission_status === 'paid' ? 'paid' : 'approved';
-        } elseif ($conversion->herregistration_commission_status !== 'paid') {
-            $payload['paid_at'] = null;
-            $payload['herregistration_paid_at'] = null;
-            $payload['herregistration_commission_status'] = 'pending';
-        }
-
-        if ($semesterOnePaid) {
-            $lastSemesterPayment = $semesterOnePayments->sortByDesc('paid_at')->first();
-            $payload['semester1_paid_at'] = $conversion->semester1_paid_at ?? $lastSemesterPayment?->paid_at ?? now();
-            $payload['semester1_commission_status'] = $conversion->semester1_commission_status === 'paid' ? 'paid' : 'approved';
-        } elseif ($conversion->semester1_commission_status !== 'paid') {
-            $payload['semester1_paid_at'] = null;
-            $payload['semester1_commission_status'] = 'pending';
-        }
-
-        $registrationStatus = $payload['registration_commission_status'] ?? $conversion->registration_commission_status;
-        $herStatus = $payload['herregistration_commission_status'] ?? $conversion->herregistration_commission_status;
-        $semesterStatus = $payload['semester1_commission_status'] ?? $conversion->semester1_commission_status;
-
-        $payload['commission_amount'] = collect([
-            in_array($registrationStatus, ['approved', 'paid'], true) ? ($payload['registration_commission_amount'] ?? $conversion->registration_commission_amount ?? 0) : 0,
-            in_array($herStatus, ['approved', 'paid'], true) ? ($payload['herregistration_commission_amount'] ?? 500000) : 0,
-            in_array($semesterStatus, ['approved', 'paid'], true) ? ($payload['semester1_commission_amount'] ?? 500000) : 0,
-        ])->sum();
-
-        $registrationApplicable = ($payload['registration_commission_amount'] ?? $conversion->registration_commission_amount ?? 0) > 0;
-
-        $anyApproved = ($registrationApplicable && $registrationStatus === 'approved') || $herStatus === 'approved' || $semesterStatus === 'approved';
-        $anyPaid = ($registrationApplicable && $registrationStatus === 'paid') || $herStatus === 'paid' || $semesterStatus === 'paid';
-
-        $payload['commission_status'] = match (true) {
-            $anyApproved => 'approved',
-            $anyPaid => 'paid',
-            default => 'pending',
-        };
-
-        $conversion->update($payload);
+        $this->commissionEngine->syncForLead($lead);
     }
 }

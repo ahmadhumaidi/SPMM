@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\PhoneNumber;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -58,13 +60,7 @@ class WhatsappBroadcast extends Model
 
     public function whatsappWebUrlForRecipient(WhatsappBroadcastRecipient $recipient): string
     {
-        $phone = preg_replace('/\D+/', '', $recipient->recipient_number);
-
-        if (str_starts_with($phone, '0')) {
-            $phone = '62'.substr($phone, 1);
-        } elseif (str_starts_with($phone, '8')) {
-            $phone = '62'.$phone;
-        }
+        $phone = PhoneNumber::normalizeWhatsapp((string) $recipient->recipient_number, config('spmm.whatsapp.default_country_code'));
 
         $message = $this->renderMessageForRecipient($recipient);
 

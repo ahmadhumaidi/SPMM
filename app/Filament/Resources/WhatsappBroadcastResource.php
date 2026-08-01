@@ -39,7 +39,7 @@ class WhatsappBroadcastResource extends Resource
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::canAccessMasterData();
+        return auth()->check();
     }
 
     public static function form(Form $form): Form
@@ -156,16 +156,24 @@ class WhatsappBroadcastResource extends Resource
                 ->color('warning')
                 ->requiresConfirmation()
                 ->modalDescription('Pesan akan dikirim otomatis lewat Fonnte (tanpa perlu buka WhatsApp Web manual), dijeda sesuai Interval antar kontak. Butuh device Fonnte dalam keadaan terhubung.')
-                ->visible(fn (WhatsappBroadcast $record): bool => in_array($record->status, ['queued', 'sending'], true) && $record->recipients()->where('status', 'queued')->exists())
+                ->visible(fn (WhatsappBroadcast $record): bool => $record->status === 'queued' && $record->recipients()->where('status', 'queued')->exists())
                 ->action(function (WhatsappBroadcast $record): void {
                     $ids = $record->recipients()->where('status', 'queued')->pluck('id');
                     $interval = max(10, (int) ($record->interval_seconds ?: 45));
+
+                    if ($ids->isEmpty()) {
+                        Notification::make()->title('Tidak ada penerima yang masih antre.')->warning()->send();
+
+                        return;
+                    }
+
+                    $record->update(['status' => 'sending']);
 
                     foreach ($ids as $index => $id) {
                         \App\Jobs\SendWhatsappBroadcastRecipientViaFonnte::dispatch($id)->delay(now()->addSeconds($index * $interval));
                     }
 
-                    Notification::make()->title(count($ids)." pesan diantrekan lewat Fonnte, dijeda {$interval} detik per pesan")->success()->send();
+                    Notification::make()->title($ids->count()." pesan diantrekan lewat Fonnte, dijeda {$interval} detik per pesan")->success()->send();
                 }),
             Tables\Actions\Action::make('report')
                 ->label('Report')
@@ -193,7 +201,22 @@ class WhatsappBroadcastResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return FilamentResourceScope::applyCampusScope(parent::getEloquentQuery());
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($user->isSuperAdmin() || FilamentResourceScope::isDirector()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($user): Builder {
+            return $query
+                ->whereIn('campus_id', $user->campuses()->select('campuses.id'))
+                ->orWhere('created_by_user_id', $user->id);
+        });
     }
 
     private static function messageTokenAction(string $name, string $label, string $token): FormAction

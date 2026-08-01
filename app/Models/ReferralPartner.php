@@ -78,4 +78,9 @@ class ReferralPartner extends Model
     {
         return $this->hasMany(ReferralConversion::class);
     }
+
+    public function affiliateCommissions(): HasMany
+    {
+        return $this->hasMany(AffiliateCommission::class);
+    }
 }

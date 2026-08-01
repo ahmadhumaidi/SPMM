@@ -9,6 +9,7 @@ use App\Http\Controllers\StudentExportController;
 use App\Models\Campus;
 use App\Support\ReceiptPdfRenderer;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 
 Route::bind('campus', fn (string $value): Campus => Campus::query()
     ->where('name', $value)
@@ -96,8 +97,8 @@ Route::get('/admin/student-payments/transaction/{payment}/receipt', function (\A
 })->middleware('auth')->name('admin.student-payments.transaction-receipt');
 
 Route::get('/admin/whatsapp-broadcasts/{broadcast}/manual-runner', function (\App\Models\WhatsappBroadcast $broadcast) {
-    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
-    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+    abort_unless(auth()->check(), 403);
+    abort_unless($broadcast->created_by_user_id === auth()->id() || \App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
 
     $recipients = $broadcast->recipients()
         ->with(['lead.latestInvoice', 'lead.studyProgram'])
@@ -118,10 +119,148 @@ Route::get('/admin/whatsapp-broadcasts/{broadcast}/manual-runner', function (\Ap
     ]);
 })->middleware('auth')->name('admin.whatsapp-broadcasts.manual-runner');
 
-Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/sent', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
-    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+Route::get('/admin/whatsapp-broadcasts/python-helper/download', function () {
+    return response()->download(base_path('tools/whatsapp_web_auto_sender.py'), 'whatsapp_web_auto_sender.py', [
+        'Content-Type' => 'text/x-python; charset=UTF-8',
+    ]);
+})->name('admin.whatsapp-broadcasts.python-helper');
+Route::get('/admin/whatsapp-broadcasts/python-runner/install', function () {
+    abort_unless(auth()->check(), 403);
+
+    return response()->download(base_path('tools/install_spmm_whatsapp_runner.bat'), 'install_spmm_whatsapp_runner.bat', [
+        'Content-Type' => 'application/bat',
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.python-runner.install');
+Route::get('/admin/whatsapp-broadcasts/chrome-extension/download', function () {
+    abort_unless(auth()->check(), 403);
+
+    return response()->download(base_path('tools/spmm-wa-sender-extension.zip'), 'spmm-wa-sender-extension.zip', [
+        'Content-Type' => 'application/zip',
+    ]);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.extension.download');
+
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/python-queue', function (\App\Models\WhatsappBroadcast $broadcast) {
+    abort_unless(auth()->check(), 403);
+    abort_unless($broadcast->created_by_user_id === auth()->id() || \App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    $expiresAt = now()->addHours(12);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.latestInvoice', 'lead.studyProgram'])
+        ->where('status', 'queued')
+        ->orderBy('id')
+        ->get()
+        ->map(function (\App\Models\WhatsappBroadcastRecipient $recipient) use ($broadcast, $expiresAt): array {
+            $phone = \App\Support\PhoneNumber::normalizeWhatsapp((string) $recipient->recipient_number, config('spmm.whatsapp.default_country_code'));
+            $message = $broadcast->renderMessageForRecipient($recipient);
+
+            return [
+                'id' => $recipient->id,
+                'name' => $recipient->lead?->full_name ?? $recipient->recipient_name ?? 'Tanpa nama',
+                'phone' => $phone,
+                'message' => $message,
+                'web_url' => 'https://web.whatsapp.com/send?phone='.$phone.'&text='.rawurlencode($message),
+                'mark_sent_url' => URL::temporarySignedRoute('admin.whatsapp-broadcasts.recipients.python-sent', $expiresAt, [$broadcast, $recipient]),
+                'mark_invalid_url' => URL::temporarySignedRoute('admin.whatsapp-broadcasts.recipients.python-invalid', $expiresAt, [$broadcast, $recipient]),
+            ];
+        })
+        ->values();
+
+    $filename = 'whatsapp-broadcast-'.$broadcast->id.'-queue.json';
+
+    return response()->json([
+        'broadcast_id' => $broadcast->id,
+        'broadcast_name' => $broadcast->name,
+        'interval_seconds' => max(30, (int) ($broadcast->interval_seconds ?: 45)),
+        'load_seconds' => 14,
+        'expires_at' => $expiresAt->toIso8601String(),
+        'recipients' => $recipients,
+    ], 200, [
+        'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+})->middleware('auth')->name('admin.whatsapp-broadcasts.python-queue');
+Route::get('/admin/whatsapp-broadcasts/{broadcast}/python-queue-signed', function (\App\Models\WhatsappBroadcast $broadcast) {
+    $expiresAt = now()->addHours(12);
+
+    $recipients = $broadcast->recipients()
+        ->with(['lead.latestInvoice', 'lead.studyProgram'])
+        ->where('status', 'queued')
+        ->orderBy('id')
+        ->get()
+        ->map(function (\App\Models\WhatsappBroadcastRecipient $recipient) use ($broadcast, $expiresAt): array {
+            $phone = \App\Support\PhoneNumber::normalizeWhatsapp((string) $recipient->recipient_number, config('spmm.whatsapp.default_country_code'));
+            $message = $broadcast->renderMessageForRecipient($recipient);
+
+            return [
+                'id' => $recipient->id,
+                'name' => $recipient->lead?->full_name ?? $recipient->recipient_name ?? 'Tanpa nama',
+                'phone' => $phone,
+                'message' => $message,
+                'web_url' => 'https://web.whatsapp.com/send?phone='.$phone.'&text='.rawurlencode($message),
+                'mark_sent_url' => URL::temporarySignedRoute('admin.whatsapp-broadcasts.recipients.python-sent', $expiresAt, [$broadcast, $recipient]),
+                'mark_invalid_url' => URL::temporarySignedRoute('admin.whatsapp-broadcasts.recipients.python-invalid', $expiresAt, [$broadcast, $recipient]),
+            ];
+        })
+        ->values();
+
+    return response()->json([
+        'broadcast_id' => $broadcast->id,
+        'broadcast_name' => $broadcast->name,
+        'interval_seconds' => max(30, (int) ($broadcast->interval_seconds ?: 45)),
+        'load_seconds' => 16,
+        'expires_at' => $expiresAt->toIso8601String(),
+        'recipients' => $recipients,
+    ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+})->middleware('signed')->name('admin.whatsapp-broadcasts.python-queue.signed');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/python-sent', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
     abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
-    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+
+    if ($recipient->status !== 'sent') {
+        $recipient->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        $broadcast->increment('sent_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('signed')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)->name('admin.whatsapp-broadcasts.recipients.python-sent');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/python-invalid', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+
+    if ($recipient->status !== 'invalid') {
+        $recipient->update([
+            'status' => 'invalid',
+            'failed_reason' => 'Nomor invalid dari Python runner',
+        ]);
+
+        $broadcast->increment('failed_count');
+    }
+
+    if ($broadcast->recipients()->where('status', 'queued')->doesntExist()) {
+        $broadcast->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return response()->json(['ok' => true]);
+})->middleware('signed')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class)->name('admin.whatsapp-broadcasts.recipients.python-invalid');
+
+Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/sent', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
+    abort_unless(auth()->check(), 403);
+    abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
+    abort_unless($broadcast->created_by_user_id === auth()->id() || \App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
 
     if ($recipient->status !== 'sent') {
         $recipient->update([
@@ -143,9 +282,9 @@ Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/sent'
 })->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.sent');
 
 Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/invalid', function (\App\Models\WhatsappBroadcast $broadcast, \App\Models\WhatsappBroadcastRecipient $recipient) {
-    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
+    abort_unless(auth()->check(), 403);
     abort_unless($recipient->whatsapp_broadcast_id === $broadcast->id, 404);
-    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+    abort_unless($broadcast->created_by_user_id === auth()->id() || \App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
 
     if ($recipient->status !== 'invalid') {
         $recipient->update([
@@ -167,8 +306,8 @@ Route::post('/admin/whatsapp-broadcasts/{broadcast}/recipients/{recipient}/inval
 })->middleware('auth')->name('admin.whatsapp-broadcasts.recipients.invalid');
 
 Route::get('/admin/whatsapp-broadcasts/{broadcast}/report', function (\App\Models\WhatsappBroadcast $broadcast) {
-    abort_unless(\App\Support\FilamentResourceScope::canAccessMasterData(), 403);
-    abort_unless(\App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
+    abort_unless(auth()->check(), 403);
+    abort_unless($broadcast->created_by_user_id === auth()->id() || \App\Support\FilamentResourceScope::canAccessCampus($broadcast->campus_id), 403);
 
     $recipients = $broadcast->recipients()
         ->with(['lead.studyProgram'])

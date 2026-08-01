@@ -8,6 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 text-slate-900">
+    @php
+        $autoSendQueueUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute('admin.whatsapp-broadcasts.python-queue.signed', now()->addHours(12), $broadcast);
+        $autoSendProtocolUrl = 'spmm-wa://run?queue='.rawurlencode($autoSendQueueUrl);
+        $extensionQueueUrl = $autoSendQueueUrl;
+    @endphp
     <main class="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-8">
         <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <p class="text-sm font-bold uppercase tracking-wide text-red-700">Broadcast WhatsApp Web</p>
@@ -17,6 +22,9 @@
             </p>
             <div class="mt-5 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-900">
                 WhatsApp Web akan dibuka per kontak dengan pesan sudah terisi. Setelah pesan terkirim, klik tandai terkirim. Jika nomor tidak bisa dibuka, tandai nomor invalid.
+            </div>
+            <div class="mt-3 rounded-xl bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+                Mode Auto Send Lokal adalah fitur eksperimen untuk komputer operator yang sudah login WhatsApp Web. Install runner cukup sekali, lalu broadcast berikutnya bisa dijalankan langsung dari tombol website.
             </div>
             <div class="mt-6 flex flex-wrap gap-3">
                 <button id="startButton" class="rounded-xl bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-[#7A1220]">
@@ -28,6 +36,24 @@
                 <button id="invalidButton" class="rounded-xl bg-red-100 px-5 py-3 text-sm font-black text-red-800 transition hover:bg-red-200" disabled>
                     Nomor Invalid & Lanjut
                 </button>
+                <button id="extensionStartButton" type="button" data-queue-url="{{ $extensionQueueUrl }}" class="rounded-xl bg-cyan-600 px-5 py-3 text-sm font-black text-white transition hover:bg-cyan-700">
+                    Jalankan via Chrome Extension
+                </button>
+                <a href="{{ $autoSendProtocolUrl }}" class="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-700">
+                    Jalankan Auto Send Lokal
+                </a>
+                <a href="{{ route('admin.whatsapp-broadcasts.extension.download') }}" class="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-700">
+                    Download Chrome Extension
+                </a>
+                <a href="{{ route('admin.whatsapp-broadcasts.python-runner.install') }}" class="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-black text-white transition hover:bg-indigo-700">
+                    Install Runner Sekali Saja
+                </a>
+                <a href="{{ route('admin.whatsapp-broadcasts.python-queue', $broadcast) }}" class="rounded-xl bg-white px-5 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50">
+                    Download Antrean
+                </a>
+                <a href="{{ route('admin.whatsapp-broadcasts.python-helper') }}" class="rounded-xl bg-white px-5 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50">
+                    Download Helper
+                </a>
                 <a href="{{ route('filament.admin.resources.whatsapp-broadcasts.index') }}" class="rounded-xl bg-white px-5 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-300 transition hover:bg-slate-50">
                     Kembali
                 </a>
@@ -70,6 +96,53 @@
     </main>
 
     <script>
+        let extensionResponseTimer = null;
+        let extensionReady = false;
+
+        window.addEventListener('message', (event) => {
+            if (event.source !== window) {
+                return;
+            }
+
+            if (event.data?.type === 'SPMM_WA_EXTENSION_READY') {
+                extensionReady = true;
+                document.getElementById('statusText').textContent = 'Chrome Extension aktif. Klik Jalankan via Chrome Extension untuk mulai.';
+                return;
+            }
+
+            if (event.data?.type !== 'SPMM_WA_EXTENSION_RESPONSE') {
+                return;
+            }
+
+            if (extensionResponseTimer) {
+                clearTimeout(extensionResponseTimer);
+                extensionResponseTimer = null;
+            }
+
+            const status = document.getElementById('statusText');
+            if (event.data.ok) {
+                status.textContent = 'Chrome Extension menerima antrean. WhatsApp Web akan dibuka otomatis.';
+            } else {
+                status.textContent = 'Chrome Extension belum aktif atau gagal menerima antrean: ' + (event.data.error || 'Tidak diketahui');
+            }
+        });
+
+        document.getElementById('extensionStartButton')?.addEventListener('click', (event) => {
+            const queueUrl = event.currentTarget.dataset.queueUrl;
+            window.postMessage({ type: 'SPMM_WA_EXTENSION_START', queueUrl }, '*');
+            document.getElementById('statusText').textContent = 'Mengirim antrean ke Chrome Extension...';
+
+            if (extensionResponseTimer) {
+                clearTimeout(extensionResponseTimer);
+            }
+
+            extensionResponseTimer = setTimeout(() => {
+                document.getElementById('statusText').textContent = extensionReady
+                    ? 'Extension aktif, tapi belum memberi respons. Klik Reload di chrome://extensions lalu refresh halaman ini.'
+                    : 'Chrome Extension belum masuk ke tab ini. Refresh halaman runner setelah extension dipasang, lalu klik lagi.';
+            }, 3000);
+        });
+
         const recipients = @json($recipients);
         const intervalSeconds = {{ (int) ($broadcast->interval_seconds ?? 45) }};
         const sentUrlTemplate = @json(route('admin.whatsapp-broadcasts.recipients.sent', [$broadcast, '__RECIPIENT__']));

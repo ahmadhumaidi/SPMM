@@ -99,6 +99,11 @@ class Lead extends Model
         return $this->hasOne(ReferralConversion::class);
     }
 
+    public function affiliateCommissions(): HasMany
+    {
+        return $this->hasMany(AffiliateCommission::class);
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);

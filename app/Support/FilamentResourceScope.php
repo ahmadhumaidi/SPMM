@@ -170,4 +170,9 @@ class FilamentResourceScope
     {
         return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
     }
+
+    public static function canAccessBroadcast(): bool
+    {
+        return static::isSuperAdmin() || static::isDirector() || static::isCoordinator() || static::isStaff();
+    }
 }
