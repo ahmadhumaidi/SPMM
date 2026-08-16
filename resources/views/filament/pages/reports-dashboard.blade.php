@@ -10,7 +10,7 @@
         $stats = [
             ['label' => 'Transaction', 'value' => number_format($payment['transaction']), 'tone' => 'from-cyan-500 to-indigo-500'],
             ['label' => 'Income', 'value' => 'Rp '.number_format($payment['income'], 0, ',', '.'), 'tone' => 'from-emerald-500 to-teal-500'],
-            ['label' => 'Expand', 'value' => 'Rp '.number_format($payment['expand'], 0, ',', '.'), 'tone' => 'from-amber-500 to-orange-500'],
+            ['label' => 'Expense', 'value' => 'Rp '.number_format($payment['expense'], 0, ',', '.'), 'tone' => 'from-amber-500 to-orange-500'],
             ['label' => 'Total Funding', 'value' => 'Rp '.number_format($payment['total_funding'], 0, ',', '.'), 'tone' => 'from-sky-600 to-cyan-500'],
         ];
     @endphp

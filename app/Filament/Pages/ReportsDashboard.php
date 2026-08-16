@@ -61,13 +61,13 @@ class ReportsDashboard extends Page
     {
         $transaction = $this->studentPaymentQuery()->count();
         $income = (int) $this->studentPaymentQuery()->sum('amount');
-        $expand = $this->paidReferralCommissionAmount();
+        $expense = $this->paidReferralCommissionAmount();
 
         return [
             'transaction' => $transaction,
             'income' => $income,
-            'expand' => $expand,
-            'total_funding' => $income - $expand,
+            'expense' => $expense,
+            'total_funding' => $income - $expense,
         ];
     }
 
