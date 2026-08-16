@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\MetaCtwaWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -22,12 +23,27 @@ class MetaWhatsappWebhookController extends Controller
         return response()->json(['message' => 'WhatsApp webhook verification failed.'], 403);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, MetaCtwaWebhookService $service): JsonResponse
     {
-        Log::info('Meta WhatsApp webhook received.', [
-            'payload' => $request->all(),
-        ]);
+        $payload = $request->all();
+        $processed = 0;
 
-        return response()->json(['ok' => true]);
+        foreach (($payload['entry'] ?? []) as $entry) {
+            foreach (($entry['changes'] ?? []) as $change) {
+                if (($change['field'] ?? null) !== 'messages') {
+                    continue;
+                }
+
+                $processed += count($service->handleMessagesChange($change, $entry));
+            }
+        }
+
+        if ($processed === 0) {
+            Log::info('Meta WhatsApp webhook received without CTWA referral messages.', [
+                'payload' => $payload,
+            ]);
+        }
+
+        return response()->json(['ok' => true, 'processed' => $processed]);
     }
 }

@@ -17,6 +17,7 @@ return [
     'whatsapp' => [
         'provider' => env('WHATSAPP_PROVIDER', 'log'),
         'default_country_code' => env('WHATSAPP_DEFAULT_COUNTRY_CODE', '62'),
+        'meta_verify_token' => env('WHATSAPP_META_VERIFY_TOKEN'),
         'n8n_webhook_base' => env('N8N_WHATSAPP_WEBHOOK_BASE', 'https://n8n.maheramedia.com/webhook'),
         'fonnte_token' => env('FONNTE_TOKEN'),
         'fonnte_devices' => [
