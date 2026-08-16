@@ -98,21 +98,16 @@
     <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        /* Animated network background khusus Hero */
-        .hero-network-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: .48;
-        }
 
         .hero-bg > .grid-pattern,
         .hero-bg > .sp-orbit,
         .hero-bg > .sp-hero-glow-fixed {
             z-index: 1;
+        }
+
+        .hero-bg > .sp-orbit,
+        .hero-bg > .sp-hero-glow-fixed {
+            display: none !important;
         }
 
         .hero-bg > .absolute.inset-0.bg-black\\/50 {
@@ -122,18 +117,6 @@
         .hero-bg > .relative {
             position: relative;
             z-index: 2;
-        }
-
-        @media (max-width: 640px) {
-            .hero-network-canvas {
-                opacity: .40;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .hero-network-canvas {
-                display: none;
-            }
         }
 
         .hero-bg {
@@ -151,21 +134,11 @@
         .skeleton-loader.is-hidden { display: none; }
         .hero-search-panel {
             border: 1px solid rgba(255, 255, 255, .42) !important;
-            background: linear-gradient(135deg, rgba(255, 255, 255, .30), rgba(255, 255, 255, .16)) !important;
-            -webkit-backdrop-filter: blur(28px) saturate(170%);
-            backdrop-filter: blur(28px) saturate(170%);
+            background: rgba(255, 255, 255, .96) !important;
             box-shadow:
                 0 32px 90px rgba(2, 6, 23, .34),
                 inset 0 1px 0 rgba(255, 255, 255, .65),
                 inset 0 -1px 0 rgba(255, 255, 255, .22) !important;
-        }
-        .hero-search-panel::before {
-            content: "";
-            position: absolute;
-            inset: 1px;
-            border-radius: inherit;
-            pointer-events: none;
-            background: radial-gradient(circle at 18% 12%, rgba(255, 255, 255, .46), transparent 34%);
         }
         .hero-search-panel > * {
             position: relative;
@@ -175,13 +148,11 @@
         .hero-search-panel .program-filter,
         .hero-search-panel .rounded-2xl.bg-gradient-to-r {
             border-color: rgba(255, 255, 255, .38) !important;
-            background: rgba(255, 255, 255, .58) !important;
-            -webkit-backdrop-filter: blur(14px) saturate(145%);
-            backdrop-filter: blur(14px) saturate(145%);
+            background: rgba(248, 250, 252, .92) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, .48);
         }
         .hero-search-panel .program-filter:hover {
-            background: rgba(255, 255, 255, .72) !important;
+            background: rgba(240, 249, 255, .95) !important;
         }
         .campus-glass-section {
             position: relative;
@@ -198,44 +169,10 @@
             z-index: 1;
         }
         .campus-glass-card {
-            border-color: rgba(255, 255, 255, .22) !important;
-            background: linear-gradient(135deg, rgba(2, 6, 23, .56), rgba(15, 23, 42, .34)) !important;
-            -webkit-backdrop-filter: blur(24px) saturate(145%);
-            backdrop-filter: blur(24px) saturate(145%);
-            box-shadow:
-                0 26px 76px rgba(0, 0, 0, .28),
-                inset 0 1px 0 rgba(255, 255, 255, .20),
-                inset 0 -1px 0 rgba(255, 255, 255, .08) !important;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
         }
         .campus-glass-card:hover {
-            border-color: rgba(125, 211, 252, .48) !important;
-            background: linear-gradient(135deg, rgba(2, 6, 23, .62), rgba(14, 116, 144, .28)) !important;
-            box-shadow:
-                0 34px 90px rgba(0, 0, 0, .34),
-                inset 0 1px 0 rgba(255, 255, 255, .24) !important;
-        }
-        .campus-glass-card h3,
-        .campus-glass-card .text-navy {
-            color: #f8fafc !important;
-        }
-        .campus-glass-card .text-slate-500,
-        .campus-glass-card .text-slate-600 {
-            color: #cbd5e1 !important;
-        }
-        .campus-glass-stat {
-            border: 1px solid rgba(255, 255, 255, .18);
-            background: rgba(255, 255, 255, .10) !important;
-            -webkit-backdrop-filter: blur(14px) saturate(135%);
-            backdrop-filter: blur(14px) saturate(135%);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
-        }
-        .campus-glass-action {
-            border-color: rgba(255, 255, 255, .26) !important;
-            background: rgba(2, 6, 23, .38) !important;
-            color: #ffffff !important;
-            -webkit-backdrop-filter: blur(14px) saturate(145%);
-            backdrop-filter: blur(14px) saturate(145%);
-            box-shadow: 0 16px 38px rgba(0, 0, 0, .20), inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
         }
         .sp-hero-wave {
             display: none !important;
@@ -284,7 +221,6 @@
     </nav>
 
     <header class="hero-bg relative -mt-[68px] overflow-hidden text-white">
-        <canvas id="hero-network-canvas" class="hero-network-canvas" aria-hidden="true"></canvas>
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
         <div class="sp-orbit sp-orbit-one" aria-hidden="true"></div>
         <div class="sp-orbit sp-orbit-two" aria-hidden="true"></div>
@@ -438,10 +374,10 @@
                                 $minFee = $campus->feeSchemes->map($firstMonthFee)->filter()->min();
                                 $programTrackText = strtolower($campus->classTracks->pluck('name')->join(' '));
                             @endphp
-                            <article class="campus-glass-card reveal group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-soft" data-campus-card data-programs="{{ $programTrackText }}" data-search="{{ strtolower($campus->name.' '.$campus->city.' '.$campus->province.' '.$campus->studyPrograms->pluck('name')->join(' ').' '.$programTrackText) }}">
+                            <article class="campus-glass-card reveal group rounded-[1.75rem] bg-white p-6 transition hover:-translate-y-0.5" data-campus-card data-programs="{{ $programTrackText }}" data-search="{{ strtolower($campus->name.' '.$campus->city.' '.$campus->province.' '.$campus->studyPrograms->pluck('name')->join(' ').' '.$programTrackText) }}">
                                 <div class="flex items-start gap-4">
                                     @if ($logoUrl)
-                                        <img class="h-16 w-16 rounded-2xl border border-slate-200 bg-white object-contain p-1" src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="64" height="64" loading="lazy" decoding="async">
+                                        <img class="h-16 w-16 rounded-2xl border border-slate-100 bg-white object-contain p-1" src="{{ $logoUrl }}" alt="Logo {{ $campus->name }}" width="64" height="64" loading="lazy" decoding="async">
                                     @else
                                         <div class="grid h-16 w-16 place-items-center rounded-2xl bg-navy text-2xl font-black text-white">{{ mb_substr($campus->name, 0, 1) }}</div>
                                     @endif
@@ -450,23 +386,23 @@
                                         <p class="mt-1 text-sm font-semibold text-slate-500">{{ $campus->city ?: 'Kota belum diisi' }}{{ $campus->province ? ', '.$campus->province : '' }}</p>
                                     </div>
                                 </div>
-                                <div class="mt-6 grid grid-cols-3 gap-2 text-center">
-                                    <div class="campus-glass-stat rounded-2xl bg-slate-50 p-3">
-                                        <p class="text-xs font-bold text-slate-500">Prodi</p>
-                                        <p class="text-lg font-black text-navy">{{ $campus->studyPrograms->count() }}</p>
+                                <div class="mt-6 grid grid-cols-3 gap-2 divide-x divide-slate-100 text-center">
+                                    <div class="campus-glass-stat px-2">
+                                        <p class="text-xs font-semibold text-slate-400">Prodi</p>
+                                        <p class="text-lg font-bold text-navy">{{ $campus->studyPrograms->count() }}</p>
                                     </div>
-                                    <div class="campus-glass-stat rounded-2xl bg-slate-50 p-3">
-                                        <p class="text-xs font-bold text-slate-500">Program</p>
-                                        <p class="text-lg font-black text-navy">{{ $campus->classTracks->count() }}</p>
+                                    <div class="campus-glass-stat px-2">
+                                        <p class="text-xs font-semibold text-slate-400">Program</p>
+                                        <p class="text-lg font-bold text-navy">{{ $campus->classTracks->count() }}</p>
                                     </div>
-                                    <div class="campus-glass-stat rounded-2xl bg-slate-50 p-3">
-                                        <p class="text-xs font-bold text-slate-500">Mulai</p>
-                                        <p class="text-sm font-black text-navy">{{ $minFee ? 'Rp '.number_format($minFee, 0, ',', '.') : '-' }}</p>
+                                    <div class="campus-glass-stat px-2">
+                                        <p class="text-xs font-semibold text-slate-400">Mulai</p>
+                                        <p class="text-sm font-bold text-navy">{{ $minFee ? 'Rp '.number_format($minFee, 0, ',', '.') : '-' }}</p>
                                     </div>
                                 </div>
                                 <div class="mt-6 flex gap-3">
-                                    <a class="flex-1 rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-black text-navy transition group-hover:border-sky-300" href="{{ route('campuses.show', ['campus' => $campus->name]) }}">Kunjungi</a>
-                                    <a class="flex-1 rounded-full bg-sky-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-sky-700" href="{{ route('registration.create', ['kampus' => $campus->slug]) }}">Daftar</a>
+                                    <a class="flex-1 rounded-full border border-slate-200 px-4 py-3 text-center text-sm font-bold text-navy transition group-hover:border-sky-300" href="{{ route('campuses.show', ['campus' => $campus->name]) }}">Kunjungi</a>
+                                    <a class="flex-1 rounded-full bg-sky-600 px-4 py-3 text-center text-sm font-bold text-white transition hover:bg-sky-700" href="{{ route('registration.create', ['kampus' => $campus->slug]) }}">Daftar</a>
                                 </div>
                             </article>
                         @endforeach
@@ -675,151 +611,6 @@
         });
 
         applyCampusFilters();    </script>
-
-    <script>
-        (() => {
-            const canvas = document.getElementById('hero-network-canvas');
-            if (!canvas) return;
-
-            const hero = canvas.closest('.hero-bg');
-            const ctx = canvas.getContext('2d');
-
-            let width = 0;
-            let height = 0;
-            let particles = [];
-            let animationFrame = null;
-            let running = true;
-
-            const connectionDistance = 125;
-
-            function particleCount() {
-                if (window.innerWidth <= 640) return 24;
-                if (window.innerWidth <= 1024) return 36;
-                return 52;
-            }
-
-            function makeParticle() {
-                return {
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    vx: (Math.random() - 0.5) * 0.45,
-                    vy: (Math.random() - 0.5) * 0.45,
-                    radius: 1.2 + Math.random() * 2
-                };
-            }
-
-            function resetParticles() {
-                particles = Array.from(
-                    { length: particleCount() },
-                    makeParticle
-                );
-            }
-
-            function resizeCanvas() {
-                const rect = hero.getBoundingClientRect();
-                const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-                width = Math.max(rect.width, 1);
-                height = Math.max(rect.height, 1);
-
-                canvas.width = Math.round(width * dpr);
-                canvas.height = Math.round(height * dpr);
-
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
-
-                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-                resetParticles();
-            }
-
-            function draw() {
-                if (!running) {
-                    animationFrame = null;
-                    return;
-                }
-
-                ctx.clearRect(0, 0, width, height);
-
-                for (let i = 0; i < particles.length; i++) {
-                    const p = particles[i];
-
-                    p.x += p.vx;
-                    p.y += p.vy;
-
-                    if (p.x <= 0 || p.x >= width) {
-                        p.vx *= -1;
-                    }
-
-                    if (p.y <= 0 || p.y >= height) {
-                        p.vy *= -1;
-                    }
-
-                    for (let j = i + 1; j < particles.length; j++) {
-                        const p2 = particles[j];
-
-                        const dx = p.x - p2.x;
-                        const dy = p.y - p2.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-
-                        if (distance < connectionDistance) {
-                            const alpha =
-                                (1 - distance / connectionDistance) * 0.48;
-
-                            ctx.beginPath();
-                            ctx.moveTo(p.x, p.y);
-                            ctx.lineTo(p2.x, p2.y);
-
-                            ctx.strokeStyle =
-                                `rgba(56, 189, 248, ${alpha})`;
-
-                            ctx.lineWidth = 1;
-                            ctx.stroke();
-                        }
-                    }
-
-                    ctx.beginPath();
-                    ctx.arc(
-                        p.x,
-                        p.y,
-                        p.radius,
-                        0,
-                        Math.PI * 2
-                    );
-
-                    ctx.fillStyle = 'rgba(56, 189, 248, .88)';
-                    ctx.shadowColor = 'rgba(56, 189, 248, .40)';
-                    ctx.shadowBlur = 6;
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
-
-                animationFrame = requestAnimationFrame(draw);
-            }
-
-            const resizeObserver = new ResizeObserver(() => {
-                resizeCanvas();
-            });
-
-            resizeObserver.observe(hero);
-
-            const intersectionObserver = new IntersectionObserver(
-                ([entry]) => {
-                    running = entry.isIntersecting;
-
-                    if (running && !animationFrame) {
-                        draw();
-                    }
-                },
-                { threshold: 0.02 }
-            );
-
-            intersectionObserver.observe(hero);
-
-            resizeCanvas();
-            draw();
-        })();
-    </script>
 
 </body>
 </html>
