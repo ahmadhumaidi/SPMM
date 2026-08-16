@@ -1188,3 +1188,51 @@ small {
         animation: none;
     }
 }
+
+/* === HERO NETWORK FIX === */
+
+.hero-bg {
+    position: relative !important;
+    isolation: isolate;
+}
+
+/* Background dekoratif lama */
+.hero-bg > .grid-pattern,
+.hero-bg > .sp-orbit,
+.hero-bg > .sp-hero-glow-fixed {
+    z-index: 0 !important;
+    pointer-events: none;
+}
+
+/* Overlay gelap tetap di belakang network */
+.hero-bg > .absolute.inset-0.bg-black\/50 {
+    z-index: 1 !important;
+    pointer-events: none;
+}
+
+/* Network sekarang terlihat */
+#hero-network-canvas,
+.hero-network-canvas {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 2 !important;
+    opacity: .85 !important;
+    pointer-events: none !important;
+    mix-blend-mode: screen;
+}
+
+/* Semua konten hero paling depan */
+.hero-bg > .relative {
+    position: relative !important;
+    z-index: 3 !important;
+}
+
+@media (max-width: 640px) {
+    #hero-network-canvas,
+    .hero-network-canvas {
+        opacity: .90 !important;
+    }
+}
+

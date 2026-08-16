@@ -37,7 +37,7 @@ class FeeSchemeResource extends Resource
 
     public static function canAccess(): bool
     {
-        return FilamentResourceScope::canAccessMasterData();
+        return FilamentResourceScope::canAccessMasterData() || FilamentResourceScope::isDirector();
     }
 
     protected static ?int $navigationSort = 4;

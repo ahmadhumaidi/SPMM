@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->renderHook(
                 'panels::head.end',
-                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=34">'),
+                fn (): HtmlString => new HtmlString('<link rel="stylesheet" href="/css/filament-admin.css?v=36">'),
             )
             ->renderHook(
                 PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE,

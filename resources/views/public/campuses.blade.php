@@ -98,6 +98,44 @@
     <script src="https://unpkg.com/lucide@1.26.0"></script>
     <style>
         body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        /* Animated network background khusus Hero */
+        .hero-network-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: .48;
+        }
+
+        .hero-bg > .grid-pattern,
+        .hero-bg > .sp-orbit,
+        .hero-bg > .sp-hero-glow-fixed {
+            z-index: 1;
+        }
+
+        .hero-bg > .absolute.inset-0.bg-black\\/50 {
+            z-index: 1;
+        }
+
+        .hero-bg > .relative {
+            position: relative;
+            z-index: 2;
+        }
+
+        @media (max-width: 640px) {
+            .hero-network-canvas {
+                opacity: .40;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-network-canvas {
+                display: none;
+            }
+        }
+
         .hero-bg {
             background-image:
                 radial-gradient(circle at 18% 16%, rgba(245, 158, 11, .20), transparent 26%),
@@ -246,6 +284,7 @@
     </nav>
 
     <header class="hero-bg relative -mt-[68px] overflow-hidden text-white">
+        <canvas id="hero-network-canvas" class="hero-network-canvas" aria-hidden="true"></canvas>
         <div class="absolute inset-0 grid-pattern opacity-50"></div>
         <div class="sp-orbit sp-orbit-one" aria-hidden="true"></div>
         <div class="sp-orbit sp-orbit-two" aria-hidden="true"></div>
@@ -636,5 +675,151 @@
         });
 
         applyCampusFilters();    </script>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById('hero-network-canvas');
+            if (!canvas) return;
+
+            const hero = canvas.closest('.hero-bg');
+            const ctx = canvas.getContext('2d');
+
+            let width = 0;
+            let height = 0;
+            let particles = [];
+            let animationFrame = null;
+            let running = true;
+
+            const connectionDistance = 125;
+
+            function particleCount() {
+                if (window.innerWidth <= 640) return 24;
+                if (window.innerWidth <= 1024) return 36;
+                return 52;
+            }
+
+            function makeParticle() {
+                return {
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.45,
+                    vy: (Math.random() - 0.5) * 0.45,
+                    radius: 1.2 + Math.random() * 2
+                };
+            }
+
+            function resetParticles() {
+                particles = Array.from(
+                    { length: particleCount() },
+                    makeParticle
+                );
+            }
+
+            function resizeCanvas() {
+                const rect = hero.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+                width = Math.max(rect.width, 1);
+                height = Math.max(rect.height, 1);
+
+                canvas.width = Math.round(width * dpr);
+                canvas.height = Math.round(height * dpr);
+
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                resetParticles();
+            }
+
+            function draw() {
+                if (!running) {
+                    animationFrame = null;
+                    return;
+                }
+
+                ctx.clearRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    const p = particles[i];
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x <= 0 || p.x >= width) {
+                        p.vx *= -1;
+                    }
+
+                    if (p.y <= 0 || p.y >= height) {
+                        p.vy *= -1;
+                    }
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < connectionDistance) {
+                            const alpha =
+                                (1 - distance / connectionDistance) * 0.48;
+
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+
+                            ctx.strokeStyle =
+                                `rgba(56, 189, 248, ${alpha})`;
+
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(
+                        p.x,
+                        p.y,
+                        p.radius,
+                        0,
+                        Math.PI * 2
+                    );
+
+                    ctx.fillStyle = 'rgba(56, 189, 248, .88)';
+                    ctx.shadowColor = 'rgba(56, 189, 248, .40)';
+                    ctx.shadowBlur = 6;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                animationFrame = requestAnimationFrame(draw);
+            }
+
+            const resizeObserver = new ResizeObserver(() => {
+                resizeCanvas();
+            });
+
+            resizeObserver.observe(hero);
+
+            const intersectionObserver = new IntersectionObserver(
+                ([entry]) => {
+                    running = entry.isIntersecting;
+
+                    if (running && !animationFrame) {
+                        draw();
+                    }
+                },
+                { threshold: 0.02 }
+            );
+
+            intersectionObserver.observe(hero);
+
+            resizeCanvas();
+            draw();
+        })();
+    </script>
+
 </body>
 </html>

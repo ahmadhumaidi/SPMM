@@ -1683,41 +1683,95 @@ form [class*="sticky"][class*="bottom"] {
         background-color: rgba(15, 23, 42, 0.96) !important;
     }
 }
-/* SPMM Notification Blur Enhancement */
-.fi-modal-window:has(.fi-no-notification),
-.fi-modal-window:has(.fi-database-notifications),
-.fi-dropdown-panel:has(.fi-no-notification),
-.fi-dropdown-panel:has(.fi-database-notifications) {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border-color: #dbe3ee !important;
-    box-shadow: 0 14px 45px rgba(15, 23, 42, 0.06) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    overflow: hidden !important;
+
+/* Notification glass panel: scoped to the database notification slide-over only. */
+body:has([data-fi-modal-id="database-notifications"].fi-modal-open) .fi-modal-close-overlay {
+    background: rgba(2, 6, 23, 0.38) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(115%) brightness(0.70) !important;
+    backdrop-filter: blur(28px) saturate(115%) brightness(0.70) !important;
 }
 
-.fi-modal-window:has(.fi-no-notification) .fi-modal-header,
-.fi-modal-window:has(.fi-no-notification) .fi-modal-content,
-.fi-modal-window:has(.fi-no-notification) .fi-no-notification,
-.fi-dropdown-panel:has(.fi-no-notification) .fi-no-notification {
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window.fi-modal-slide-over-window,
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window {
+    border: 1px solid rgba(148, 163, 184, 0.16) !important;
+    border-radius: 1.25rem 0 0 1.25rem !important;
+    background: linear-gradient(180deg, rgba(5, 18, 42, 0.90), rgba(7, 24, 50, 0.86)) !important;
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.28) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(145%) !important;
+    backdrop-filter: blur(30px) saturate(145%) !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-modal-header {
+    background: rgba(5, 18, 42, 0.72) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(24px) !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-modal-content,
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-modal-footer {
     background: transparent !important;
+    color: #f8fafc !important;
 }
 
-.fi-no-notification {
-    border-color: rgba(219, 227, 238, 0.85) !important;
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification {
+    margin: 0.75rem 0 !important;
+    border: 1px solid rgba(148, 163, 184, 0.13) !important;
+    border-radius: 1.35rem !important;
+    background: linear-gradient(135deg, rgba(15, 35, 65, 0.82), rgba(10, 28, 55, 0.76)) !important;
+    color: #f8fafc !important;
+    -webkit-backdrop-filter: blur(22px) saturate(135%) !important;
+    backdrop-filter: blur(22px) saturate(135%) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 12px 30px rgba(0, 0, 0, 0.10) !important;
 }
 
-:root.dark .fi-modal-window:has(.fi-no-notification),
-:root.dark .fi-modal-window:has(.fi-database-notifications),
-:root.dark .fi-dropdown-panel:has(.fi-no-notification),
-:root.dark .fi-dropdown-panel:has(.fi-database-notifications) {
-    background: rgba(7, 16, 35, 0.86) !important;
-    border-color: rgba(255, 255, 255, 0.10) !important;
-    box-shadow: 0 14px 45px rgba(0, 0, 0, 0.22) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-title {
+    color: #f8fafc !important;
 }
 
-:root.dark .fi-modal-window:has(.fi-no-notification) .fi-no-notification {
-    border-color: rgba(255, 255, 255, 0.10) !important;
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-date {
+    color: #94a3b8 !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-body {
+    color: #cbd5e1 !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-icon {
+    color: #bae6fd !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-actions .fi-btn {
+    color: #f8fafc !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-actions .fi-btn-color-primary {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+    box-shadow: 0 10px 26px rgba(14, 165, 233, 0.28) !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification-actions .fi-btn-color-primary:hover {
+    background: linear-gradient(135deg, #38bdf8, #3b82f6) !important;
+}
+
+.fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-no-notification button {
+    color: #cbd5e1 !important;
+}
+
+@media (max-width: 640px) {
+    .fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window.fi-modal-slide-over-window {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+        touch-action: pan-y;
+    }
+
+    .fi-modal[data-fi-modal-id="database-notifications"] .fi-modal-window .fi-modal-content {
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+    }
 }
