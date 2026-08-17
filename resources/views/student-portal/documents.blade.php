@@ -2,6 +2,8 @@
     use Illuminate\Support\Facades\Storage;
 
     $lead = $account->lead;
+    $classTrackName = strtolower((string) ($lead->classTrack?->name ?? ''));
+    $isRplStudent = str_contains($classTrackName, 'rpl');
     $completed = collect($documentTypes)->filter(fn ($document, $key) => $documents->has($key))->count();
     $total = count($documentTypes);
     $progress = (int) round(($completed / max($total, 1)) * 100);
@@ -86,6 +88,76 @@
             </div>
         @endif
 
+        @if ($isRplStudent)
+            <section class="mt-6 overflow-hidden rounded-[2rem] border border-cyan-200 bg-white p-6 shadow-sm dark:border-cyan-500/20 dark:bg-white/10 lg:p-7">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                        <p class="inline-flex rounded-full bg-cyan-50 px-4 py-2 text-sm font-black uppercase tracking-wide text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-200">Informasi Khusus RPL</p>
+                        <h2 class="mt-4 text-2xl font-black text-navy dark:text-white">Berkas yang dibutuhkan untuk Program RPL</h2>
+                        <p class="mt-3 max-w-3xl leading-7 text-slate-600 dark:text-slate-300">Mahasiswa program RPL perlu menyiapkan dokumen pendidikan, pribadi, legalitas pekerjaan, dan bukti pendukung konversi mata kuliah.</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid gap-4 lg:grid-cols-2">
+                    <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/5">
+                        <h3 class="font-black text-navy dark:text-white">Berkas Utama</h3>
+                        <ul class="mt-3 list-disc space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300">
+                            <li>Daftar Riwayat Hidup</li>
+                            <li>A2 Pernyataan Calon Mahasiswa</li>
+                            <li>SK Pengangkatan Kerja</li>
+                            <li>SK Penempatan Kerja</li>
+                            <li>Dokumen lain yang berkaitan dengan pengangkatan kerja</li>
+                        </ul>
+                    </article>
+
+                    <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/5">
+                        <h3 class="font-black text-navy dark:text-white">Dokumen Pendidikan</h3>
+                        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300">
+                            <li>Ijazah S1 dan transkrip</li>
+                            <li>Ijazah SMA dan transkrip</li>
+                        </ol>
+                    </article>
+
+                    <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/5">
+                        <h3 class="font-black text-navy dark:text-white">Dokumen Pribadi</h3>
+                        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300">
+                            <li>Kartu Keluarga (KK)</li>
+                            <li>Kartu Tanda Penduduk (KTP)</li>
+                        </ol>
+                    </article>
+
+                    <article class="rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/5">
+                        <h3 class="font-black text-navy dark:text-white">Dokumen Legalitas Pekerjaan</h3>
+                        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300">
+                            <li>SK Pengangkatan Kerja</li>
+                            <li>SK Penempatan Kerja</li>
+                            <li>Dokumen lain yang berkaitan dengan pengangkatan kerja</li>
+                        </ol>
+                    </article>
+                </div>
+
+                <article class="mt-4 rounded-3xl border border-cyan-200 bg-cyan-50/70 p-5 dark:border-cyan-500/20 dark:bg-cyan-500/10">
+                    <h3 class="font-black text-navy dark:text-white">Dokumen Konversi Mata Kuliah</h3>
+                    <p class="mt-2 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300">Dokumen konversi dapat berupa salah satu atau beberapa bukti berikut:</p>
+                    <ol class="mt-3 grid list-decimal gap-2 pl-5 text-sm font-semibold leading-6 text-slate-600 dark:text-slate-300 md:grid-cols-2">
+                        <li>Daftar riwayat pekerjaan dengan rincian tugas yang pernah dilakukan</li>
+                        <li>Sertifikat kompetensi</li>
+                        <li>Sertifikat pengoperasian atau lisensi yang sesuai dengan jabatan kerja</li>
+                        <li>Foto pekerjaan yang pernah dilakukan dan deskripsi pekerjaan</li>
+                        <li>Buku harian</li>
+                        <li>Lembar tugas atau lembar kerja ketika bekerja di perusahaan</li>
+                        <li>Dokumen analisis atau perancangan, parsial atau lengkap, ketika bekerja di perusahaan</li>
+                        <li>Logbook</li>
+                        <li>Catatan pelatihan di lokasi tempat kerja</li>
+                        <li>Keanggotaan asosiasi profesi yang relevan</li>
+                        <li>Referensi, surat keterangan, atau laporan verifikasi pihak ketiga dari pemberi kerja/supervisor</li>
+                        <li>Penghargaan dari industri</li>
+                        <li>Penilaian kinerja dari perusahaan</li>
+                        <li>Dokumen lain yang relevan dan mendukung profisiensi calon mahasiswa saat ini</li>
+                    </ol>
+                </article>
+            </section>
+        @endif
         <form method="POST" action="{{ route('student-portal.documents.upload') }}" enctype="multipart/form-data" class="mt-6">
             @csrf
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
