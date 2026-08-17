@@ -262,7 +262,7 @@
     <nav class="sticky top-0 z-50 border-b border-white/10 bg-black/50 text-white shadow-lg shadow-slate-950/10 backdrop-blur-xl">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" width="160" height="48" decoding="async" class="h-12 w-auto object-contain" style="filter: drop-shadow(0 0 2px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,.9));">
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" width="160" height="48" decoding="async" class="h-12 w-auto object-contain" style="filter: drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 3px rgba(255,255,255,.55));">
             </a>
             <div class="hidden items-center gap-7 text-sm font-bold text-sky-50 md:flex">
                 <a href="#kampus" class="hover:text-gold">Kampus</a>
@@ -571,7 +571,7 @@
     <footer class="border-t border-white/10 bg-navy/90 px-4 py-12 text-white shadow-2xl shadow-slate-950/20 backdrop-blur-xl sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" loading="lazy" decoding="async" class="h-14 w-auto object-contain" style="filter: drop-shadow(0 0 2px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,.9));">
+                <img src="/images/social/logo%20kampus%20media.png" alt="Kampus Media" loading="lazy" decoding="async" class="h-14 w-auto object-contain" style="filter: drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 3px rgba(255,255,255,.55));">
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 @foreach ([['facebook', 'Facebook'], ['instagram', 'Instagram'], ['tiktok', 'TikTok'], ['youtube', 'YouTube']] as $social)
