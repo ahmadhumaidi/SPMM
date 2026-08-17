@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ExternalLeadEventResource\Pages;
 
 use App\Filament\Resources\ExternalLeadEventResource;
 use App\Jobs\ImportMetaFormLeadsJob;
-use App\Services\MetaLeadImportService;
 use Filament\Actions;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -51,26 +50,6 @@ class ListExternalLeadEvents extends ListRecords
                     Notification::make()
                         ->title('Import lead Meta diproses')
                         ->body('Import berjalan di background. Refresh halaman ini beberapa saat lagi untuk melihat status event dan lead yang masuk.')
-                        ->success()
-                        ->send();
-                }),
-            Actions\Action::make('importMetaLead')
-                ->label('Import 1 Lead')
-                ->icon('heroicon-o-document-arrow-down')
-                ->modalHeading('Import Satu Lead Meta')
-                ->form([
-                    TextInput::make('leadgen_id')
-                        ->label('Leadgen ID')
-                        ->helperText('Contoh: 1796297438001038')
-                        ->required()
-                        ->numeric(),
-                ])
-                ->action(function (array $data, MetaLeadImportService $importer): void {
-                    $event = $importer->importLead((string) $data['leadgen_id'], true);
-
-                    Notification::make()
-                        ->title('Import lead Meta selesai')
-                        ->body("Status: {$event->status}.")
                         ->success()
                         ->send();
                 }),
