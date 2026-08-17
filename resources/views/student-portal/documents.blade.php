@@ -96,6 +96,10 @@
                         <h2 class="mt-4 text-2xl font-black text-navy dark:text-white">Berkas yang dibutuhkan untuk Program RPL</h2>
                         <p class="mt-3 max-w-3xl leading-7 text-slate-600 dark:text-slate-300">Mahasiswa program RPL perlu menyiapkan dokumen pendidikan, pribadi, legalitas pekerjaan, dan bukti pendukung konversi mata kuliah.</p>
                     </div>
+                    <a href="https://drive.google.com/drive/folders/1F6I35Go-QI_D9q2B6Y1Zn2kicgKbRGRl?usp=drive_link" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-navy px-5 py-3 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-1 dark:bg-white dark:text-navy">
+                        <i data-lucide="folder-up" class="h-5 w-5"></i>
+                        Upload Berkas RPL via Google Drive
+                    </a>
                 </div>
 
                 <div class="mt-6 grid gap-4 lg:grid-cols-2">
