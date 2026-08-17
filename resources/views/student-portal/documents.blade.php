@@ -4,6 +4,7 @@
     $lead = $account->lead;
     $classTrackName = strtolower((string) ($lead->classTrack?->name ?? ''));
     $isRplStudent = str_contains($classTrackName, 'rpl');
+    $rplDriveUrl = 'https://drive.google.com/drive/folders/1F6I35Go-QI_D9q2B6Y1Zn2kicgKbRGRl?usp=drive_link';
     $completed = collect($documentTypes)->filter(fn ($document, $key) => $documents->has($key))->count();
     $total = count($documentTypes);
     $progress = (int) round(($completed / max($total, 1)) * 100);
@@ -167,6 +168,7 @@
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($documentTypes as $key => $document)
                     @php($uploaded = $documents->get($key))
+                    @php($isRplDriveDocument = $isRplStudent && $key === 'dokumen_pendukung')
                     <article class="rounded-[2rem] border border-white/70 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft dark:border-white/10 dark:bg-white/10">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-center gap-3">
@@ -180,27 +182,37 @@
                                     </p>
                                 </div>
                             </div>
-                            <span class="rounded-full px-3 py-1 text-xs font-black {{ $uploaded ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-200' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300' }}">
-                                {{ $uploaded ? 'Uploaded' : 'Belum' }}
+                            <span class="rounded-full px-3 py-1 text-xs font-black {{ $isRplDriveDocument ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-200' : ($uploaded ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-200' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300') }}">
+                                {{ $isRplDriveDocument ? 'Via Drive' : ($uploaded ? 'Uploaded' : 'Belum') }}
                             </span>
                         </div>
 
-                        @if ($uploaded)
-                            <div class="mt-5 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-                                <p class="truncate text-sm font-black">{{ $uploaded->original_name }}</p>
-                                <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{{ number_format(($uploaded->file_size ?? 0) / 1024, 1) }} KB</p>
-                                <a href="{{ Storage::url($uploaded->file_path) }}" target="_blank" class="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-black text-cyan-700 shadow-sm dark:bg-white/10 dark:text-cyan-200">Lihat dokumen</a>
+                        @if ($isRplDriveDocument)
+                            <div class="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 text-sm font-semibold leading-6 text-cyan-800 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-100">
+                                Upload dokumen pendukung RPL melalui folder Google Drive yang disediakan Kampus Media.
                             </div>
+                            <a href="{{ $rplDriveUrl }}" target="_blank" rel="noopener" class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-navy px-5 py-3 text-sm font-black text-white shadow-lg shadow-cyan-500/20 transition hover:-translate-y-1 dark:bg-white dark:text-navy">
+                                <i data-lucide="folder-up" class="h-5 w-5"></i>
+                                Upload via Google Drive
+                            </a>
                         @else
-                            <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
-                                Belum ada file. Format: JPG, PNG, PDF. Maksimal 4 MB.
-                            </div>
-                        @endif
+                            @if ($uploaded)
+                                <div class="mt-5 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
+                                    <p class="truncate text-sm font-black">{{ $uploaded->original_name }}</p>
+                                    <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{{ number_format(($uploaded->file_size ?? 0) / 1024, 1) }} KB</p>
+                                    <a href="{{ Storage::url($uploaded->file_path) }}" target="_blank" class="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-xs font-black text-cyan-700 shadow-sm dark:bg-white/10 dark:text-cyan-200">Lihat dokumen</a>
+                                </div>
+                            @else
+                                <div class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-semibold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+                                    Belum ada file. Format: JPG, PNG, PDF. Maksimal 4 MB.
+                                </div>
+                            @endif
 
-                        <label class="mt-5 grid gap-2 text-sm font-bold">
-                            {{ $uploaded ? 'Ganti file' : 'Upload file' }}
-                            <input type="file" name="{{ $key }}" accept=".jpg,.jpeg,.png,.pdf" class="rounded-2xl border border-slate-200 bg-white p-3 file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
-                        </label>
+                            <label class="mt-5 grid gap-2 text-sm font-bold">
+                                {{ $uploaded ? 'Ganti file' : 'Upload file' }}
+                                <input type="file" name="{{ $key }}" accept=".jpg,.jpeg,.png,.pdf" class="rounded-2xl border border-slate-200 bg-white p-3 file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
+                            </label>
+                        @endif
                     </article>
                 @endforeach
             </div>
