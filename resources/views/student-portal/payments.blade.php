@@ -169,11 +169,11 @@
             <div class="grid gap-0 lg:grid-cols-[.95fr_1.05fr]">
                 <div class="bg-gradient-to-br from-navy via-[#0b2d63] to-cyan-700 p-6 text-white lg:p-8">
                     <p class="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black uppercase tracking-wide text-cyan-100">Bayar Sekarang</p>
-                    <h2 class="mt-5 text-3xl font-black">Transfer ke rekening resmi Mahera Media</h2>
-                    <p class="mt-3 text-sm font-semibold leading-7 text-sky-100">Setelah transfer sesuai nominal tagihan aktif, upload struk pembayaran agar tim keuangan bisa melakukan verifikasi.</p>
+                    <h2 class="mt-5 text-3xl font-black">Transfer atau scan QRIS resmi</h2>
+                    <p class="mt-3 text-sm font-semibold leading-7 text-sky-100">Setelah transfer atau membayar via QRIS sesuai nominal tagihan aktif, upload struk pembayaran agar tim keuangan bisa melakukan verifikasi.</p>
 
                     <div class="mt-6 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
-                        <p class="text-xs font-black uppercase tracking-wide text-cyan-100">Bank tujuan</p>
+                        <p class="text-xs font-black uppercase tracking-wide text-cyan-100">Transfer bank</p>
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
                                 <p class="text-xs font-bold text-sky-100">Bank</p>
@@ -195,11 +195,24 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mt-5 rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-wide text-cyan-100">QRIS</p>
+                                <h3 class="mt-1 text-xl font-black">Mahera Konsultan</h3>
+                                <p class="mt-1 text-xs font-semibold text-sky-100">NMID: ID1026572572398</p>
+                            </div>
+                            <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-navy">Scan</span>
+                        </div>
+                        <div class="mt-4 overflow-hidden rounded-2xl bg-white p-3">
+                            <img src="{{ asset('images/payments/qris-mahera-konsultan.png') }}" alt="QRIS Mahera Konsultan" class="mx-auto w-full max-w-xs rounded-xl">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="p-6 lg:p-8">
                     <p class="text-sm font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Upload Struk</p>
-                    <h3 class="mt-1 text-2xl font-black text-navy dark:text-white">Kirim bukti transfer</h3>
+                    <h3 class="mt-1 text-2xl font-black text-navy dark:text-white">Kirim bukti pembayaran</h3>
                     <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">Status pembayaran menjadi menunggu verifikasi sampai disetujui tim keuangan.</p>
 
                     @if ($activePayments->isNotEmpty())
@@ -221,13 +234,19 @@
                                 </select>
                             </label>
                             <label class="grid gap-2">
-                                <span class="text-sm font-black text-slate-700 dark:text-slate-200">Upload struk transfer</span>
+                                <span class="text-sm font-black text-slate-700 dark:text-slate-200">Metode pembayaran</span>
+                                <select name="payment_method" required class="h-12 rounded-2xl border border-slate-200 bg-white px-4 font-bold outline-none focus:border-cyanx focus:ring-4 focus:ring-cyan-100 dark:border-white/10 dark:bg-white/10">
+                                    <option value="transfer_rekening_cv">Transfer rekening Mandiri</option>
+                                    <option value="qris_mahera_konsultan">QRIS Mahera Konsultan</option>
+                                </select>
+                            </label>                            <label class="grid gap-2">
+                                <span class="text-sm font-black text-slate-700 dark:text-slate-200">Upload struk pembayaran</span>
                                 <input type="file" name="proof_path" accept=".jpg,.jpeg,.png,.pdf" required class="rounded-2xl border border-slate-200 bg-white p-3 text-sm font-bold file:mr-4 file:rounded-xl file:border-0 file:bg-navy file:px-4 file:py-2 file:font-black file:text-white dark:border-white/10 dark:bg-white/10">
                                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Format JPG, PNG, atau PDF. Maksimal 5 MB.</span>
                             </label>
                             <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyanx px-6 py-4 font-black text-white shadow-glow transition hover:-translate-y-1">
                                 <i data-lucide="upload-cloud" class="h-5 w-5"></i>
-                                Kirim Struk untuk Verifikasi
+                                Kirim Bukti untuk Verifikasi
                             </button>
                         </form>
                     @else
@@ -242,7 +261,7 @@
 
             @if ($activePayments->isNotEmpty())
                 <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 lg:px-8">
-                    Pastikan nominal transfer sesuai tagihan yang dipilih. Pembayaran baru dianggap lunas setelah struk diverifikasi oleh tim keuangan.
+                    Pastikan nominal transfer atau QRIS sesuai tagihan yang dipilih. Pembayaran baru dianggap lunas setelah bukti diverifikasi oleh tim keuangan.
                 </div>
             @else
                 <div class="border-t border-slate-100 bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 lg:px-8">

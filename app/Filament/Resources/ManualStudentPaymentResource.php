@@ -85,6 +85,7 @@ class ManualStudentPaymentResource extends Resource
             Select::make('payment_method')->label('Metode pembayaran')->options([
                 'transfer_cv' => 'Transfer rekening CV',
                 'transfer_rekening_cv' => 'Transfer rekening CV',
+                'qris_mahera_konsultan' => 'QRIS Mahera Konsultan',
                 'bank_transfer' => 'Transfer bank',
                 'cash' => 'Tunai',
                 'other' => 'Lainnya',
@@ -251,6 +252,8 @@ class ManualStudentPaymentResource extends Resource
                 TextColumn::make('amount')->label('Nominal')->money('IDR')->sortable()->alignEnd(),
                 TextColumn::make('payment_method')->label('Metode')->formatStateUsing(fn (?string $state): string => match ($state) {
                     'transfer_cv' => 'Transfer CV',
+                    'transfer_rekening_cv' => 'Transfer rekening CV',
+                    'qris_mahera_konsultan' => 'QRIS Mahera Konsultan',
                     'bank_transfer' => 'Transfer bank',
                     'cash' => 'Tunai',
                     default => $state ? str($state)->replace('_', ' ')->title()->toString() : '-',

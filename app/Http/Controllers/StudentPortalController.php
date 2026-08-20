@@ -398,6 +398,7 @@ class StudentPortalController extends Controller
 
         $data = $request->validate([
             'student_payment_id' => ['required', 'integer'],
+            'payment_method' => ['nullable', 'in:transfer_rekening_cv,qris_mahera_konsultan'],
             'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ], [
             'student_payment_id.required' => 'Pilih tagihan yang akan dibayar.',
@@ -420,6 +421,7 @@ class StudentPortalController extends Controller
             return back()->with('status', 'Tagihan ini sudah lunas.');
         }
 
+        $paymentMethod = $data['payment_method'] ?? 'transfer_rekening_cv';
         $path = $request->file('proof_path')->store('student-payment-proofs/'.$account->lead_id, 'public');
         $manualPayment = $this->pendingManualPaymentFor($account->lead_id, $payment);
 
@@ -440,7 +442,7 @@ class StudentPortalController extends Controller
             'amount' => (int) $payment->amount,
             'due_date' => $payment->due_date,
             'status' => 'pending',
-            'payment_method' => 'transfer_rekening_cv',
+            'payment_method' => $paymentMethod,
             'proof_path' => $path,
             'submitted_at' => now(),
             'payment_type' => 'manual',
@@ -462,7 +464,7 @@ class StudentPortalController extends Controller
 
         $payment->update([
             'status' => 'pending',
-            'payment_method' => 'transfer_rekening_cv',
+            'payment_method' => $paymentMethod,
             'proof_path' => $path,
             'submitted_at' => now(),
             'verification_status' => 'pending',
@@ -487,6 +489,7 @@ class StudentPortalController extends Controller
         );
 
         $data = $request->validate([
+            'payment_method' => ['nullable', 'in:transfer_rekening_cv,qris_mahera_konsultan'],
             'proof_path' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ], [
             'proof_path.required' => 'Bukti pembayaran wajib diupload.',
@@ -507,6 +510,7 @@ class StudentPortalController extends Controller
             return back()->with('status', 'Tagihan pendaftaran ini sudah lunas.');
         }
 
+        $paymentMethod = $data['payment_method'] ?? 'transfer_rekening_cv';
         $path = $data['proof_path']->store('student-payment-proofs/'.$lead->id, 'public');
         $manualPayment = $this->pendingManualPaymentFor($lead->id, $payment);
 
@@ -527,7 +531,7 @@ class StudentPortalController extends Controller
             'amount' => (int) $payment->amount,
             'due_date' => $payment->due_date,
             'status' => 'pending',
-            'payment_method' => 'transfer_rekening_cv',
+            'payment_method' => $paymentMethod,
             'proof_path' => $path,
             'submitted_at' => now(),
             'payment_type' => 'manual',
@@ -549,7 +553,7 @@ class StudentPortalController extends Controller
 
         $payment->update([
             'status' => 'pending',
-            'payment_method' => 'transfer_rekening_cv',
+            'payment_method' => $paymentMethod,
             'proof_path' => $path,
             'submitted_at' => now(),
             'verification_status' => 'pending',
