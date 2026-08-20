@@ -188,22 +188,22 @@
                             <div class="flex items-center justify-between">
                                 <span>
                                     <span class="block text-sm font-bold text-cyan-100">Progress Kelulusan</span>
-                                    <strong class="mt-1 block text-4xl font-black">64%</strong>
+                                    <strong class="mt-1 block text-4xl font-black">0%</strong>
                                 </span>
                                 <span class="grid h-16 w-16 place-items-center rounded-3xl bg-gold text-navy">
                                     <i data-lucide="rocket" class="h-8 w-8"></i>
                                 </span>
                             </div>
                             <div class="mt-6 h-3 rounded-full bg-white/15">
-                                <div class="h-3 rounded-full bg-gradient-to-r from-gold to-cyan-300" style="width: 64%"></div>
+                                <div class="h-3 rounded-full bg-gradient-to-r from-gold to-cyan-300" style="width: 0%"></div>
                             </div>
-                            <p class="mt-4 text-sm font-semibold leading-6 text-sky-50">Tetap konsisten. Kamu berada di jalur yang bagus untuk menyelesaikan target SKS.</p>
+                            <p class="mt-4 text-sm font-semibold leading-6 text-sky-50">Progress akademik akan muncul setelah data perkuliahan dan nilai tersedia.</p>
                         </div>
                     </div>
                 </section>
 
                 <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                    @foreach ([['IPK', '3.72', 'Naik 0.08', 'trending-up'], ['Total SKS', '86', '58 SKS tersisa', 'layers-3'], ['Semester Aktif', '4', 'Reguler Malam', 'calendar-check'], ['Tagihan Aktif', 'Rp '.number_format($activeBillAmount, 0, ',', '.'), $activeBillStatus.' - '.$billingMonthLabel, 'wallet-cards'], ['Progress', '64%', 'Kelulusan', 'activity']] as $stat)
+                    @foreach ([['IPK', '-', 'Belum tersedia', 'trending-up'], ['Total SKS', '-', 'Belum tersedia', 'layers-3'], ['Semester Aktif', '-', 'Belum tersedia', 'calendar-check'], ['Tagihan Aktif', 'Rp '.number_format($activeBillAmount, 0, ',', '.'), $activeBillStatus.' - '.$billingMonthLabel, 'wallet-cards'], ['Progress', '0%', 'Belum tersedia', 'activity']] as $stat)
                         <article class="reveal rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-soft dark:border-white/10 dark:bg-white/10">
                             <div class="flex items-center justify-between">
                                 <p class="text-sm font-black text-slate-500 dark:text-slate-400">{{ $stat[0] }}</p>
@@ -212,7 +212,7 @@
                             <strong class="mt-4 block text-2xl font-black text-navy dark:text-white">{{ $stat[1] }}</strong>
                             <p class="mt-2 text-xs font-bold text-slate-500 dark:text-slate-400">{{ $stat[2] }}</p>
                             <div class="mt-4 flex h-9 items-end gap-1">
-                                @foreach ([30, 48, 42, 70, 58, 86, 76] as $bar)
+                                @foreach ([8, 8, 8, 8, 8, 8, 8] as $bar)
                                     <span class="flex-1 rounded-t bg-gradient-to-t from-cyanx to-indigo-400" style="height: {{ $bar }}%"></span>
                                 @endforeach
                             </div>
@@ -222,29 +222,14 @@
 
                 <section class="mt-6 grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
                     <article id="jadwal-kuliah" class="reveal rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-white/10">
-                        <div class="flex items-center justify-between gap-4">
-                            <div>
-                                <p class="text-sm font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Jadwal Kuliah</p>
-                                <h2 class="mt-1 text-2xl font-black text-navy dark:text-white">Timeline hari ini</h2>
-                            </div>
-                            <button class="rounded-full bg-slate-100 px-4 py-2 text-sm font-black text-slate-600 dark:bg-white/10 dark:text-slate-200">Lihat kalender</button>
+                        <div>
+                            <p class="text-sm font-black uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Jadwal Kuliah</p>
+                            <h2 class="mt-1 text-2xl font-black text-navy dark:text-white">Timeline hari ini</h2>
                         </div>
-                        <div class="mt-6 grid gap-4">
-                            @foreach ([['08:00 - 09:40', 'Sistem Basis Data', 'Dr. Hanif Pratama', 'Online'], ['10:00 - 11:40', 'Manajemen Proyek TI', 'Nadia Kurnia, M.Kom', 'Offline'], ['19:00 - 20:30', 'Bahasa Inggris Bisnis', 'Ratri Dewi, M.Pd', 'Hybrid']] as $class)
-                                <div class="group flex gap-4 rounded-3xl border border-slate-100 bg-slate-50 p-4 transition hover:-translate-y-1 hover:bg-white hover:shadow-soft dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
-                                    <div class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-cyan-700 shadow-sm dark:bg-white/10 dark:text-cyan-200">
-                                        <i data-lucide="video" class="h-6 w-6"></i>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <h3 class="font-black text-navy dark:text-white">{{ $class[1] }}</h3>
-                                            <span class="rounded-full {{ $class[3] === 'Online' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-200' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200' }} px-3 py-1 text-xs font-black">{{ $class[3] }}</span>
-                                        </div>
-                                        <p class="mt-1 text-sm font-semibold text-slate-500 dark:text-slate-400">{{ $class[2] }}</p>
-                                        <p class="mt-2 text-sm font-black text-slate-700 dark:text-slate-200">{{ $class[0] }}</p>
-                                    </div>
-                                </div>
-                            @endforeach
+                        <div class="mt-6 rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-white/10 dark:bg-white/5">
+                            <i data-lucide="calendar-clock" class="mx-auto h-10 w-10 text-cyan-700 dark:text-cyan-200"></i>
+                            <strong class="mt-4 block text-navy dark:text-white">Belum ada jadwal kuliah</strong>
+                            <p class="mt-2 text-sm font-semibold leading-6 text-slate-500 dark:text-slate-400">Jadwal akan tampil setelah data SIAKAD/LMS tersambung.</p>
                         </div>
                     </article>
 
@@ -292,18 +277,18 @@
                         <h2 class="mt-1 text-2xl font-black text-navy dark:text-white">Analytics semester</h2>
                         <div class="mt-6 h-56 rounded-3xl bg-slate-50 p-5 dark:bg-white/5">
                             <div class="flex h-full items-end gap-3">
-                                @foreach ([2.9, 3.2, 3.4, 3.72, 3.61, 3.8] as $ip)
+                                @foreach ([0, 0, 0, 0, 0, 0] as $ip)
                                     <div class="flex flex-1 flex-col items-center gap-2">
-                                        <span class="w-full rounded-t-2xl bg-gradient-to-t from-indigo-500 to-cyan-300 shadow-glow" style="height: {{ $ip / 4 * 100 }}%"></span>
-                                        <span class="text-xs font-black text-slate-500 dark:text-slate-400">{{ $ip }}</span>
+                                        <span class="w-full rounded-t-2xl bg-gradient-to-t from-indigo-500 to-cyan-300 shadow-glow" style="height: 8%"></span>
+                                        <span class="text-xs font-black text-slate-500 dark:text-slate-400">-</span>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                         <div class="mt-5 grid gap-3 sm:grid-cols-3">
                             <div class="rounded-2xl bg-slate-50 p-4 dark:bg-white/5"><p class="text-xs font-bold text-slate-500">Status</p><strong class="mt-1 block">Aktif</strong></div>
-                            <div class="rounded-2xl bg-slate-50 p-4 dark:bg-white/5"><p class="text-xs font-bold text-slate-500">SKS Lulus</p><strong class="mt-1 block">86/144</strong></div>
-                            <div class="rounded-2xl bg-slate-50 p-4 dark:bg-white/5"><p class="text-xs font-bold text-slate-500">KHS</p><strong class="mt-1 block">Ready</strong></div>
+                            <div class="rounded-2xl bg-slate-50 p-4 dark:bg-white/5"><p class="text-xs font-bold text-slate-500">SKS Lulus</p><strong class="mt-1 block">-</strong></div>
+                            <div class="rounded-2xl bg-slate-50 p-4 dark:bg-white/5"><p class="text-xs font-bold text-slate-500">KHS</p><strong class="mt-1 block">-</strong></div>
                         </div>
                     </article>
 

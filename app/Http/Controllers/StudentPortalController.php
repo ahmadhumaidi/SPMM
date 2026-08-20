@@ -649,12 +649,9 @@ class StudentPortalController extends Controller
         }
 
         $rules = [];
-        $existingDocuments = $account->lead->studentDocuments()
-            ->pluck('id', 'document_type');
-
         foreach ($this->documentTypes() as $key => $document) {
             $rules[$key] = [
-                $document['required'] && ! $existingDocuments->has($key) ? 'required' : 'nullable',
+                'nullable',
                 'file',
                 'mimes:jpg,jpeg,png,pdf',
                 'max:4096',
@@ -1003,5 +1000,3 @@ class StudentPortalController extends Controller
             ->values();
     }
 }
-
-
